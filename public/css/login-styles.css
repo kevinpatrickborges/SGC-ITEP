@@ -1,0 +1,168 @@
+:root {
+    --azul-escuro: #185a8b;
+    --azul-claro: #4a90e2;
+    --azul-padrao: #1976d2;
+    --cinza-claro: #f3f4f6;
+  }
+  
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(120deg, #eaf3fa, #f7fafc);
+    min-height: 100dvh;
+    height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+
+
+  
+  /* Cabeçalho */
+  .header-sei {
+    width: 100%;
+  }
+  .header-top {
+    background: #1976a1;
+    color: #fff;
+    font-size: 0.62rem;
+    padding: 3px 18px;
+  }
+  .header-divider {
+    background: #005b88;
+    height: 4px;
+  }
+  .header-main {
+    background: #13a0d8;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: bold;
+    padding: 12px 18px;
+  }
+  
+  /* Wrapper principal */
+  .main-login-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 10px 6px 38px 6px; /* padding-bottom igual altura do footer */
+    height: calc(100dvh - 34px); /* altura total - altura do footer */
+    min-height: 0;
+    box-sizing: border-box;
+    overflow: visible;
+  }
+
+  .box {
+    background: #fff;
+    max-width: 320px;
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    padding: 10px 8px 8px 8px;
+    margin-top: 10px;
+  }
+  
+  /* Logo e títulos */
+  .logo-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .login-logo {
+    max-width: 75px;
+  }
+  .login-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--azul-escuro);
+    margin-top: 10px;
+    text-align: center;
+  }
+  .login-subtitle {
+    font-size: 0.95rem;
+    color: var(--azul-claro);
+    text-align: center;
+  }
+  
+  /* Inputs */
+  .input-group {
+    margin-bottom: 13px;
+    display: flex;
+    align-items: center;
+  }
+  .input-group-text {
+    background: var(--cinza-claro);
+    border: 1px solid #d1d5db;
+    padding: 10px;
+    border-radius: 6px 0 0 6px;
+    color: #555;
+  }
+  .form-control {
+    flex: 1;
+    height: 38px;
+    border: 1px solid #d1d5db;
+    border-left: none;
+    padding-left: 8px;
+    font-size: 0.97rem;
+    border-radius: 0 6px 6px 0;
+  }
+  
+  /* Botão */
+  .login-btn {
+    background: var(--azul-padrao);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    padding: 12px;
+    width: 100%;
+    margin-top: 10px;
+    font-size: 1rem;
+  }
+  .login-btn:hover {
+    background: #145ea8;
+  }
+  
+  /* Alertas */
+  .alert {
+    font-size: 0.95rem;
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 6px;
+  }
+  
+  /* Rodapé */
+  .login-footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    background: #fff;
+    text-align: center;
+    font-size: 0.78rem;
+    color: #889;
+    padding: 7px 7px 7px 7px;
+    line-height: 1.3;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.03);
+    z-index: 10;
+  }
+.login-footer i, .login-footer svg {
+    font-size: 1.05em !important;
+    vertical-align: middle;
+}
+
+  
+  /* Acessibilidade */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  

@@ -1,0 +1,33 @@
+html {
+  height: 100%;
+}
+
+body {
+  height: 100vh;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: #f4f6fa;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Contêiner principal que envolve a sidebar e o conteúdo */
+.sei-app-wrapper {
+  display: flex;
+  flex: 1;
+  overflow: hidden; /* Evita barras de rolagem indesejadas */
+}
+
+/* Conteúdo principal da aplicação */
+.sei-main-content {
+  flex-grow: 1; /* Ocupa o espaço restante */
+  padding: 1.5rem;
+  overflow-y: auto; /* Permite rolagem apenas no conteúdo */
+  height: 100%;
+}
+.card { border-radius: 12px; }
+.btn-primary { background: #003366; border: none; }
+.btn-primary:hover { background: #002244; }

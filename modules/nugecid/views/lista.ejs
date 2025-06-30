@@ -1,0 +1,84 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-2 text-gray-800">Módulo NUGECID - Desarquivamento de Prontuários</h1>
+    <p class="mb-4">Gerenciamento de solicitações de desarquivamento de prontuários.</p>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Lista de Solicitações</h6>
+            <a href="/nugecid/novo" class="btn btn-success btn-icon-split btn-sm float-right" style="margin-top: -25px;">
+                <span class="icon text-white-50"><i class="fas fa-plus"></i></span>
+                <span class="text">Nova Solicitação</span>
+            </a>
+            <button id="btnPrint" class="btn btn-info btn-icon-split btn-sm float-right" style="margin-top: -25px; margin-right: 10px;">
+                <span class="icon text-white-50"><i class="fas fa-print"></i></span>
+                <span class="text">Imprimir Lista</span>
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Nº Prontuário</th>
+                            <th>Solicitante</th>
+                            <th>Data da Solicitação</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% desarquivamentos.forEach(item => { %>
+                        <tr>
+                            <td><%= item.nome %></td>
+                            <td><%= item.numero_prontuario %></td>
+                            <td><%= item.solicitante %></td>
+                            <td><%= new Date(item.data_solicitacao).toLocaleDateString('pt-BR') %></td>
+                            <td><span class="badge badge-info"><%= item.status %></span></td>
+                            <td>
+                                <a href="/nugecid/editar/<%= item.id %>" class="btn btn-warning btn-circle btn-sm" title="Editar">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <form action="/nugecid/deletar/<%= item.id %>" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja cancelar esta solicitação?');">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button type="submit" class="btn btn-danger btn-circle btn-sm" title="Cancelar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<!-- Script para Impressão com jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf-autotable.min.js"></script>
+
+<script>
+    document.getElementById('btnPrint').addEventListener('click', function () {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        doc.autoTable({
+            html: '#dataTable',
+            startY: 20,
+            headStyles: { fillColor: [41, 128, 185] },
+            didDrawPage: function (data) {
+                doc.setFontSize(18);
+                doc.setTextColor(40);
+                doc.text('Lista de Desarquivamentos - NUGECID', data.settings.margin.left, 15);
+            }
+        });
+
+        doc.save('desarquivamentos-nugecid.pdf');
+    });
+</script>

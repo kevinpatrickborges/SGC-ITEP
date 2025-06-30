@@ -1,0 +1,43 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Movimentações do Vestígio</h2>
+  <a href="/movimentacoes/vestigio/<%= vestigio.id %>/nova" class="btn btn-success">+ Nova Movimentação</a>
+</div>
+<div class="mb-2">
+  <strong>Vestígio:</strong> <%= vestigio.codigo %> | <%= vestigio.tipo %> | <%= vestigio.numeroLaudo %>
+</div>
+<table class="table table-bordered table-hover table-sm">
+  <thead class="table-light">
+    <tr>
+      <th>Tipo</th>
+      <th>Data/Hora</th>
+      <th>Agente</th>
+      <th>Destino</th>
+      <th>Justificativa</th>
+      <th>Anexo</th>
+      <th>Assinatura</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (movimentacoes.length === 0) { %>
+      <tr><td colspan="7" class="text-center">Nenhuma movimentação registrada.</td></tr>
+    <% } %>
+    <% movimentacoes.forEach(m => { %>
+      <tr>
+        <td><%= m.tipoMovimentacao %></td>
+        <td><%= m.data ? m.data.toLocaleString('pt-BR') : '' %></td>
+        <td><%= m.agenteNome %> (<%= m.agenteMatricula %>)</td>
+        <td><%= m.destino %></td>
+        <td><%= m.justificativa %></td>
+        <td>
+          <% if (m.anexo) { %>
+            <a href="/uploads/movimentacoes/<%= m.anexo %>" target="_blank">Ver</a>
+          <% } else { %>
+            <span class="text-muted">-</span>
+          <% } %>
+        </td>
+        <td><%= m.assinatura ? m.assinatura : '-' %></td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
+<a href="/vestigios/<%= vestigio.id %>" class="btn btn-secondary">Voltar ao Vestígio</a>

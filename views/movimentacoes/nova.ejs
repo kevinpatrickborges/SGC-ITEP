@@ -1,0 +1,43 @@
+<form action="/movimentacoes/vestigio/<%= vestigio.id %>/nova" method="POST" enctype="multipart/form-data" class="row g-3">
+  <div class="col-md-4">
+    <label class="form-label">Tipo de Movimentação</label>
+    <select name="tipoMovimentacao" class="form-select" required>
+      <option value="">Selecione...</option>
+      <option value="entrada">Entrada</option>
+      <option value="saida_temporaria">Saída Temporária</option>
+      <option value="saida_definitiva">Saída Definitiva</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Data/Hora</label>
+    <input type="datetime-local" name="data" class="form-control" value="<%= (new Date()).toISOString().slice(0,16) %>" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Agente Responsável (Nome)</label>
+    <input type="text" name="agenteNome" class="form-control" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Agente Responsável (Matrícula)</label>
+    <input type="text" name="agenteMatricula" class="form-control" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Destino</label>
+    <input type="text" name="destino" class="form-control">
+  </div>
+  <div class="col-md-12">
+    <label class="form-label">Justificativa</label>
+    <textarea name="justificativa" class="form-control" rows="2"></textarea>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Termo/Anexo</label>
+    <input type="file" name="anexo" class="form-control" accept="image/*,.pdf,.doc,.docx">
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Assinatura Digital (hash ou identificação)</label>
+    <input type="text" name="assinatura" class="form-control">
+  </div>
+  <div class="col-12 mt-3">
+    <button type="submit" class="btn btn-primary">Registrar Movimentação</button>
+    <a href="/movimentacoes/vestigio/<%= vestigio.id %>" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>

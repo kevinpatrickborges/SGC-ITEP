@@ -1,0 +1,16 @@
+<div class="container mt-5">
+    <div class="alert alert-danger">
+        <h4 class="alert-heading">Ocorreu um Erro</h4>
+        <p>Lamentamos, mas um erro inesperado ocorreu. Por favor, tente novamente mais tarde.</p>
+        <hr>
+        <% if (typeof error !== 'undefined' && error) { %>
+            <p class="mb-0"><strong>Detalhes do Erro:</strong> <%= error.message %></p>
+            <% if (process.env.NODE_ENV === 'development' && error.stack) { %>
+                <pre><code><%= error.stack %></code></pre>
+            <% } %>
+        <% } else { %>
+            <p class="mb-0">Não foi possível obter detalhes sobre o erro.</p>
+        <% } %>
+    </div>
+    <a href="/" class="btn btn-primary">Voltar para a Página Inicial</a>
+</div>

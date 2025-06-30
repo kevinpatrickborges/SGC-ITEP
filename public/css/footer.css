@@ -1,0 +1,37 @@
+/* Footer Styles */
+.sei-footer {
+  text-align: center;
+  color: #888;
+  font-size: 0.85rem;
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+  margin-top: 0 !important;
+  border-top: 1px solid #e0e0e0;
+}
+.sei-footer::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 257px; /* igual à sidebar */
+  background: #233045; /* igual à sidebar */
+  z-index: 0;
+}
+.sei-footer .footer-content {
+  position: relative;
+  z-index: 1;
+}
+.footer-box {
+  width: 100vw;
+  background: transparent;
+  border-top: none;
+  padding: 0.7rem 0 0.5rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.login-footer {
+  color: #888;
+  font-size: 0.8rem;
+  text-align: center;
+}

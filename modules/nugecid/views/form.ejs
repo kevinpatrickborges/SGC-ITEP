@@ -1,0 +1,51 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800"><%= title %></h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Detalhes da Solicitação</h6>
+        </div>
+        <div class="card-body">
+            <form action="<%= action %>" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="form-group">
+                    <label for="nome">Nome do Prontuário</label>
+                    <input type="text" class="form-control" id="nome" name="nome" value="<%= desarquivamento.nome || '' %>" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="numero_prontuario">Nº do Prontuário</label>
+                    <input type="text" class="form-control" id="numero_prontuario" name="numero_prontuario" value="<%= desarquivamento.numero_prontuario || '' %>" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="solicitante">Solicitante</label>
+                    <input type="text" class="form-control" id="solicitante" name="solicitante" value="<%= desarquivamento.solicitante || '' %>" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="motivo">Motivo da Solicitação</label>
+                    <textarea class="form-control" id="motivo" name="motivo" rows="3" required><%= desarquivamento.motivo || '' %></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select class="form-control" id="status" name="status">
+                        <option value="Solicitado" <%= (desarquivamento.status === 'Solicitado') ? 'selected' : '' %>>Solicitado</option>
+                        <option value="Em Andamento" <%= (desarquivamento.status === 'Em Andamento') ? 'selected' : '' %>>Em Andamento</option>
+                        <option value="Concluído" <%= (desarquivamento.status === 'Concluído') ? 'selected' : '' %>>Concluído</option>
+                        <option value="Cancelado" <%= (desarquivamento.status === 'Cancelado') ? 'selected' : '' %>>Cancelado</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <a href="/nugecid" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

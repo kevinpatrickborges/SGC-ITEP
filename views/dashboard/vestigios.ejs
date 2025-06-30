@@ -1,0 +1,41 @@
+<main class="sei-content">
+    <h2 class="sei-title">Vestígios</h2>
+    <div class="sei-actions">
+      <a href="/vestigios/novo" class="sei-action-btn"><i class="bi bi-plus-circle"></i> Novo Vestígio</a>
+      <button class="sei-action-btn"><i class="bi bi-download"></i> Exportar</button>
+    </div>
+    <section class="sei-table-section">
+      <div class="sei-table-title">Lista de Vestígios</div>
+      <table class="sei-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Descrição</th>
+            <th>Status</th>
+            <th>Data</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (vestigios && vestigios.length) { %>
+            <% vestigios.forEach(function(vestigio) { %>
+              <tr>
+                <td><%= vestigio.id %></td>
+                <td><%= vestigio.descricao %></td>
+                <td><%= vestigio.status %></td>
+                <td><%= vestigio.data %></td>
+                <td>
+                  <a href="/vestigios/<%= vestigio.id %>" title="Detalhes"><i class="bi bi-eye"></i></a>
+                </td>
+              </tr>
+            <% }) %>
+          <% } else { %>
+            <tr><td colspan="5">Nenhum vestígio cadastrado.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+<script src="/js/export-vestigios.js"></script>

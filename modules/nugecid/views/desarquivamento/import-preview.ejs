@@ -1,0 +1,56 @@
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Pré-visualização da Importação</h3>
+  </div>
+  <div class="card-body">
+    <p>Confira os dados abaixo antes de confirmar a importação. As linhas com erros não serão importadas.</p>
+
+    <form action="/nugecid/desarquivamento/importar/confirmar" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <!-- Passando os dados serializados para o próximo passo -->
+      <input type="hidden" name="dadosImportacao" value="<%= JSON.stringify(dados) %>">
+      
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped table-sm">
+          <thead>
+            <tr>
+              <th>Tipo Desarquivamento</th>
+              <th>Status</th>
+              <th>Nome Completo</th>
+              <th>Nº Documento</th>
+              <th>Nº Processo</th>
+              <th>Tipo Documento</th>
+              <th>Data Solicitação</th>
+              <th>Data Desarquivamento</th>
+              <th>Data Devolução</th>
+              <th>Setor Demandante</th>
+              <th>Servidor Responsável</th>
+              <th>Finalidade</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% dados.forEach(item => { %>
+              <tr>
+                <td><%= item.tipoDesarquivamento || '—' %></td>
+                <td><span class="badge bg-info"><%= item.status || '—' %></span></td>
+                <td><%= item.nomeCompleto || '—' %></td>
+                <td><%= item.numDocumento || '—' %></td>
+                <td><%= item.numProcesso || '—' %></td>
+                <td><%= item.tipoDocumento || '—' %></td>
+                <td><%= item.dataSolicitacao instanceof Date ? item.dataSolicitacao.toLocaleDateString('pt-BR') : (item.dataSolicitacao || '—') %></td>
+                <td><%= item.dataDesarquivamento instanceof Date ? item.dataDesarquivamento.toLocaleDateString('pt-BR') : (item.dataDesarquivamento || '—') %></td>
+                <td><%= item.dataDevolucao instanceof Date ? item.dataDevolucao.toLocaleDateString('pt-BR') : (item.dataDevolucao || '—') %></td>
+                <td><%= item.setorDemandante || '—' %></td>
+                <td><%= item.servidorResponsavel || '—' %></td>
+                <td><%= item.finalidade || '—' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <button type="submit" class="btn btn-success">Confirmar Importação</button>
+      <a href="/nugecid/desarquivamento" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>

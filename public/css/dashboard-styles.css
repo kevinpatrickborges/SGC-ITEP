@@ -1,0 +1,188 @@
+/* SEI-inspired Dashboard Styles */
+html, body, html {
+  height: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: #f4f6fa;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #222;
+}
+
+.sei-app-wrapper {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  height: 100%;
+  background: transparent;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.sei-main-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+
+.sei-main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.sei-dashboard {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Removido: topbar, logo, topbar-right, user, logout (agora em topbar.css) */
+
+.sei-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.sei-content {
+  flex: 1;
+  background: #f4f6fa;
+  padding: 2.2rem 2.5rem 1.5rem 2.5rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sei-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  color: #0076bf;
+}
+
+.sei-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.sei-action-btn {
+  background: #e3eaf5;
+  color: #0076bf;
+  border: none;
+  border-radius: 0.3rem;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.15s, color 0.15s;
+}
+.sei-action-btn:hover {
+  background: #0076bf;
+  color: #fff;
+}
+
+.sei-cards {
+  display: flex;
+  gap: 1.2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+.sei-card {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 1.1rem 2rem;
+  min-width: 180px;
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.sei-card-title {
+  color: #0076bf;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+}
+.sei-card-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #233045;
+}
+
+.sei-table-section {
+  margin-top: 1.5rem;
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  padding: 1.2rem 1.5rem;
+}
+.sei-table-title {
+  font-weight: 600;
+  color: #0076bf;
+  margin-bottom: 0.7rem;
+}
+.sei-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.98rem;
+  background: #fff;
+}
+.sei-table th, .sei-table td {
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: left;
+}
+.sei-table th {
+  background: #e3eaf5;
+  color: #233045;
+  font-weight: 600;
+}
+.sei-table tr:last-child td {
+  border-bottom: none;
+}
+.sei-status-recebido {
+  color: #388e3c;
+  font-weight: 600;
+}
+.sei-status-processo {
+  color: #e65100;
+  font-weight: 600;
+}
+.sei-main-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+/* Responsividade */
+@media (max-width: 900px) {
+  .sei-main {
+    flex-direction: column;
+  }
+  .sei-sidebar {
+    flex-direction: row;
+    width: 100%;
+    min-width: 0;
+    padding: 0.5rem;
+    overflow-x: auto;
+  }
+  .sei-content {
+    padding: 1.2rem 0.5rem;
+  }
+  .sei-cards {
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+}

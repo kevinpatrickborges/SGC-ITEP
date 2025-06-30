@@ -1,0 +1,135 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800"><%= title %></h1>
+
+    <!-- Gráficos de Vestígios -->
+    <div class="row">
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Vestígios por Tipo</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4">
+                        <canvas id="vestigiosPorTipoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Vestígios por Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4">
+                        <canvas id="vestigiosPorStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Movimentações -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Movimentações nos Últimos 12 Meses</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="movimentacoesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Publicações -->
+    <div class="row">
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Publicações por Tipo</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar pt-4">
+                        <canvas id="publicacoesPorTipoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<%- include('../partials/footer') %>
+
+<!-- Page level plugins -->
+<script src="/vendor/chart.js/Chart.min.js"></script>
+
+<!-- Page level custom scripts -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Dados do servidor
+        const stats = <%- JSON.stringify(stats) %>;
+
+        // Gráfico de Pizza: Vestígios por Tipo
+        new Chart(document.getElementById('vestigiosPorTipoChart'), {
+            type: 'doughnut',
+            data: {
+                labels: stats.vestigiosPorTipo.map(item => item.tipo),
+                datasets: [{
+                    data: stats.vestigiosPorTipo.map(item => item.total),
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                }]
+            },
+            options: { maintainAspectRatio: false, legend: { display: true } }
+        });
+
+        // Gráfico de Pizza: Vestígios por Status
+        new Chart(document.getElementById('vestigiosPorStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: stats.vestigiosPorStatus.map(item => item.status),
+                datasets: [{
+                    data: stats.vestigiosPorStatus.map(item => item.total),
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                }]
+            },
+            options: { maintainAspectRatio: false, legend: { display: true } }
+        });
+
+        // Gráfico de Linha: Movimentações Mensais
+        new Chart(document.getElementById('movimentacoesChart'), {
+            type: 'line',
+            data: {
+                labels: stats.movimentacoesMensais.map(item => `<%= formatMonth('${item.ano}', '${item.mes}') %>`),
+                datasets: [{
+                    label: 'Movimentações',
+                    lineTension: 0.3,
+                    backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    data: stats.movimentacoesMensais.map(item => item.total),
+                }]
+            },
+            options: { maintainAspectRatio: false, scales: { yAxes: [{ ticks: { beginAtZero: true } }] } }
+        });
+
+        // Gráfico de Barra: Publicações por Tipo
+        new Chart(document.getElementById('publicacoesPorTipoChart'), {
+            type: 'bar',
+            data: {
+                labels: stats.publicacoesPorTipo.map(item => item.tipo),
+                datasets: [{
+                    label: 'Total',
+                    backgroundColor: '#4e73df',
+                    data: stats.publicacoesPorTipo.map(item => item.total),
+                }]
+            },
+            options: { maintainAspectRatio: false, scales: { yAxes: [{ ticks: { beginAtZero: true } }] }, legend: { display: false } }
+        });
+    });
+</script>

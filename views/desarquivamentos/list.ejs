@@ -1,0 +1,103 @@
+<div class="container-fluid">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
+    <a href="/desarquivamentos/novo" class="btn btn-primary btn-icon-split">
+      <span class="icon text-white-50">
+        <i class="fas fa-plus"></i>
+      </span>
+      <span class="text">Novo Desarquivamento</span>
+    </a>
+    <a href="/desarquivamentos/importar" class="btn btn-info btn-icon-split">
+      <span class="icon text-white-50">
+        <i class="fas fa-file-import"></i>
+      </span>
+      <span class="text">Importar Planilha</span>
+    </a>
+    <a href="/desarquivamentos/exportar/xlsx" class="btn btn-success btn-icon-split">
+      <span class="icon text-white-50">
+        <i class="fas fa-file-excel"></i>
+      </span>
+      <span class="text">Exportar XLSX</span>
+    </a>
+    <a href="/desarquivamentos/exportar/pdf" class="btn btn-danger btn-icon-split">
+      <span class="icon text-white-50">
+        <i class="fas fa-file-pdf"></i>
+      </span>
+      <span class="text">Exportar PDF</span>
+    </a>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Registros</h6>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+          <thead>
+            <tr>
+              <th>Nº</th>
+              <th>Desarq. Físico/Digital</th>
+              <th>Status</th>
+              <th>Nome Completo</th>
+              <th>Nº Documento</th>
+              <th>Nº Processo</th>
+              <th>Tipo de Documento</th>
+              <th>Data de Solicitação</th>
+              <th>Data Desarquivamento</th>
+              <th>Data Devolução</th>
+              <th>Setor Demandante</th>
+              <th>Servidor Responsável</th>
+              <th>Finalidade</th>
+              <th>Prazo Solicitado</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (desarquivamentos && desarquivamentos.length > 0) { %>
+              <% desarquivamentos.forEach(item => { %>
+                <tr>
+                  <td><%= item.id %></td>
+                  <td><%= item.tipoDesarquivamento %></td>
+                  <td>
+                    <form class="status-form" data-id="<%= item.id %>">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <select name="status" class="form-control form-control-sm status-select" style="width: 120px;">
+                        <option value="Solicitado" <%= item.status === 'Solicitado' ? 'selected' : '' %>>Solicitado</option>
+                        <option value="Em posse" <%= item.status === 'Em posse' ? 'selected' : '' %>>Em posse</option>
+                        <option value="Devolvido" <%= item.status === 'Devolvido' ? 'selected' : '' %>>Devolvido</option>
+                        <option value="Extraviado" <%= item.status === 'Extraviado' ? 'selected' : '' %>>Extraviado</option>
+                      </select>
+                    </form>
+                  </td>
+                  <td><%= item.nomeCompleto %></td>
+                  <td><%= item.numDocumento %></td>
+                  <td><%= item.numProcesso || '-' %></td>
+                  <td><%= item.tipoDocumento || '-' %></td>
+                  <td><%= new Date(item.dataSolicitacao).toLocaleDateString('pt-BR') %></td>
+                  <td><%= item.dataDesarquivamento ? new Date(item.dataDesarquivamento).toLocaleDateString('pt-BR') : '-' %></td>
+                  <td><%= item.dataDevolucao ? new Date(item.dataDevolucao).toLocaleDateString('pt-BR') : '-' %></td>
+                  <td><%= item.setorDemandante %></td>
+                  <td><%= item.servidorResponsavel || '-' %></td>
+                  <td><%= item.finalidade %></td>
+                  <td><%= item.prazoSolicitado || '-' %></td>
+                  <td>
+                    <a href="/desarquivamentos/<%= item.id %>/editar" class="btn btn-sm btn-warning" title="Editar"><i class="fas fa-pencil-alt"></i></a>
+                    <form action="/desarquivamentos/<%= item.id %>/excluir" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este registro?');">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="6" class="text-center">Nenhum registro encontrado.</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

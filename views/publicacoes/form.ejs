@@ -1,0 +1,84 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800"><%= title %></h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Detalhes da Publicação</h6>
+        </div>
+        <div class="card-body">
+            <form action="<%= action %>" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <!-- ETAPA 1: TIPO E METADADOS PRINCIPAIS -->
+                <h5>Etapa 1: Informações Básicas</h5>
+                <hr>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="titulo">Título</label>
+                        <input type="text" class="form-control" id="titulo" name="titulo" value="<%= publicacao.titulo || '' %>" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="tipo">Tipo de Publicação</label>
+                        <select class="form-control" id="tipo" name="tipo">
+                            <option value="Artigo" <%= (publicacao.tipo === 'Artigo') ? 'selected' : '' %>>Artigo</option>
+                            <option value="Livro" <%= (publicacao.tipo === 'Livro') ? 'selected' : '' %>>Livro</option>
+                            <option value="Pôster" <%= (publicacao.tipo === 'Pôster') ? 'selected' : '' %>>Pôster</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="autores">Autores (separados por vírgula)</label>
+                    <input type="text" class="form-control" id="autores" name="autores" value="<%= publicacao.autores || '' %>">
+                </div>
+                <div class="form-group">
+                    <label for="resumo">Resumo</label>
+                    <textarea class="form-control" id="resumo" name="resumo" rows="4"><%= publicacao.resumo || '' %></textarea>
+                </div>
+
+                <!-- ETAPA 2: ARQUIVO E STATUS -->
+                <h5 class="mt-4">Etapa 2: Arquivo e Status</h5>
+                <hr>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="fileId">ID do Arquivo Final (Opcional)</label>
+                        <input type="text" class="form-control" id="fileId" name="fileId" value="<%= publicacao.fileId || '' %>" placeholder="Cole o UUID do arquivo após o upload">
+                        <small class="form-text text-muted">Faça o upload do arquivo na seção de arquivos e cole o ID aqui.</small>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="status">Status</label>
+                        <select class="form-control" id="status" name="status">
+                            <option value="Rascunho" <%= (publicacao.status === 'Rascunho') ? 'selected' : '' %>>Rascunho</option>
+                            <option value="Em Revisão" <%= (publicacao.status === 'Em Revisão') ? 'selected' : '' %>>Em Revisão</option>
+                            <option value="Publicado" <%= (publicacao.status === 'Publicado') ? 'selected' : '' %>>Publicado</option>
+                            <option value="Arquivado" <%= (publicacao.status === 'Arquivado') ? 'selected' : '' %>>Arquivado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ETAPA 3: CÓDIGOS (TESTE) -->
+                <h5 class="mt-4">Etapa 3: Códigos (Para Teste)</h5>
+                <hr>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="gerar_doi" name="gerar_doi">
+                    <label class="form-check-label" for="gerar_doi">
+                        Gerar DOI Falso (para Artigos)
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="gerar_isbn" name="gerar_isbn">
+                    <label class="form-check-label" for="gerar_isbn">
+                        Gerar ISBN Falso (para Livros)
+                    </label>
+                </div>
+
+                <hr>
+                <button type="submit" class="btn btn-primary mt-3">Salvar Publicação</button>
+                <a href="/publicacoes" class="btn btn-secondary mt-3">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,57 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-2 text-gray-800">Itens Arquivados (Lixeira)</h1>
+    <p class="mb-4">Aqui você pode visualizar, restaurar ou excluir permanentemente itens que foram arquivados no sistema.</p>
+
+    <!-- Abas de Navegação -->
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="vestigios-tab" data-toggle="tab" href="#vestigios" role="tab">Vestígios (<%= vestigios.length %>)</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="usuarios-tab" data-toggle="tab" href="#usuarios" role="tab">Usuários (<%= usuarios.length %>)</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="localizacoes-tab" data-toggle="tab" href="#localizacoes" role="tab">Localizações (<%= localizacoes.length %>)</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="movimentacoes-tab" data-toggle="tab" href="#movimentacoes" role="tab">Movimentações (<%= movimentacoes.length %>)</a>
+        </li>
+    </ul>
+
+    <!-- Conteúdo das Abas -->
+    <div class="tab-content card shadow" id="myTabContent">
+        
+        <!-- Aba Vestígios -->
+        <div class="tab-pane fade show active" id="vestigios" role="tabpanel">
+            <div class="card-body">
+                <%- include('./_table', { items: vestigios, model: 'Vestigio', fields: ['codigo', 'tipo', 'numeroLaudo', 'deletedAt'], csrfToken: csrfToken }) %>
+            </div>
+        </div>
+
+        <!-- Aba Usuários -->
+        <div class="tab-pane fade" id="usuarios" role="tabpanel">
+            <div class="card-body">
+                <%- include('./_table', { items: usuarios, model: 'Usuario', fields: ['nome', 'email', 'matricula', 'deletedAt'], csrfToken: csrfToken }) %>
+            </div>
+        </div>
+
+        <!-- Aba Localizações -->
+        <div class="tab-pane fade" id="localizacoes" role="tabpanel">
+            <div class="card-body">
+                <%- include('./_table', { items: localizacoes, model: 'Localizacao', fields: ['sala', 'armario', 'caixa', 'deletedAt'], csrfToken: csrfToken }) %>
+            </div>
+        </div>
+
+        <!-- Aba Movimentações -->
+        <div class="tab-pane fade" id="movimentacoes" role="tabpanel">
+            <div class="card-body">
+                <%- include('./_table', { items: movimentacoes, model: 'Movimentacao', fields: ['tipoMovimentacao', 'agenteNome', 'data', 'deletedAt'], csrfToken: csrfToken }) %>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

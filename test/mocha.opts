@@ -1,0 +1,4 @@
+--require chai
+--reporter spec
+--slow 5000
+--timeout 10000

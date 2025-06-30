@@ -1,0 +1,16 @@
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+# Configs sensíveis
+.env
+*.env
+# Banco local / uploads
+storage/
+db.sqlite
+# Build / cache
+dist/
+coverage/
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carregando - NUGECID ITEP</title>
+  <link href="/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/loading.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    .loading-container {
+      text-align: center;
+      padding: 2rem;
+    }
+    .system-name {
+      font-size: 1.5rem;
+      color: #0076bf;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-container">
+    <img src="/img/itep_logo.png" alt="ITEP" height="80" class="mb-4">
+    <div class="system-name">NUGECID - Sistema de Gestão de Custódia</div>
+    <div class="loading-spinner"></div>
+    <p class="loading-text mt-3">Carregando o sistema, por favor aguarde...</p>
+  </div>
+
+  <script>
+    // Redireciona para a página de destino após um breve atraso
+    setTimeout(function() {
+      window.location.href = "<%= redirectTo %>";
+    }, 2000); // 2 segundos de espera
+  </script>
+</body>
+</html>

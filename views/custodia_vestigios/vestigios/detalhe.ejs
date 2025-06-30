@@ -1,0 +1,192 @@
+<%- include('../../../views/partials/notificacoes.ejs') %>
+<main class="sei-content flex-grow-1 py-4 px-3">
+  <div class="vestigio detalhe">
+  <div class="card mb-3">
+    <div class="card-header">
+      <h4>Detalhe do Vestígio</h4>
+    </div>
+    <div class="card-body">
+    <dl class="row vestigio-detalhes">
+      <dt class="col-sm-4">Código</dt>
+      <dd class="col-sm-8"><%= vestigio.catalogacao || vestigio.codigo %></dd>
+      <dt class="col-sm-4">Tipo</dt>
+      <dd class="col-sm-8"><%= vestigio.tipo %></dd>
+      <dt class="col-sm-4">Número do Laudo</dt>
+      <dd class="col-sm-8"><%= vestigio.numeroLaudo %></dd>
+      <dt class="col-sm-4">Número do Processo</dt>
+      <dd class="col-sm-8"><%= vestigio.numeroProcesso %></dd>
+      <dt class="col-sm-4">Descrição</dt>
+      <dd class="col-sm-8"><%= vestigio.descricao %></dd>
+      <dt class="col-sm-4">Origem</dt>
+      <dd class="col-sm-8"><%= vestigio.origem %></dd>
+      <dt class="col-sm-4">Data/Hora de Entrada</dt>
+      <dd class="col-sm-8"><%= vestigio.dataEntrada ? vestigio.dataEntrada.toLocaleString('pt-BR') : '' %></dd>
+      <dt class="col-sm-4">Responsável</dt>
+      <dd class="col-sm-8"><%= vestigio.responsavelNome %> (<%= vestigio.responsavelMatricula %>)</dd>
+      <dt class="col-sm-4">Status</dt>
+      <dd class="col-sm-8"><span class="badge bg-primary"><%= vestigio.status %></span></dd>
+      <dt class="col-sm-4">Localização</dt>
+      <dd class="col-sm-8">
+        <% if (vestigio.localizacao) { %>
+          <%= vestigio.localizacao.tipo || '' %> <%= vestigio.localizacao.sala ? 'Sala '+vestigio.localizacao.sala : '' %> <%= vestigio.localizacao.armario ? 'Armário '+vestigio.localizacao.armario : '' %> <%= vestigio.localizacao.prateleira ? 'Prat. '+vestigio.localizacao.prateleira : '' %> <%= vestigio.localizacao.caixa ? 'Caixa '+vestigio.localizacao.caixa : '' %> <%= vestigio.localizacao.freezer ? 'Freezer '+vestigio.localizacao.freezer : '' %>
+        <% } else { %>
+          <span class="text-muted">Não informado</span>
+        <% } %>
+        <% if (vestigio.codigoNicho) { %>
+          <div class="mt-2">
+            <span class="badge bg-success">Nicho: <%= vestigio.codigoNicho %></span>
+            <a href="/custodia-vestigios/vestigios/<%= vestigio.id %>/view3d" class="btn btn-sm btn-primary ms-2">Visualizar no Armário 3D</a>
+          </div>
+        <% } %>
+      </dd>
+      <dt class="col-sm-4">Anexos</dt>
+      <dd class="col-sm-8">
+        <% if (vestigio.anexos && vestigio.anexos.length > 0) { %>
+          <ul>
+            <% vestigio.anexos.forEach(a => { %>
+              <li><a href="/uploads/vestigios/<%= a %>" target="_blank"><%= a %></a></li>
+            <% }); %>
+          </ul>
+        <% } else { %>
+          <span class="text-muted">Nenhum anexo</span>
+        <% } %>
+      </dd>
+    </dl>
+    <a href="/custodia-vestigios/vestigios/<%= vestigio.id %>/alterar-status" class="btn btn-warning">Alterar Status</a>
+    <a href="/custodia-vestigios/vestigios" class="btn btn-secondary">Voltar</a>
+    <% if (currentUser && currentUser.roleId === 1) { %>
+      <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#modalDeleteVestigio">Excluir</button>
+      <!-- Modal de confirmação -->
+      <div class="modal fade" id="modalDeleteVestigio" tabindex="-1" aria-labelledby="modalDeleteVestigioLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalDeleteVestigioLabel">Confirmar exclusão</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+              Tem certeza que deseja excluir este vestígio? Esta ação não pode ser desfeita.
+            </div>
+            <div class="modal-footer">
+              <form method="POST" action="/custodia-vestigios/vestigios/<%= vestigio.id %>/delete">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger" onclick="showPushNotificacao('Vestígio excluído com sucesso!', 'success')">Excluir</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% } %>
+    </div>
+  </div>
+
+  <!-- Timeline de Movimentações -->
+  <div class="card mt-4 vestigio-timeline-card">
+    <div class="card-body">
+      <% 
+      // Funções auxiliares para formatação da timeline
+      function getTipoMovimentacaoClass(tipo) {
+        switch(tipo) {
+          case 'entrada': return 'marker-success';
+          case 'saida_temporaria': return 'marker-warning';
+          case 'saida_definitiva': return 'marker-danger';
+          default: return 'marker-info';
+        }
+      }
+      
+      function getTipoMovimentacaoIcon(tipo) {
+        switch(tipo) {
+          case 'entrada': return 'bi bi-box-arrow-in-down';
+          case 'saida_temporaria': return 'bi bi-box-arrow-right';
+          case 'saida_definitiva': return 'bi bi-box-arrow-up-right';
+          default: return 'bi bi-arrow-left-right';
+        }
+      }
+      
+      function getTipoMovimentacaoBadge(tipo) {
+        switch(tipo) {
+          case 'entrada': return 'bg-success';
+          case 'saida_temporaria': return 'bg-warning text-dark';
+          case 'saida_definitiva': return 'bg-danger';
+          default: return 'bg-info';
+        }
+      }
+      
+      function formatTipoMovimentacao(tipo) {
+        switch(tipo) {
+          case 'entrada': return 'Entrada';
+          case 'saida_temporaria': return 'Saída Temporária';
+          case 'saida_definitiva': return 'Saída Definitiva';
+          default: return tipo;
+        }
+      }
+      
+      function formatDate(date) {
+        return new Date(date).toLocaleString('pt-BR');
+      }
+      %>
+      
+      <h3 class="card-title mb-4">Histórico de Movimentações</h3>
+      
+      <% if (vestigio.movimentacoes && vestigio.movimentacoes.length > 0) { %>
+        <div class="timeline">
+          <% vestigio.movimentacoes.forEach((mov, index) => { %>
+            <div class="timeline-item">
+              <div class="timeline-marker <%= getTipoMovimentacaoClass(mov.tipoMovimentacao) %>">
+                <i class="<%= getTipoMovimentacaoIcon(mov.tipoMovimentacao) %>"></i>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <span class="badge <%= getTipoMovimentacaoBadge(mov.tipoMovimentacao) %>">
+                    <%= formatTipoMovimentacao(mov.tipoMovimentacao) %>
+                  </span>
+                  <span class="timeline-date"><%= formatDate(mov.data) %></span>
+                </div>
+                <div class="timeline-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p><strong>Agente:</strong> <%= mov.agenteNome %> (<%= mov.agenteMatricula %>)</p>
+                      <% if (mov.destino) { %>
+                        <p><strong>Destino:</strong> <%= mov.destino %></p>
+                      <% } %>
+                    </div>
+                    <div class="col-md-6">
+                      <% if (mov.justificativa) { %>
+                        <p><strong>Justificativa:</strong> <%= mov.justificativa %></p>
+                      <% } %>
+                      <% if (mov.anexo) { %>
+                        <p>
+                          <strong>Anexo:</strong> 
+                          <a href="/uploads/movimentacoes/<%= mov.anexo %>" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-file-earmark"></i> Ver documento
+                          </a>
+                        </p>
+                      <% } %>
+                    </div>
+                  </div>
+                  <% if (mov.assinatura) { %>
+                    <div class="digital-signature">
+                      <small><i class="bi bi-shield-check"></i> Assinado digitalmente</small>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i> Nenhuma movimentação registrada para este vestígio.
+        </div>
+      <% } %>
+      
+      <div class="mt-3">
+        <a href="/movimentacoes/vestigio/<%= vestigio.id %>/nova" class="btn btn-primary">
+          <i class="bi bi-plus-circle"></i> Registrar Nova Movimentação
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+</main>

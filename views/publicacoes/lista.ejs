@@ -1,0 +1,59 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <h1 class="h3 mb-2 text-gray-800">Publicações</h1>
+    <p class="mb-4">Gerenciamento de livros, artigos, pôsteres e outros materiais produzidos.</p>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Lista de Publicações</h6>
+            <a href="/publicacoes/novo" class="btn btn-success btn-icon-split btn-sm float-right" style="margin-top: -25px;">
+                <span class="icon text-white-50"><i class="fas fa-plus"></i></span>
+                <span class="text">Nova Publicação</span>
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Tipo</th>
+                            <th>Autor(es)</th>
+                            <th>Status</th>
+                            <th>DOI / ISBN</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% publicacoes.forEach(item => { %>
+                        <tr>
+                            <td><%= item.titulo %></td>
+                            <td><%= item.tipo %></td>
+                            <td><%= item.autores %></td>
+                            <td><span class="badge badge-primary"><%= item.status %></span></td>
+                            <td>
+                                <% if (item.doi) { %> DOI: <%= item.doi %> <% } %>
+                                <% if (item.isbn) { %> ISBN: <%= item.isbn %> <% } %>
+                            </td>
+                            <td>
+                                <a href="/publicacoes/editar/<%= item.id %>" class="btn btn-warning btn-circle btn-sm" title="Editar">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <form action="/publicacoes/deletar/<%= item.id %>" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja arquivar esta publicação?');">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button type="submit" class="btn btn-danger btn-circle btn-sm" title="Arquivar">
+                                        <i class="fas fa-archive"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

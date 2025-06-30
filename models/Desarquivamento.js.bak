@@ -1,0 +1,35 @@
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
+
+const Desarquivamento = sequelize.define('Desarquivamento', {
+  nome: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  numero_prontuario: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  motivo: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  solicitante: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  status: {
+    type: DataTypes.ENUM('Solicitado', 'Em Andamento', 'Concluído', 'Cancelado'),
+    defaultValue: 'Solicitado'
+  },
+  data_solicitacao: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  }
+}, {
+  tableName: 'desarquivamentos',
+  timestamps: true,
+  paranoid: true
+});
+
+module.exports = Desarquivamento;

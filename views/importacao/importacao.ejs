@@ -1,0 +1,50 @@
+<main class="sei-content">
+    <h2 class="sei-title"><%= __('Importação de Vestígios') %></h2>
+    <form action="/importacao" method="POST" enctype="multipart/form-data" class="mb-4" id="formImportacao">
+      <div class="mb-3">
+        <label for="arquivo" class="form-label"><%= __('Selecione um arquivo .xlsx ou .csv') %></label>
+        <input type="file" name="arquivo" id="arquivo" class="form-control" accept=".xlsx,.csv" required>
+      </div>
+      <button type="submit" class="btn btn-success"><i class="bi bi-upload"></i> <%= __('Importar') %></button>
+    </form>
+    <% if (preview && preview.length) { %>
+      <h5 class="mt-4"><%= __('Pré-visualização dos dados') %>:</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+          <thead>
+            <tr>
+              <% Object.keys(preview[0]).forEach(function(col) { %>
+                <th><%= col %></th>
+              <% }); %>
+            </tr>
+          </thead>
+          <tbody>
+            <% preview.forEach(function(row) { %>
+              <tr>
+                <% Object.values(row).forEach(function(val) { %>
+                  <td><%= val %></td>
+                <% }); %>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+      <form action="/importacao/confirmar" method="POST">
+        <input type="hidden" name="arquivoTemp" value="<%= arquivoTemp %>">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-check-circle"></i> <%= __('Confirmar Importação') %></button>
+      </form>
+    <% } %>
+    <% if (mensagem) { %>
+      <div class="alert alert-info mt-4"><%= mensagem %></div>
+    <% } %>
+    <% if (erros && erros.length) { %>
+      <div class="alert alert-danger mt-4">
+        <ul>
+          <% erros.forEach(function(erro) { %>
+            <li><%= erro %></li>
+          <% }); %>
+        </ul>
+      </div>
+    <% } %>
+  </main>
+</div>

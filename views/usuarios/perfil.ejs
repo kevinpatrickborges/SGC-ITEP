@@ -1,0 +1,21 @@
+<%- include('../partials/messages') %>
+<div class="container mt-4">
+  <div class="card">
+    <div class="card-header">
+      <h4>Meu Perfil</h4>
+    </div>
+    <div class="card-body">
+      <dl class="row">
+        <dt class="col-sm-3">Nome</dt>
+        <dd class="col-sm-9"><%= usuario.nome %></dd>
+        <dt class="col-sm-3">Matrícula</dt>
+        <dd class="col-sm-9"><%= usuario.matricula %></dd>
+        <dt class="col-sm-3">E-mail</dt>
+        <dd class="col-sm-9"><%= usuario.email %></dd>
+        <dt class="col-sm-3">Perfil</dt>
+        <dd class="col-sm-9"><%= usuario.perfil || usuario.roleId || '' %></dd>
+      </dl>
+      <a href="/" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
+</div>

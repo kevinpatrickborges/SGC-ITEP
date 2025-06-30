@@ -1,0 +1,193 @@
+/* Estilos para o Dashboard Analítico */
+.dashboard-container {
+  border-radius: 18px;
+
+  padding: 1.5rem;
+}
+
+.dashboard-title {
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.dashboard-subtitle {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Cards de estatísticas */
+.stat-card {
+  background-color: #fff;
+  border-radius: 18px; 
+  border-radius: 8px;
+  box-shadow: 0 0.15rem 1.75rem rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15);
+}
+
+.stat-card .card-icon {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 2rem;
+  opacity: 0.3;
+  color: #4e73df;
+}
+
+.stat-card .card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+  color: #6c757d;
+}
+
+.stat-card .card-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.stat-card .card-description {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+/* Cores para os diferentes tipos de cards */
+.card-primary {
+  border-left: 4px solid #4e73df;
+}
+.card-primary .card-icon {
+  color: #4e73df;
+}
+
+.card-success {
+  border-left: 4px solid #1cc88a;
+}
+.card-success .card-icon {
+  color: #1cc88a;
+}
+
+.card-warning {
+  border-left: 4px solid #f6c23e;
+}
+.card-warning .card-icon {
+  color: #f6c23e;
+}
+
+.card-danger {
+  border-left: 4px solid #e74a3b;
+}
+.card-danger .card-icon {
+  color: #e74a3b;
+}
+
+/* Contêineres de gráficos */
+.chart-container {
+  border-radius: 18px;
+
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0.15rem 1.75rem rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  position: relative;
+}
+
+.chart-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e3e6f0;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 300px;
+}
+
+.chart-error {
+  display: none;
+  color: #e74a3b;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Tabela de vestígios recentes */
+.recent-table {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.recent-table th {
+  font-weight: 600;
+  color: #333;
+  padding: 0.75rem;
+  border-bottom: 2px solid #e3e6f0;
+}
+
+.recent-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e3e6f0;
+  vertical-align: middle;
+}
+
+.recent-table tr:last-child td {
+  border-bottom: none;
+}
+
+.recent-table .status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-em_custodia {
+  background-color: rgba(28, 200, 138, 0.2);
+  color: #1cc88a;
+}
+
+.status-em_analise {
+  background-color: rgba(246, 194, 62, 0.2);
+  color: #f6c23e;
+}
+
+.status-transferido {
+  background-color: rgba(78, 115, 223, 0.2);
+  color: #4e73df;
+}
+
+.status-arquivado {
+  background-color: rgba(133, 135, 150, 0.2);
+  color: #858796;
+}
+
+.status-destruido {
+  background-color: rgba(231, 74, 59, 0.2);
+  color: #e74a3b;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .chart-wrapper {
+    height: 250px;
+  }
+  
+  .stat-card .card-value {
+    font-size: 1.5rem;
+  }
+}

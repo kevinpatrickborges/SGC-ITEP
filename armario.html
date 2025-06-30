@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sala com Armário e Computadores Ajustada</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab; 
+        }
+        canvas:active {
+            cursor: grabbing; 
+        }
+        #info {
+            position: absolute;
+            bottom: 20px; 
+            left: 20px;
+            color: white;
+            z-index: 1;
+            padding: 12px 18px; 
+            background-color: rgba(0, 0, 0, 0.6); 
+            border-radius: 8px; 
+            font-size: 14px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+        }
+    </style>
+</head>
+<body>
+    <canvas id="viewerCanvas"></canvas>
+    <div id="info">Clique nos nichos do armário para interagir. Use o mouse para navegar.</div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let doorsToAnimate = [];
+
+        class Armario3D {
+            constructor({ larg = 1, alt = 1, prof = 1, nLin = 3, nCol = 2, prefix = 'armario' }) { // Padrões ajustados
+                this.largura = larg;
+                this.altura = alt;
+                this.profundidade = prof;
+                this.numLinhas = nLin; // 3 níveis de nichos
+                this.numColunas = nCol; // 2 colunas (portas)
+                this.prefixo = prefix;
+                
+                this.armarioGroup = new THREE.Group();
+                this.nichos = {};
+                this.portas = [];
+                this.nichoSelecionadoMesh = null;
+
+                this._criarEstruturaArmario();
+                
+                // Posição do armário: centralizado no X, um pouco para trás na cena
+                this.armarioGroup.position.set(0, this.altura / 2, -3.8); 
+                this.armarioGroup.rotation.y = 0; // Virado para a frente (eixo Z positivo)
+            }
+
+            _criarEstruturaArmario() {
+                const corArmario = 0x95A5A6; // Cinza médio para o armário
+                const materialArmario = new THREE.MeshStandardMaterial({ color: corArmario, roughness: 0.8, metalness: 0.1 });
+                const espessuraPainel = 0.04;
+
+                // Fundo
+                const fundoGeometry = new THREE.BoxGeometry(this.largura, this.altura, espessuraPainel);
+                const fundoMesh = new THREE.Mesh(fundoGeometry, materialArmario);
+                fundoMesh.position.z = -this.profundidade / 2 + espessuraPainel / 2;
+                this.armarioGroup.add(fundoMesh);
+
+                // Laterais
+                const lateralGeometry = new THREE.BoxGeometry(espessuraPainel, this.altura, this.profundidade);
+                const lateralEsquerdaMesh = new THREE.Mesh(lateralGeometry, materialArmario);
+                lateralEsquerdaMesh.position.x = -this.largura / 2 + espessuraPainel / 2;
+                this.armarioGroup.add(lateralEsquerdaMesh);
+
+                const lateralDireitaMesh = new THREE.Mesh(lateralGeometry, materialArmario);
+                lateralDireitaMesh.position.x = this.largura / 2 - espessuraPainel / 2;
+                this.armarioGroup.add(lateralDireitaMesh);
+
+                // Prateleiras (numLinhas = 3 significa 2 prateleiras internas + base e topo)
+                const alturaUtilInternaParaPrateleiras = this.altura - (espessuraPainel * 2);
+                for (let i = 0; i <= this.numLinhas; i++) { // Loop de 0 a 3 (para numLinhas = 3) -> 4 prateleiras
+                    const prateleiraGeometry = new THREE.BoxGeometry(this.largura - (espessuraPainel * 2), espessuraPainel, this.profundidade - espessuraPainel);
+                    const prateleiraMesh = new THREE.Mesh(prateleiraGeometry, materialArmario);
+                    
+                    if (i === 0) { // Base
+                        prateleiraMesh.position.y = -this.altura / 2 + espessuraPainel / 2;
+                    } else if (i === this.numLinhas) { // Topo (i = 3 para numLinhas = 3)
+                        prateleiraMesh.position.y = this.altura / 2 - espessuraPainel / 2;
+                    } else { // Prateleiras intermediárias (i = 1, 2 para numLinhas = 3)
+                         // Ajuste para distribuir as prateleiras corretamente para N níveis de nicho
+                        prateleiraMesh.position.y = (-this.altura / 2 + espessuraPainel) + (i * (alturaUtilInternaParaPrateleiras / this.numLinhas)) + (espessuraPainel / 2) ;
+                    }
+                    prateleiraMesh.position.z = espessuraPainel / 2;
+                    this.armarioGroup.add(prateleiraMesh);
+                }
+                
+                // Divisórias Verticais (numColunas = 2 significa 1 divisória central)
+                const alturaDivisoria = this.altura - (espessuraPainel * 2);
+                if (this.numColunas > 1) {
+                    for (let j = 1; j < this.numColunas; j++) { // j = 1 (para numColunas = 2)
+                        const divisoriaGeometry = new THREE.BoxGeometry(espessuraPainel, alturaDivisoria, this.profundidade - espessuraPainel);
+                        const divisoriaMesh = new THREE.Mesh(divisoriaGeometry, materialArmario);
+                        divisoriaMesh.position.x = -this.largura / 2 + j * (this.largura / this.numColunas);
+                        divisoriaMesh.position.z = espessuraPainel/2;
+                        this.armarioGroup.add(divisoriaMesh);
+                    }
+                }
+
+                // Nichos interativos
+                const nichoMaterialInterativo = new THREE.MeshBasicMaterial({ visible: false });
+                // alturaRealNicho é a altura de cada um dos this.numLinhas vãos
+                const alturaRealNicho = (this.altura - espessuraPainel * (this.numLinhas + 1)) / this.numLinhas;
+                const larguraRealNicho = (this.largura - espessuraPainel * (this.numColunas + 1)) / this.numColunas;
+
+                for (let i = 0; i < this.numLinhas; i++) { // i = 0, 1, 2 (para numLinhas = 3)
+                    for (let j = 0; j < this.numColunas; j++) { // j = 0, 1 (para numColunas = 2)
+                        const nichoGeometry = new THREE.BoxGeometry(larguraRealNicho, alturaRealNicho, this.profundidade * 0.9);
+                        const nichoMesh = new THREE.Mesh(nichoGeometry, nichoMaterialInterativo);
+                        nichoMesh.name = `${this.prefixo}_L${i + 1}C${j + 1}`;
+                        
+                        nichoMesh.position.x = -this.largura / 2 + espessuraPainel + larguraRealNicho / 2 + j * (larguraRealNicho + espessuraPainel);
+                        nichoMesh.position.y = -this.altura / 2 + espessuraPainel + alturaRealNicho / 2 + i * (alturaRealNicho + espessuraPainel);
+                        nichoMesh.position.z = 0; 
+                        
+                        this.armarioGroup.add(nichoMesh);
+                        this.nichos[nichoMesh.name] = nichoMesh;
+                    }
+                }
+
+                // Portas (numColunas = 2 significa 2 portas)
+                const larguraPorta = (this.largura / this.numColunas) - (espessuraPainel / this.numColunas);
+                const alturaPorta = this.altura - (espessuraPainel * 2);
+                const espessuraPortaReal = 0.025;
+                const corPorta = 0xAAB7B8; // Cinza um pouco mais claro para as portas
+                const materialPorta = new THREE.MeshStandardMaterial({ color: corPorta, roughness: 0.75, metalness: 0.15, side: THREE.DoubleSide });
+
+                for (let j = 0; j < this.numColunas; j++) { // j = 0, 1
+                    const portaPivot = new THREE.Group();
+                    portaPivot.position.x = -this.largura / 2 + j * (this.largura / this.numColunas) + espessuraPainel / 2;
+                    portaPivot.position.y = 0; 
+                    portaPivot.position.z = this.profundidade / 2 - espessuraPainel / 2;
+
+                    const portaGeometry = new THREE.BoxGeometry(larguraPorta, alturaPorta, espessuraPortaReal);
+                    const portaMesh = new THREE.Mesh(portaGeometry, materialPorta);
+                    portaMesh.position.x = larguraPorta / 2; 
+                    
+                    portaPivot.add(portaMesh);
+                    
+                    portaPivot.userData.isOpen = false;
+                    portaPivot.userData.isAnimating = false;
+                    portaPivot.name = `porta_coluna_${j}`;
+                    this.armarioGroup.add(portaPivot);
+                    this.portas.push(portaPivot);
+                }
+            }
+
+            highlight(codigoNicho) {
+                const nicho = this.nichos[codigoNicho];
+                if (nicho) {
+                    if (this.nichoSelecionadoMesh) {
+                        this.armarioGroup.remove(this.nichoSelecionadoMesh);
+                        this.nichoSelecionadoMesh = null;
+                    }
+                    const highlightMaterial = new THREE.MeshStandardMaterial({
+                        color: 0xFF8C00, 
+                        emissive: 0xcc5500,
+                        emissiveIntensity: 0.7,
+                        transparent: true,
+                        opacity: 0.45,
+                        depthTest: false 
+                    });
+                    const highlightedMesh = new THREE.Mesh(nicho.geometry.clone(), highlightMaterial);
+                    highlightedMesh.position.copy(nicho.position);
+                    highlightedMesh.rotation.copy(nicho.rotation);
+                    highlightedMesh.scale.set(1.03, 1.03, 1.03); 
+                    highlightedMesh.name = `highlighted_${codigoNicho}`;
+                    this.armarioGroup.add(highlightedMesh);
+                    this.nichoSelecionadoMesh = highlightedMesh;
+                    setTimeout(() => {
+                        if (this.nichoSelecionadoMesh && this.nichoSelecionadoMesh.name === `highlighted_${codigoNicho}`) {
+                            this.armarioGroup.remove(this.nichoSelecionadoMesh);
+                            this.nichoSelecionadoMesh = null;
+                        }
+                    }, 1200);
+                } else {
+                    console.warn(`Nicho com código "${codigoNicho}" não encontrado para destaque.`);
+                }
+            }
+
+            getArmarioGroup() {
+                return this.armarioGroup;
+            }
+
+            alternarPorta(index) {
+                if (index >= 0 && index < this.portas.length) {
+                    const portaPivot = this.portas[index];
+                    portaPivot.userData.isOpen = !portaPivot.userData.isOpen;
+                    const targetRotationY = portaPivot.userData.isOpen ? Math.PI / 2.1 : 0; 
+                    doorsToAnimate = doorsToAnimate.filter(anim => anim.door !== portaPivot);
+                    doorsToAnimate.push({ door: portaPivot, targetRotation: targetRotationY });
+                }
+            }
+        }
+
+        function criarMesaComComputadores(scene) {
+            const larguraMesa = 2.8; // Mantida para 2 computadores lado a lado
+            const profundidadeMesa = 1.4; // Aumentada para acomodar computadores em lados opostos
+            const alturaTotalMesa = 0.75;
+            const espessuraTampo = 0.05;
+            const corTampo = 0x967969; 
+            const corPernas = 0x5C4033;
+
+            const mesaGroup = new THREE.Group();
+
+            const tampoGeometry = new THREE.BoxGeometry(larguraMesa, espessuraTampo, profundidadeMesa);
+            const tampoMaterial = new THREE.MeshStandardMaterial({ color: corTampo, roughness: 0.7, metalness: 0.2 });
+            const tampo = new THREE.Mesh(tampoGeometry, tampoMaterial);
+            tampo.position.y = alturaTotalMesa - espessuraTampo / 2;
+            tampo.castShadow = true;
+            tampo.receiveShadow = true;
+            mesaGroup.add(tampo);
+
+            const alturaPerna = alturaTotalMesa - espessuraTampo;
+            const raioPerna = 0.035;
+            const pernaGeometry = new THREE.CylinderGeometry(raioPerna, raioPerna, alturaPerna, 16);
+            const pernaMaterial = new THREE.MeshStandardMaterial({ color: corPernas, roughness: 0.8 });
+
+            const offsetX = larguraMesa / 2 - raioPerna * 2;
+            const offsetZ = profundidadeMesa / 2 - raioPerna * 2; // Ajustado para nova profundidade
+
+            const posicoesPernas = [
+                new THREE.Vector3(offsetX, alturaPerna / 2, offsetZ),
+                new THREE.Vector3(-offsetX, alturaPerna / 2, offsetZ),
+                new THREE.Vector3(offsetX, alturaPerna / 2, -offsetZ),
+                new THREE.Vector3(-offsetX, alturaPerna / 2, -offsetZ),
+            ];
+
+            posicoesPernas.forEach(pos => {
+                const perna = new THREE.Mesh(pernaGeometry, pernaMaterial);
+                perna.position.copy(pos);
+                perna.castShadow = true;
+                perna.receiveShadow = true;
+                mesaGroup.add(perna);
+            });
+            
+            const numComputadoresTotal = 4;
+            const numComputadoresPorLado = 2;
+            const alturaMonitor = 0.38;
+            const larguraMonitor = 0.58;
+            const profundidadeCaixaMonitor = 0.04;
+            const corCaixaMonitor = 0x1A1A1A;
+
+            for (let i = 0; i < numComputadoresTotal; i++) {
+                const monitorGroup = new THREE.Group();
+                const monitorBoxGeo = new THREE.BoxGeometry(larguraMonitor, alturaMonitor, profundidadeCaixaMonitor);
+                const monitorMaterial = new THREE.MeshStandardMaterial({ color: corCaixaMonitor, roughness: 0.6, metalness: 0.4 });
+                const monitorMesh = new THREE.Mesh(monitorBoxGeo, monitorMaterial);
+                monitorMesh.castShadow = true;
+                
+                const screenGeo = new THREE.PlaneGeometry(larguraMonitor * 0.9, alturaMonitor * 0.88);
+                const screenMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x2266AA, emissive: 0x113366, emissiveIntensity: 0.5, side: THREE.DoubleSide 
+                });
+                const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+                screenMesh.position.z = profundidadeCaixaMonitor / 2 + 0.002;
+                monitorMesh.add(screenMesh);
+                monitorGroup.add(monitorMesh);
+                
+                monitorGroup.position.y = alturaTotalMesa + alturaMonitor / 2;
+                
+                const k = i % numComputadoresPorLado; // Índice do computador naquele lado (0 ou 1)
+                // Posiciona 2 computadores de cada lado da largura da mesa
+                monitorGroup.position.x = (k + 0.5) * (larguraMesa / numComputadoresPorLado) - larguraMesa / 2;
+
+
+                if (i < numComputadoresPorLado) { // Primeiros 2 computadores (lado +Z)
+                    monitorGroup.position.z = profundidadeMesa * 0.25; // Um quarto da profundidade da mesa
+                    monitorGroup.rotation.x = -Math.PI / 36;
+                } else { // Últimos 2 computadores (lado -Z, virados)
+                    monitorGroup.position.z = -profundidadeMesa * 0.25;
+                    monitorGroup.rotation.x = -Math.PI / 36;
+                    monitorGroup.rotation.y = Math.PI; // Vira para o outro lado
+                }
+                mesaGroup.add(monitorGroup);
+            }
+            
+            mesaGroup.position.set(0, 0, 0); // Mesa centralizada na origem
+            scene.add(mesaGroup);
+            return mesaGroup;
+        }
+
+        function criarCadeiras(scene, numCadeirasTotal, mesaLargura, mesaProfundidadeDaMesa, alturaDaMesa) {
+            const corPrincipalCadeira = 0x3D3D3D;
+            const materialCadeira = new THREE.MeshStandardMaterial({ color: corPrincipalCadeira, roughness: 0.65 });
+            const corMetalCadeira = 0x707070;
+            const materialMetalCadeira = new THREE.MeshStandardMaterial({ color: corMetalCadeira, roughness: 0.4, metalness: 0.7 });
+            const alturaAssentoDoChao = 0.45;
+            const numCadeirasPorLado = numCadeirasTotal / 2; // 2 cadeiras por lado
+
+            for (let i = 0; i < numCadeirasTotal; i++) {
+                const cadeiraGroup = new THREE.Group();
+                const tamAssento = 0.42;
+                const espAssento = 0.07;
+                const assentoGeometry = new THREE.BoxGeometry(tamAssento, espAssento, tamAssento * 0.95);
+                const assento = new THREE.Mesh(assentoGeometry, materialCadeira);
+                assento.position.y = alturaAssentoDoChao;
+                assento.castShadow = true;
+
+                const largEncosto = tamAssento;
+                const altEncosto = 0.58;
+                const espEncosto = 0.06;
+                const encostoGeometry = new THREE.BoxGeometry(largEncosto, altEncosto, espEncosto);
+                const encosto = new THREE.Mesh(encostoGeometry, materialCadeira);
+                encosto.position.y = alturaAssentoDoChao + altEncosto / 2 - espAssento / 2.5;
+                encosto.position.z = -tamAssento / 2 * 0.9 + espEncosto / 2;
+                encosto.rotation.x = Math.PI / 20;
+                encosto.castShadow = true;
+
+                const raioPoste = 0.03;
+                const altPoste = alturaAssentoDoChao - 0.08;
+                const posteGeometry = new THREE.CylinderGeometry(raioPoste, raioPoste * 1.1, altPoste, 16);
+                const poste = new THREE.Mesh(posteGeometry, materialMetalCadeira);
+                poste.position.y = altPoste / 2;
+                poste.castShadow = true;
+
+                const numPernasBase = 5;
+                const comprPernaBase = 0.28;
+                const espPernaBase = 0.035;
+                for (let k = 0; k < numPernasBase; k++) {
+                    const pernaBaseGroup = new THREE.Group(); 
+                    const pernaBaseGeo = new THREE.BoxGeometry(espPernaBase, espPernaBase * 1.1, comprPernaBase);
+                    const pernaBaseMesh = new THREE.Mesh(pernaBaseGeo, materialMetalCadeira);
+                    pernaBaseMesh.position.z = comprPernaBase / 2;
+                    pernaBaseMesh.position.y = espPernaBase * 0.55;
+                    pernaBaseMesh.castShadow = true;
+                    const raioRodinha = 0.03;
+                    const altRodinha = 0.028;
+                    const rodinhaGeo = new THREE.CylinderGeometry(raioRodinha, raioRodinha, altRodinha, 10);
+                    const rodinhaMesh = new THREE.Mesh(rodinhaGeo, materialCadeira);
+                    rodinhaMesh.rotation.z = Math.PI / 2;
+                    rodinhaMesh.position.set(0, raioRodinha * 0.9, comprPernaBase - raioRodinha * 0.4);
+                    pernaBaseMesh.add(rodinhaMesh);
+                    pernaBaseGroup.add(pernaBaseMesh);
+                    pernaBaseGroup.rotation.y = (k / numPernasBase) * Math.PI * 2;
+                    cadeiraGroup.add(pernaBaseGroup);
+                }
+                cadeiraGroup.add(assento);
+                cadeiraGroup.add(encosto);
+                cadeiraGroup.add(poste);
+
+                const k_cadeira = i % numCadeirasPorLado; // Índice da cadeira naquele lado (0 ou 1)
+                // Posiciona 2 cadeiras de cada lado da largura da mesa
+                const xPos = (k_cadeira + 0.5) * (mesaLargura / numCadeirasPorLado) - mesaLargura / 2;
+                let zPos;
+                
+                if (i < numCadeirasPorLado) { // Primeiras 2 cadeiras (lado +Z da mesa)
+                    zPos = mesaProfundidadeDaMesa * 0.25 + 0.7; // Em frente aos computadores do lado +Z
+                    cadeiraGroup.rotation.y = 0; // Virada para os computadores (-Z global)
+                } else { // Últimas 2 cadeiras (lado -Z da mesa)
+                    zPos = -(mesaProfundidadeDaMesa * 0.25 + 0.7); // Em frente aos computadores do lado -Z
+                    cadeiraGroup.rotation.y = Math.PI; // Virada para os computadores (+Z global)
+                }
+                cadeiraGroup.position.set(xPos, 0, zPos);
+                scene.add(cadeiraGroup);
+            }
+        }
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x454555);
+
+        const canvas = document.getElementById('viewerCanvas');
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2.8, 5.8); // Câmera um pouco mais afastada e alta
+        camera.lookAt(0, 0.8, 0); // Olhando para a região da mesa
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.04;
+        controls.minDistance = 1.5;
+        controls.maxDistance = 20; // Aumentado maxDistance
+        controls.target.set(0, 0.8, 0);
+        controls.maxPolarAngle = Math.PI / 2 - 0.05;
+        controls.update();
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(8, 12, 10);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 50;
+        directionalLight.shadow.camera.left = -12;
+        directionalLight.shadow.camera.right = 12;
+        directionalLight.shadow.camera.top = 12;
+        directionalLight.shadow.camera.bottom = -12;
+        scene.add(directionalLight);
+
+        const floorGeometry = new THREE.PlaneGeometry(18, 18); // Chão maior
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x303030, roughness: 0.95, metalness: 0.1 });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -0.005;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Armário Instanciação
+        const prefixoArmario = 'armarioPrincipal';
+        const larguraArmario = 1.8; // Largura para 2 colunas
+        const alturaArmario = 2.0;
+        const profundidadeArmario = 0.50;
+        // numLinhas e numColunas são definidos no construtor do Armario3D ou passados aqui
+        const armarioInstance = new Armario3D({
+            larg: larguraArmario,
+            alt: alturaArmario,
+            prof: profundidadeArmario,
+            nLin: 3, // 3 níveis de nichos
+            nCol: 2, // 2 colunas/portas
+            prefix: prefixoArmario
+        });
+        scene.add(armarioInstance.getArmarioGroup());
+        armarioInstance.getArmarioGroup().traverse(child => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        // Mesa e Computadores Instanciação
+        const mesa = criarMesaComComputadores(scene); // Retorna o grupo da mesa
+        mesa.traverse(child => { // Aplica sombras aos filhos da mesa
+            if(child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+        
+        // Cadeiras Instanciação (4 cadeiras no total, 2 de cada lado da mesa)
+        criarCadeiras(scene, 4, 2.8, 1.4, 0.75); // (scene, numCadeirasTotal, larguraDaMesa, profundidadeDaMesa, alturaDaMesa)
+        
+        scene.traverse(node => {
+            if (node.isGroup) {
+                let isChairGroup = false;
+                if (node.children.length > 5 && node.children.some(c => c.geometry && (c.geometry.type === "BoxGeometry" || c.geometry.type === "CylinderGeometry"))) {
+                     // Verifica se o nome do grupo não é o da mesa ou do armário para ser mais específico
+                    if (node !== mesa && node !== armarioInstance.getArmarioGroup()) {
+                        isChairGroup = true;
+                    }
+                }
+                if(isChairGroup) {
+                    node.traverse(n => { if(n.isMesh) { n.castShadow = true; n.receiveShadow = true;} });
+                }
+            }
+        });
+        
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        canvas.addEventListener('click', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(armarioInstance.getArmarioGroup().children, true);
+
+            if (intersects.length > 0) {
+                let nichoClicado = null;
+                for(let i=0; i < intersects.length; i++){
+                    if(intersects[i].object.name && 
+                       intersects[i].object.name.startsWith(prefixoArmario) && 
+                       !intersects[i].object.name.includes("highlighted")){
+                        nichoClicado = intersects[i].object;
+                        break;
+                    }
+                }
+                if (nichoClicado) {
+                    armarioInstance.highlight(nichoClicado.name);
+                    const nichoParts = nichoClicado.name.split('_'); 
+                    if (nichoParts.length >= 2) { 
+                        const infoLocalizacaoNicho = nichoParts[1];
+                        const indiceColunaPart = infoLocalizacaoNicho.indexOf('C');
+                        if (indiceColunaPart !== -1) {
+                            const stringColuna = infoLocalizacaoNicho.substring(indiceColunaPart + 1);
+                            const numeroColuna = parseInt(stringColuna, 10);
+                            if (!isNaN(numeroColuna)) {
+                                const indicePorta = numeroColuna - 1;
+                                armarioInstance.alternarPorta(indicePorta);
+                            } else { console.error("Número da coluna do nicho inválido:", stringColuna); }
+                        } else { console.error("Formato de coluna não encontrado:", infoLocalizacaoNicho); }
+                    } else { console.error("Nome do nicho em formato incorreto:", nichoClicado.name); }
+                }
+            }
+        });
+
+        function animarPortasAtivas() {
+            const velocidadeRotacaoPorta = 0.09;
+            for (let i = doorsToAnimate.length - 1; i >= 0; i--) {
+                const animacao = doorsToAnimate[i];
+                const porta = animacao.door;
+                const rotacaoAlvo = animacao.targetRotation;
+                const diferencaRotacao = rotacaoAlvo - porta.rotation.y;
+                if (Math.abs(diferencaRotacao) > 0.01) {
+                    porta.rotation.y += Math.sign(diferencaRotacao) * Math.min(velocidadeRotacaoPorta, Math.abs(diferencaRotacao));
+                } else {
+                    porta.rotation.y = rotacaoAlvo;
+                    doorsToAnimate.splice(i, 1);
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            animarPortasAtivas();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

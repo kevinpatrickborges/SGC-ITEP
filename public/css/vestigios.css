@@ -1,0 +1,318 @@
+/* Estilos da tela de Vestígios - padrão institucional */
+
+.sei-content h2 {
+  font-size: 1.7rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+.sei-content .sei-actions,
+.sei-content form {
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+.sei-content .btn-success {
+  font-size: 1rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: 0.3rem;
+}
+
+.sei-content form.mb-3 {
+  margin-bottom: 1.6rem !important;
+  max-width: 450px;
+}
+
+.sei-content .input-group .form-control {
+  font-size: 1rem;
+}
+
+.sei-content table {
+  background: #fff;
+  border-radius: 0.4rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  margin-bottom: 2rem;
+}
+
+.sei-content th {
+  font-weight: 600;
+  color: #1a2433;
+  background: #f7fafd;
+  font-size: 1.04rem;
+}
+.sei-action-btn {
+  background: #e3eaf5;
+  color: #0076bf;
+  border: none;
+  border-radius: 0.3rem;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none !important;
+}
+.sei-action-btn:hover {
+  background: #0076bf;
+  color: #fff;
+}
+
+.sei-content td {
+  font-size: 1rem;
+  color: #233045;
+  vertical-align: middle;
+}
+
+.sei-content .badge.bg-primary {
+  background: #0076bf !important;
+  font-weight: 500;
+  font-size: 0.97rem;
+}
+
+.sei-content .btn-outline-info {
+  border-radius: 0.3rem;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.98rem;
+}
+
+/* Estilos diretos para a página de detalhes de vestígios */
+
+/* Estilo para o card principal */
+main.sei-content .card {
+  border: none !important;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.08) !important;
+  border-radius: 10px !important;
+  margin-bottom: 2rem !important;
+  overflow: hidden !important;
+}
+
+/* Estilo para o cabeçalho do card */
+main.sei-content .card-header {
+  background-color: #0076bf !important;
+  color: white !important;
+  padding: 1.2rem 1.5rem !important;
+  border: none !important;
+}
+
+main.sei-content .card-header h4 {
+  color: white !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  font-size: 1.3rem !important;
+}
+
+/* Estilo para o corpo do card */
+main.sei-content .card-body {
+  background-color: #f8f9fa !important;
+  padding: 25px !important;
+}
+
+/* Estilos para a lista de definição */
+main.sei-content dl.vestigio-detalhes {
+  background-color: white !important;
+  border-radius: 8px !important;
+  padding: 10px !important;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.05) !important;
+}
+
+/* Estilos para os termos */
+main.sei-content dl.vestigio-detalhes dt {
+  font-weight: 600 !important;
+  color: #0076bf !important;
+  padding: 10px 15px !important;
+  background-color: rgba(0,118,191,0.05) !important;
+  border-radius: 5px !important;
+  margin-bottom: 5px !important;
+}
+
+/* Estilos para as definições */
+main.sei-content dl.vestigio-detalhes dd {
+  color: #333 !important;
+  padding: 10px 15px !important;
+  border-bottom: 1px solid #eee !important;
+  margin-bottom: 10px !important;
+}
+
+/* Estilo para o badge de status */
+main.sei-content .badge.bg-primary {
+  background-color: #0076bf !important;
+  font-weight: 500 !important;
+  padding: 0.5em 0.8em !important;
+  font-size: 0.9rem !important;
+  border-radius: 4px !important;
+}
+
+/* Estilos para os botões */
+main.sei-content .btn-warning {
+  background-color: #ff9800 !important;
+  border-color: #f57c00 !important;
+  color: white !important;
+  font-weight: 500 !important;
+  padding: 0.5rem 1.2rem !important;
+  margin-right: 10px !important;
+  border-radius: 5px !important;
+}
+
+main.sei-content .btn-secondary {
+  background-color: #607d8b !important;
+  border-color: #546e7a !important;
+  color: white !important;
+  font-weight: 500 !important;
+  padding: 0.5rem 1.2rem !important;
+  border-radius: 5px !important;
+}
+
+/* Estilos para a página de listagem de vestígios */
+
+/* Estilos para o título da página */
+main.sei-content h2 {
+  color: #0076bf !important;
+  font-weight: 600 !important;
+  margin-bottom: 0.5rem !important;
+  font-size: 1.8rem !important;
+}
+
+/* Estilos para os botões de ação */
+main.sei-content .sei-action-btn {
+  background-color: #e3eaf5 !important;
+  color: #0076bf !important;
+  border: none !important;
+  border-radius: 5px !important;
+  padding: 0.6rem 1.2rem !important;
+  font-size: 1rem !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  margin-right: 10px !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+main.sei-content .sei-action-btn:hover {
+  background-color: #0076bf !important;
+  color: white !important;
+}
+
+/* Estilos para a tabela de vestígios */
+main.sei-content table.table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+  border: none !important;
+  margin-top: 1.5rem !important;
+}
+
+main.sei-content table.table thead th {
+  background-color: #0076bf !important;
+  color: white !important;
+  font-weight: 600 !important;
+  padding: 12px 15px !important;
+  border: none !important;
+  text-align: left !important;
+}
+
+main.sei-content table.table tbody td {
+  padding: 12px 15px !important;
+  border-bottom: 1px solid #eee !important;
+  vertical-align: middle !important;
+}
+
+main.sei-content table.table tbody tr:hover {
+  background-color: #f8f9fa !important;
+}
+
+/* Estilo para links na tabela */
+main.sei-content table.table a {
+  color: #0076bf !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+}
+
+main.sei-content table.table a:hover {
+  text-decoration: underline !important;
+}
+
+/* Estilo para o badge de status na tabela */
+main.sei-content table.table .badge.bg-primary {
+  background-color: #0076bf !important;
+  font-weight: 500 !important;
+  padding: 0.4em 0.7em !important;
+  font-size: 0.85rem !important;
+}
+
+/* Estilo para o botão de detalhes na tabela */
+main.sei-content table.table .btn-outline-info {
+  color: #0076bf !important;
+  border-color: #0076bf !important;
+  padding: 0.3rem 0.8rem !important;
+  font-size: 0.85rem !important;
+  border-radius: 4px !important;
+}
+
+main.sei-content table.table .btn-outline-info:hover {
+  background-color: #0076bf !important;
+  color: white !important;
+}
+
+/* Estilos para a lista de definição (dt/dd) na página de detalhes */
+.sei-content .vestigio.detalhe dl.vestigio-detalhes {
+  margin-bottom: 1.5rem;
+  background-color: white;
+  border-radius: 6px;
+  padding: 15px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.sei-content .vestigio.detalhe dt {
+  font-weight: 600;
+  color: #455a64;
+  padding: 8px 15px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 5px;
+  background-color: rgba(0,118,191,0.03);
+}
+
+.sei-content .vestigio.detalhe dd {
+  color: #37474f;
+  padding: 8px 15px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 5px;
+}
+
+.sei-content .vestigio.detalhe dt:last-of-type,
+.sei-content .vestigio.detalhe dd:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.sei-content .vestigio.detalhe .badge.bg-primary {
+  background-color: #0076bf !important;
+  font-weight: 500;
+  padding: 0.4em 0.8em;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+  .sei-content table {
+    font-size: 0.93rem;
+  }
+  .sei-content th, .sei-content td {
+    font-size: 0.93rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .sei-content h2 {
+    font-size: 1.2rem;
+  }
+  .sei-content .btn-success {
+    font-size: 0.93rem;
+    padding: 0.35rem 0.7rem;
+  }
+}

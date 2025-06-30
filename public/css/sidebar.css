@@ -1,0 +1,196 @@
+/* ========================================
+   Sidebar Styles (SEI RN Inspired)
+   ======================================== */
+.sei-sidebar {
+  background: #1C3B37; /* Dark Green/Teal from SEI */
+  width: 230px;
+  min-width: 230px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  padding: 0.8rem 0;
+}
+
+.sei-menu-search {
+  width: 90%;
+  padding: 0.5rem 0.7rem;
+  border-radius: 2px;
+  border: 1px solid #4a6e68;
+  margin-bottom: 1rem;
+  background: #FFF;
+  color: #333;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 0.9rem;
+}
+
+.sei-menu-search::placeholder {
+  color: #888;
+}
+
+.sei-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+  flex-grow: 1;
+  color: #e3eaf5; /* Default text color for the menu */
+}
+
+.sei-menu li {
+  margin: 0 0.5rem 0.2rem 0.5rem;
+}
+
+.sei-menu li a {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: inherit; /* Inherit color from .sei-menu */
+  text-decoration: none;
+  padding: 0.6rem 0.9rem;
+  border-radius: 2px;
+  font-size: 0.95rem;
+  transition: background 0.2s, color 0.2s;
+  position: relative;
+  cursor: pointer;
+}
+
+/* Active and hover states */
+.sei-menu li a:hover,
+.sei-menu li.active > a,
+.sei-menu li a[aria-expanded="true"] {
+  background: #2a524c; /* Lighter Green/Teal for selection */
+  color: #fff;
+}
+
+.sei-menu li a i {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+  opacity: 0.9;
+}
+
+/* ========================================
+   Submenu Styles
+   ======================================== */
+
+/* CSS-only arrow (font-independent) */
+.has-submenu > a::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 5px solid currentColor; /* Use the link's color */
+  transform: translateY(-50%);
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Rotate arrow when expanded */
+.has-submenu > a[aria-expanded="true"]::after {
+  transform: translateY(-50%) rotate(90deg);
+}
+
+/* Submenu container */
+.submenu {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.3rem;
+  background: transparent;
+}
+
+.submenu.collapse:not(.show) {
+  display: none;
+}
+
+/* Submenu item links */
+.submenu li a {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem; /* Space between icon and text */
+  padding: 0.5rem 0.9rem;
+  padding-left: 2rem; /* Indent the whole item */
+  font-size: 0.9rem;
+  color: #bdcdca; /* Dimmed color for sub-items */
+}
+
+.submenu li a:hover,
+.submenu li.active a {
+  color: #fff;
+  background: none; /* No background change on submenu hover */
+}
+
+/* Style for submenu icons */
+.submenu li a i {
+  font-size: 1rem; /* Slightly smaller than main menu icons */
+  width: 20px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* ========================================
+   Collapsed Sidebar Styles
+   ======================================== */
+
+.sei-sidebar {
+  transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out;
+}
+
+.sei-sidebar .sei-menu li a span {
+    transition: opacity 0.2s, width 0.2s;
+    white-space: nowrap;
+}
+
+.sei-sidebar.collapsed {
+  width: 70px; /* Width when collapsed */
+  min-width: 70px;
+}
+
+.sei-sidebar.collapsed .sei-menu-search {
+  display: none;
+}
+
+.sei-sidebar.collapsed .sei-menu li a span {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sei-sidebar.collapsed .sei-menu li a {
+  justify-content: center;
+}
+
+.sei-sidebar.collapsed .has-submenu > a::after {
+  display: none;
+}
+
+/* --- Temporary expansion on hover when collapsed --- */
+.sei-sidebar.collapsed:hover {
+  width: 230px;
+  min-width: 230px;
+}
+
+.sei-sidebar.collapsed:hover .sei-menu-search {
+  display: block;
+}
+
+.sei-sidebar.collapsed:hover .sei-menu li a span {
+  opacity: 1;
+  width: auto;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.sei-sidebar.collapsed:hover .sei-menu li a {
+  justify-content: flex-start; /* Return to default alignment */
+}
+
+.sei-sidebar.collapsed:hover .has-submenu > a::after {
+  display: block;
+}
+

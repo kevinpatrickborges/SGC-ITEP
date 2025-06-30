@@ -1,0 +1,30 @@
+<%- include('../../partials/messages') %>
+<div class="card mt-4">
+  <div class="card-header">
+    <h4>Alterar Status do Vestígio</h4>
+  </div>
+  <div class="card-body">
+    <form method="POST" action="/custodia-vestigios/vestigios/<%= vestigio.id %>/alterar-status">
+      <div class="mb-3">
+        <label for="novoStatus" class="form-label">Novo Status</label>
+        <select class="form-select" id="novoStatus" name="novoStatus" required>
+          <option value="">Selecione...</option>
+          <option value="em_custodia" <%= vestigio.status === 'em_custodia' ? 'selected' : '' %>>Em Custódia</option>
+          <option value="Descarte" <%= vestigio.status === 'Descarte' ? 'selected' : '' %>>Descarte</option>
+          <option value="Transporte" <%= vestigio.status === 'Transporte' ? 'selected' : '' %>>Transporte</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="usuario" class="form-label">Usuário (matrícula)</label>
+        <input type="text" class="form-control" id="usuario" name="usuario" required>
+      </div>
+      <div class="mb-3">
+        <label for="senha" class="form-label">Senha</label>
+        <input type="password" class="form-control" id="senha" name="senha" required>
+      </div>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="btn btn-primary">Alterar Status</button>
+      <a href="/custodia-vestigios/vestigios/<%= vestigio.id %>" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,32 @@
+<form action="/usuarios/novo" method="POST" class="row g-3">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="col-md-6">
+    <label class="form-label">Nome</label>
+    <input type="text" name="nome" class="form-control" required>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Matrícula</label>
+    <input type="text" name="matricula" class="form-control">
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Email</label>
+    <input type="email" name="email" class="form-control" required>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Senha</label>
+    <input type="password" name="senha" class="form-control" required>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Perfil</label>
+    <select name="perfil" class="form-select" required>
+      <option value="">Selecione...</option>
+      <option value="admin">Administrador</option>
+      <option value="tecnico">Técnico</option>
+      <option value="auditor">Auditor</option>
+    </select>
+  </div>
+  <div class="col-12 mt-3">
+    <button type="submit" class="btn btn-primary">Salvar Usuário</button>
+    <a href="/usuarios" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>

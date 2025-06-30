@@ -1,0 +1,22 @@
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Importar Desarquivamentos de Planilha</h3>
+  </div>
+  <div class="card-body">
+    <p class="card-text">
+      Selecione um arquivo XLSX para importar. A planilha deve conter as seguintes colunas na primeira aba:
+      <code>nome</code>, <code>numProntuario</code>, <code>motivo</code>, <code>solicitante</code>, <code>dataSolicitacao</code>, <code>status</code>.
+    </p>
+    <form action="/desarquivamentos/importar" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <div class="mb-3">
+        <label for="arquivo" class="form-label">Arquivo XLSX</label>
+        <input class="form-control" type="file" id="arquivo" name="arquivo" accept=".xlsx" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Enviar para Validação</button>
+      <a href="/desarquivamentos" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>

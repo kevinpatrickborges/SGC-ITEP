@@ -1,0 +1,27 @@
+<div class="card mb-3">
+  <div class="card-header">
+    <h4>Detalhe da Localização</h4>
+  </div>
+  <div class="card-body">
+    <dl class="row">
+      <dt class="col-sm-3">Tipo</dt>
+      <dd class="col-sm-9"><%= local.tipo %></dd>
+      <dt class="col-sm-3">Sala</dt>
+      <dd class="col-sm-9"><%= local.sala %></dd>
+      <dt class="col-sm-3">Armário</dt>
+      <dd class="col-sm-9"><%= local.armario %></dd>
+      <dt class="col-sm-3">Prateleira</dt>
+      <dd class="col-sm-9"><%= local.prateleira %></dd>
+      <dt class="col-sm-3">Caixa</dt>
+      <dd class="col-sm-9"><%= local.caixa %></dd>
+      <dt class="col-sm-3">Freezer</dt>
+      <dd class="col-sm-9"><%= local.freezer %></dd>
+      <dt class="col-sm-3">Observações</dt>
+      <dd class="col-sm-9"><%= local.observacoes %></dd>
+    </dl>
+    <div class="d-flex gap-2">
+      <a href="/custodia-vestigios/localizacoes" class="btn btn-secondary">Voltar</a>
+      <a href="/custodia-vestigios/localizacoes/<%= local.id %>/view3d" class="btn btn-primary">Visualizar 3D</a>
+    </div>
+  </div>
+</div>

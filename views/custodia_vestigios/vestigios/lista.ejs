@@ -1,0 +1,48 @@
+<link rel="stylesheet" href="/css/vestigios.css">
+<main class="sei-content flex-grow-1 py-4 px-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2><%= __('Vestigios') %></h2>
+    </div>
+    <div class="sei-actions">
+      <a href="/custodia-vestigios/vestigios/novo" class="sei-action-btn"><i class="bi bi-plus-circle"></i> Novo Vestígio</a>
+      <button type="button" class="sei-action-btn export-vestigios-btn"><i class="bi bi-download"></i> Exportar</button>
+    </div>
+    <form class="mb-3" method="get" action="/custodia-vestigios/vestigios">
+      <div class="input-group">
+        <input type="text" class="form-control" name="busca" placeholder="Buscar por código, laudo, processo ou descrição" value="<%= busca %>">
+        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+      </div>
+    </form>
+    <table class="table table-bordered table-hover table-sm">
+      <thead class="table-light">
+        <tr>
+          <th>Código</th>
+          <th>Tipo</th>
+          <th>Nº Laudo</th>
+          <th>Descrição</th>
+          <th>Status</th>
+          <th>Entrada</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (vestigios.length === 0) { %>
+          <tr><td colspan="7" class="text-center">Nenhum vestígio encontrado.</td></tr>
+        <% } %>
+        <% vestigios.forEach(v => { %>
+          <tr>
+            <td><a href="/custodia-vestigios/vestigios/<%= v.id %>"><%= v.catalogacao || v.codigo %></a></td>
+            <td><%= v.tipo %></td>
+            <td><%= v.numeroLaudo %></td>
+            <td><%= v.descricao.substring(0,40) %>...</td>
+            <td><span class="badge bg-primary"><%= v.status %></span></td>
+            <td><%= v.dataEntrada ? v.dataEntrada.toLocaleString('pt-BR') : '' %></td>
+            <td><a href="/custodia-vestigios/vestigios/<%= v.id %>" class="btn btn-sm btn-outline-info">Detalhes</a></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+
+  </main>
+
+<script src="/js/export-vestigios.js"></script>

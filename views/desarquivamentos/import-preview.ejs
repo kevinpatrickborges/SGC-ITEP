@@ -1,0 +1,46 @@
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Pré-visualização da Importação</h3>
+  </div>
+  <div class="card-body">
+    <p>Confira os dados abaixo antes de confirmar a importação. As linhas com erros não serão importadas.</p>
+
+    <form action="/desarquivamentos/importar/confirmar" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped table-sm">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Status</th>
+              <th>Nome Completo</th>
+              <th>Nº do Documento</th>
+              <th>Nº do Processo</th>
+              <th>Setor Demandante</th>
+              <th>Servidor Responsável</th>
+              <th>Data Solicitação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% dados.forEach(item => { %>
+              <tr>
+                <td><%= item.tipoDesarquivamento || '—' %></td>
+                <td><span class="badge bg-info"><%= item.status || '—' %></span></td>
+                <td><%= item.nomeCompleto || '—' %></td>
+                <td><%= item.numDocumento || '—' %></td>
+                <td><%= item.numProcesso || '—' %></td>
+                <td><%= item.setorDemandante || '—' %></td>
+                <td><%= item.servidorResponsavel || '—' %></td>
+                <td><%= item.dataSolicitacao ? new Date(item.dataSolicitacao).toLocaleDateString('pt-BR') : '—' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <button type="submit" class="btn btn-success">Confirmar Importação</button>
+      <a href="/desarquivamentos" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>

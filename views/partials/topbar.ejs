@@ -1,0 +1,14 @@
+<link rel="stylesheet" href="/css/topbar.css">
+<header class="sei-topbar">
+  <div class="sei-logo topbar-left">
+    <button id="sidebar-toggle" class="btn btn-link text-white me-2">
+      <i class="bi bi-list"></i>
+    </button>
+    <img src="/img/itep_logo.png" alt="ITEP" height="32">
+    <span>NUGECID - ITEP</span>
+  </div>
+  <div class="sei-topbar-right">
+    <a href="/usuarios/perfil" class="sei-user"><i class="bi bi-person-circle"></i> <%= currentUser ? currentUser.nome : 'Usuário' %></a>
+    <a href="/auth/logout" class="sei-logout" title="Sair"><i class="bi bi-box-arrow-right"></i></a>
+  </div>
+</header>

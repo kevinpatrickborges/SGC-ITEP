@@ -1,0 +1,59 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Localizações</h2>
+  <a href="/custodia-vestigios/localizacoes/novo" class="btn btn-success">+ Nova Localização</a>
+</div>
+<table class="localizacoes-table" class="table table-bordered table-hover table-sm">
+  <thead class="table-light">
+    <tr>
+      <th>Tipo</th>
+      <th>Sala</th>
+      <th>Armário</th>
+      <th>Prateleira</th>
+      <th>Caixa</th>
+      <th>Freezer</th>
+      <th>Observações</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (locais.length === 0) { %>
+      <tr><td colspan="8" class="text-center">Nenhum local cadastrado.</td></tr>
+    <% } %>
+    <% locais.forEach(l => { %>
+      <tr>
+        <td><%= l.tipo %></td>
+        <td><%= l.sala %></td>
+        <td><%= l.armario %></td>
+        <td><%= l.prateleira %></td>
+        <td><%= l.caixa %></td>
+        <td><%= l.freezer %></td>
+        <td><%= l.observacoes %></td>
+        <td>
+  <a href="/custodia-vestigios/localizacoes/<%= l.id %>" class="btn btn-sm btn-outline-info">Detalhes</a>
+  <button type="button" class="btn btn-danger btn-excluir" data-bs-toggle="modal" data-bs-target="#modalDelete<%= l.id %>">Excluir</button>
+  <!-- Modal de confirmação -->
+  <div class="modal fade confirm-modal" id="modalDelete<%= l.id %>" tabindex="-1" aria-labelledby="modalDeleteLabel<%= l.id %>" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDeleteLabel<%= l.id %>">Confirmar exclusão</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          Tem certeza que deseja excluir esta localização?
+        </div>
+        <div class="modal-footer">
+          <form method="POST" action="/custodia-vestigios/localizacoes/<%= l.id %>/delete">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger" onclick="showPushNotificacao('Localização excluída com sucesso!', 'success')">Excluir</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>

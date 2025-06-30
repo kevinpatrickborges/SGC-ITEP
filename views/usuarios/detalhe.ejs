@@ -1,0 +1,38 @@
+<div class="card mb-3">
+  <div class="card-header">
+    <h4>Detalhe do Usuário</h4>
+  </div>
+  <div class="card-body">
+    <dl class="row">
+      <dt class="col-sm-3">Nome</dt>
+      <dd class="col-sm-9"><%= usuario.nome %></dd>
+      <dt class="col-sm-3">Matrícula</dt>
+      <dd class="col-sm-9"><%= usuario.matricula %></dd>
+      <dt class="col-sm-3">Email</dt>
+      <dd class="col-sm-9"><%= usuario.email %></dd>
+      <dt class="col-sm-3">Perfil</dt>
+      <dd class="col-sm-9"><span class="badge bg-info"><%= usuario.perfil %></span></dd>
+      <dt class="col-sm-3">Criado em</dt>
+      <dd class="col-sm-9"><%= usuario.createdAt ? usuario.createdAt.toLocaleString('pt-BR') : '' %></dd>
+    </dl>
+    <h5 class="mt-4">Logs de Auditoria</h5>
+    <% if (usuario.logAuditoria && usuario.logAuditoria.length > 0) { %>
+      <table class="table table-sm table-bordered">
+        <thead><tr><th>Data/Hora</th><th>Ação</th><th>Detalhes</th><th>IP</th></tr></thead>
+        <tbody>
+          <% usuario.logAuditoria.slice().reverse().forEach(log => { %>
+            <tr>
+              <td><%= (new Date(log.data)).toLocaleString('pt-BR') %></td>
+              <td><%= log.acao %></td>
+              <td><%= log.detalhes %></td>
+              <td><%= log.ip %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } else { %>
+      <div class="text-muted">Nenhum log registrado.</div>
+    <% } %>
+    <a href="/usuarios" class="btn btn-secondary mt-3">Voltar</a>
+  </div>
+</div>

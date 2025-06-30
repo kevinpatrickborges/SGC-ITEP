@@ -1,0 +1,123 @@
+<%# views/nugecid/desarquivamento/form.ejs %>
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800"><%= typeof desarquivamento !== 'undefined' && desarquivamento.id ? 'Editar' : 'Novo' %> Desarquivamento</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        <% errors.forEach(function(error) { %>
+                            <li><%= error.msg %></li>
+                        <% }); %>
+                    </ul>
+                </div>
+            <% } %>
+
+            <form action="<%= typeof desarquivamento !== 'undefined' && desarquivamento.id ? '/nugecid/desarquivamento/' + desarquivamento.id + '/editar' : '/nugecid/desarquivamento/novo' %>" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="tipoDesarquivamento">Desarquivamento Físico/Digital</label>
+                                <select id="tipoDesarquivamento" name="tipoDesarquivamento" class="form-control" required>
+                                    <option value="Físico" <%= desarquivamento && desarquivamento.tipoDesarquivamento === 'Físico' ? 'selected' : '' %>>Físico</option>
+                                    <option value="Digital" <%= desarquivamento && desarquivamento.tipoDesarquivamento === 'Digital' ? 'selected' : '' %>>Digital</option>
+                                    <option value="Não Localizado" <%= desarquivamento && desarquivamento.tipoDesarquivamento === 'Não Localizado' ? 'selected' : '' %>>Não Localizado</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="status">Status</label>
+                                <select id="status" name="status" class="form-control">
+                                    <option value="Solicitado" <%= desarquivamento && desarquivamento.status === 'Solicitado' ? 'selected' : '' %>>Solicitado</option>
+                                    <option value="Em posse" <%= desarquivamento && desarquivamento.status === 'Em posse' ? 'selected' : '' %>>Em posse</option>
+                                    <option value="Devolvido" <%= desarquivamento && desarquivamento.status === 'Devolvido' ? 'selected' : '' %>>Devolvido</option>
+                                    <option value="Extraviado" <%= desarquivamento && desarquivamento.status === 'Extraviado' ? 'selected' : '' %>>Extraviado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nomeCompleto">Nome Completo</label>
+                            <input type="text" class="form-control" id="nomeCompleto" name="nomeCompleto" value="<%= desarquivamento ? desarquivamento.nomeCompleto : '' %>" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label for="numDocumento">Nº do NIC/Laudo/Auto/etc.</label>
+                                <input type="text" class="form-control" id="numDocumento" name="numDocumento" value="<%= desarquivamento ? desarquivamento.numDocumento : '' %>" required>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="numProcesso">Nº Processo (Opcional)</label>
+                                <input type="text" class="form-control" id="numProcesso" name="numProcesso" value="<%= desarquivamento ? desarquivamento.numProcesso : '' %>">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="tipoDocumento">Tipo de Documento (Opcional)</label>
+                                <input type="text" class="form-control" id="tipoDocumento" name="tipoDocumento" value="<%= desarquivamento ? desarquivamento.tipoDocumento : '' %>">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label for="dataSolicitacao">Data de Solicitação</label>
+                                <input type="date" class="form-control" id="dataSolicitacao" name="dataSolicitacao" value="<%= desarquivamento && desarquivamento.dataSolicitacao ? new Date(desarquivamento.dataSolicitacao).toISOString().split('T')[0] : new Date().toISOString().split('T')[0] %>" required>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="dataDesarquivamento">Data Desarquivamento (Opcional)</label>
+                                <input type="date" class="form-control" id="dataDesarquivamento" name="dataDesarquivamento" value="<%= desarquivamento && desarquivamento.dataDesarquivamento ? new Date(desarquivamento.dataDesarquivamento).toISOString().split('T')[0] : '' %>">
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label for="dataDevolucao">Data Devolução (Opcional)</label>
+                                <%
+                                let dataDevolucaoValue = '';
+                                if (typeof desarquivamento !== 'undefined' && desarquivamento.dataDevolucao) {
+                                    const date = new Date(desarquivamento.dataDevolucao);
+                                    if (!isNaN(date.getTime())) {
+                                        dataDevolucaoValue = date.toISOString().split('T')[0];
+                                    }
+                                }
+                                %>
+                                <input type="date" class="form-control" id="dataDevolucao" name="dataDevolucao" value="<%= dataDevolucaoValue %>">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="setorDemandante">Setor Demandante</label>
+                                <input type="text" class="form-control" id="setorDemandante" name="setorDemandante" value="<%= desarquivamento ? desarquivamento.setorDemandante : '' %>" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="servidorResponsavel">Servidor Responsável (Matrícula) (Opcional)</label>
+                                <input type="text" class="form-control" id="servidorResponsavel" name="servidorResponsavel" value="<%= desarquivamento ? desarquivamento.servidorResponsavel : '' %>">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="finalidade">Finalidade do Desarquivamento</label>
+                            <textarea class="form-control" id="finalidade" name="finalidade" rows="3"><%= desarquivamento ? desarquivamento.finalidade : '' %></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="prazoSolicitado">Solicitação de Prazo (Opcional)</label>
+                            <input type="text" class="form-control" id="prazoSolicitado" name="prazoSolicitado" value="<%= desarquivamento ? desarquivamento.prazoSolicitado : '' %>">
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-end">
+                    <a href="/nugecid/desarquivamento" class="btn btn-secondary me-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

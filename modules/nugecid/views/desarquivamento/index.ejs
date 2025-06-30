@@ -1,0 +1,246 @@
+<%# views/nugecid/desarquivamento/index.ejs %>
+<div class="container-fluid">
+    <h1 class="mt-4"><%= title %></h1>
+    <p>Listagem de desarquivamentos do módulo NUGECID.</p>
+
+        <div class="d-flex justify-content-end mb-3">
+        <a href="/nugecid/desarquivamento/novo" class="btn btn-primary me-2">
+            <i class="fas fa-plus me-1"></i> Novo Registro
+        </a>
+        <a href="/nugecid/desarquivamento/importar" class="btn btn-success me-2">
+            <i class="fas fa-file-import me-1"></i> Importar
+        </a>
+        <div class="btn-group">
+            <button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-file-export me-1"></i> Exportar
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="/nugecid/desarquivamento/exportar/xlsx">Exportar para Excel (XLSX)</a></li>
+                <li><a class="dropdown-item" href="/nugecid/desarquivamento/exportar/pdf">Exportar para PDF</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Formulário de Filtro -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Filtrar por Status</h5>
+            <form action="/nugecid/desarquivamento" method="GET">
+                <div class="d-flex flex-wrap align-items-center mb-3">
+                    <% allStatus.forEach(status => { %>
+                        <input type="checkbox" class="btn-check" name="status" id="status_<%= status.replace(/\s+/g, '') %>" value="<%= status %>" autocomplete="off" <%= selectedStatus.includes(status) ? 'checked' : '' %>>
+                        <label class="btn btn-outline-primary btn-sm me-2 mb-2" for="status_<%= status.replace(/\s+/g, '') %>"><%= status %></label>
+                    <% }); %>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <a href="/nugecid/desarquivamento" class="btn btn-outline-secondary">Limpar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Registros
+        </div>
+        <div class="card-body">
+            <table id="desarquivamentoTable" class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Nº Documento</th>
+                        <th>Nome Completo</th>
+                        <th>Status</th>
+                        <th>Setor Demandante</th>
+                        <th>Data Solicitação</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% 
+                        const statusStyles = {
+                            'Finalizado': 'table-row-finalizado',
+                            'Desarquivado': 'table-row-desarquivado',
+                            'Não coletado': 'table-row-nao-coletado',
+                            'Solicitado': 'table-row-solicitado',
+                            'Rearquivamento solicitado': 'table-row-rearquivamento-solicitado',
+                            'Retirado pelo setor': 'table-row-retirado-pelo-setor',
+                            'Não localizado': 'table-row-nao-localizado',
+                        };
+
+                        const badgeStyles = {
+                            'Finalizado': 'bg-secondary',
+                            'Desarquivado': 'bg-success',
+                            'Não coletado': 'bg-danger',
+                            'Solicitado': 'bg-primary',
+                            'Rearquivamento solicitado': 'bg-warning',
+                            'Retirado pelo setor': 'bg-success',
+                            'Não localizado': 'bg-warning',
+                        };
+                    %>
+                    <% desarquivamentos.forEach(item => { %>
+                        <tr class="<%= statusStyles[item.status] || '' %>">
+                            <td><%= item.numDocumento %></td>
+                            <td><%= item.nomeCompleto %></td>
+                            <td class="status-cell" data-id="<%= item.id %>" data-status="<%= item.status %>">
+                                <span class="badge <%= badgeStyles[item.status] || 'bg-light' %> status-badge"><%= item.status %></span>
+                                <select class="form-select status-select">
+                                    <% allStatus.forEach(status => { %>
+                                        <option value="<%= status %>" <%= item.status === status ? 'selected' : '' %>><%= status %></option>
+                                    <% }); %>
+                                </select>
+                            </td>
+                            <td><%= item.setorDemandante %></td>
+                            <td><%= new Date(item.dataSolicitacao).toLocaleDateString('pt-BR') %></td>
+                            <td class="text-center">
+                                <a href="/nugecid/desarquivamento/<%= item.id %>/editar" class="btn btn-warning btn-sm me-1" title="Editar">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                <form action="/nugecid/desarquivamento/<%= item.id %>/excluir" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este registro?');">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Excluir">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+  .table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.075) !important; /* Garante que o hover funcione sobre as cores */
+  }
+  .status-badge { cursor: pointer; }
+  .status-select { display: none; width: 150px; }
+
+  /* Cores baseadas na imagem do usuário */
+  .table-row-retirado-pelo-setor { background-color: #28a745 !important; color: white !important; }
+  .table-row-desarquivado { background-color: #d4edda !important; }
+  .table-row-nao-localizado { background-color: #fff3cd !important; }
+  
+  /* Cores adicionais para outros status */
+  .table-row-finalizado { background-color: #e2e3e5 !important; }
+  .table-row-solicitado { background-color: #cce5ff !important; }
+  .table-row-rearquivamento-solicitado { background-color: #ffeeba !important; }
+  .table-row-nao-coletado { background-color: #f8d7da !important; }
+
+  /* Estilo para links e badges nas linhas coloridas */
+  .table-row-retirado-pelo-setor a { color: white; text-decoration: underline; }
+  .table-row-retirado-pelo-setor .status-badge { background-color: #1e7e34 !important; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const csrfToken = '<%= csrfToken %>';
+    const tableBody = document.querySelector('#desarquivamentoTable tbody');
+
+    // Hardcoded styles to prevent server-side EJS processing error on startup
+    const statusStyles = {
+        'Finalizado': 'table-row-finalizado',
+        'Desarquivado': 'table-row-desarquivado',
+        'Não coletado': 'table-row-nao-coletado',
+        'Solicitado': 'table-row-solicitado',
+        'Rearquivamento solicitado': 'table-row-rearquivamento-solicitado',
+        'Retirado pelo setor': 'table-row-retirado-pelo-setor',
+        'Não localizado': 'table-row-nao-localizado',
+    };
+    const badgeStyles = {
+        'Finalizado': 'bg-secondary',
+        'Desarquivado': 'bg-success',
+        'Não coletado': 'bg-danger',
+        'Solicitado': 'bg-primary',
+        'Rearquivamento solicitado': 'bg-warning',
+        'Retirado pelo setor': 'bg-success',
+        'Não localizado': 'bg-warning',
+    };
+
+    tableBody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('status-badge')) {
+            showSelect(e.target.closest('.status-cell'));
+        }
+    });
+
+    tableBody.addEventListener('change', (e) => {
+        if (e.target.classList.contains('status-select')) {
+            handleStatusChange(e.target);
+        }
+    });
+
+    tableBody.addEventListener('blur', (e) => {
+        if (e.target.classList.contains('status-select')) {
+            hideSelect(e.target.closest('.status-cell'));
+        }
+    }, true);
+
+    function showSelect(cell) {
+        if (!cell) return;
+        cell.querySelector('.status-badge').style.display = 'none';
+        const select = cell.querySelector('.status-select');
+        select.style.display = 'inline-block';
+        select.focus();
+    }
+
+    function hideSelect(cell) {
+        if (!cell) return;
+        cell.querySelector('.status-badge').style.display = 'inline-block';
+        cell.querySelector('.status-select').style.display = 'none';
+    }
+
+    async function handleStatusChange(select) {
+        const cell = select.closest('.status-cell');
+        const id = cell.dataset.id;
+        const newStatus = select.value;
+        const originalStatus = cell.dataset.status;
+
+        if (newStatus === originalStatus) {
+            hideSelect(cell);
+            return;
+        }
+
+        try {
+            const response = await fetch(`/nugecid/desarquivamento/${id}/atualizar-campo`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-csrf-token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ field: 'status', value: newStatus })
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Resposta não é JSON. Provável redirecionamento para login.');
+                window.location.reload();
+                return; 
+            }
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Falha ao atualizar o status.');
+            }
+
+            // --- Sucesso: Atualiza a UI ---
+            cell.dataset.status = newStatus;
+            const row = cell.closest('tr');
+            row.className = statusStyles[newStatus] || '';
+
+            const badge = cell.querySelector('.status-badge');
+            badge.textContent = newStatus;
+            badge.className = `badge ${badgeStyles[newStatus] || 'bg-light'} status-badge`;
+
+        } catch (error) {
+            console.error('Erro ao atualizar status:', error);
+            select.value = originalStatus; // Reverte a mudança no select
+        } finally {
+            hideSelect(cell);
+        }
+    }
+});
+</script>

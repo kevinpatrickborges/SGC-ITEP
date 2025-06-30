@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sala com Armário e Computadores Ajustada v4 - Zoom no Armário</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            z-index: 1;
+            padding: 12px 18px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="viewerCanvas"></canvas>
+    <div id="info">Clique nos nichos para abrir/fechar portas. Clique no corpo do armário para focar. Use o mouse para navegar.</div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let doorsToAnimate = [];
+        let scene, camera, renderer, controls;
+        let armarioInstance; 
+
+        let isFocusingOnObject = false;
+        const targetCameraPosition = new THREE.Vector3();
+        const targetControlsLookAt = new THREE.Vector3();
+        const focusAnimationSpeed = 0.05; // Speed of the camera focus animation
+
+
+        class Armario3D {
+            constructor({ larg = 1, alt = 1, prof = 1, nLin = 3, nCol = 2, prefix = 'armario' }) {
+                this.largura = larg;
+                this.altura = alt;
+                this.profundidade = prof;
+                this.numLinhas = nLin;
+                this.numColunas = nCol; 
+                this.prefixo = prefix;
+                
+                this.armarioGroup = new THREE.Group();
+                this.armarioGroup.name = "grupo_armario_principal";
+                this.nichos = {}; // Stores interactive nicho meshes
+                this.portas = []; // Stores door pivot groups
+                this.nichoSelecionadoMesh = null; // For highlighting
+
+                this._criarEstruturaArmario();
+            }
+
+            _criarEstruturaArmario() {
+                const corArmario = 0x95A5A6; 
+                const materialArmario = new THREE.MeshStandardMaterial({ color: corArmario, roughness: 0.8, metalness: 0.1 });
+                const espessuraPainel = 0.04; // Thickness of cabinet panels
+
+                // Fundo (Back Panel)
+                const fundoGeometry = new THREE.BoxGeometry(this.largura, this.altura, espessuraPainel);
+                const fundoMesh = new THREE.Mesh(fundoGeometry, materialArmario);
+                fundoMesh.position.z = -this.profundidade / 2 + espessuraPainel / 2;
+                fundoMesh.name = `${this.prefixo}_fundo`;
+                this.armarioGroup.add(fundoMesh);
+
+                // Laterais (Side Panels)
+                const lateralGeometry = new THREE.BoxGeometry(espessuraPainel, this.altura, this.profundidade);
+                const lateralEsquerdaMesh = new THREE.Mesh(lateralGeometry, materialArmario);
+                lateralEsquerdaMesh.position.x = -this.largura / 2 + espessuraPainel / 2;
+                lateralEsquerdaMesh.name = `${this.prefixo}_lateral_esq`;
+                this.armarioGroup.add(lateralEsquerdaMesh);
+
+                const lateralDireitaMesh = new THREE.Mesh(lateralGeometry, materialArmario);
+                lateralDireitaMesh.position.x = this.largura / 2 - espessuraPainel / 2;
+                lateralDireitaMesh.name = `${this.prefixo}_lateral_dir`;
+                this.armarioGroup.add(lateralDireitaMesh);
+
+                // Prateleiras (Shelves)
+                const alturaUtilInternaParaPrateleiras = this.altura - (espessuraPainel * 2); // Usable height for shelves
+                for (let i = 0; i <= this.numLinhas; i++) { // Loop creates base, top, and intermediate shelves
+                    const prateleiraGeometry = new THREE.BoxGeometry(this.largura - (espessuraPainel * 2), espessuraPainel, this.profundidade - espessuraPainel);
+                    const prateleiraMesh = new THREE.Mesh(prateleiraGeometry, materialArmario);
+                    
+                    if (i === 0) { // Base shelf
+                        prateleiraMesh.position.y = -this.altura / 2 + espessuraPainel / 2;
+                    } else if (i === this.numLinhas) { // Top shelf
+                        prateleiraMesh.position.y = this.altura / 2 - espessuraPainel / 2;
+                    } else { // Intermediate shelves
+                        prateleiraMesh.position.y = (-this.altura / 2 + espessuraPainel) + (i * (alturaUtilInternaParaPrateleiras / this.numLinhas)) + (espessuraPainel / 2) ;
+                    }
+                    prateleiraMesh.position.z = espessuraPainel / 2; // Position shelves slightly forward from the back panel
+                    prateleiraMesh.name = `${this.prefixo}_prateleira_${i}`;
+                    this.armarioGroup.add(prateleiraMesh);
+                }
+                
+                // Divisórias Verticais (Vertical Dividers)
+                const alturaDivisoria = this.altura - (espessuraPainel * 2);
+                if (this.numColunas > 1) {
+                    for (let j = 1; j < this.numColunas; j++) { 
+                        const divisoriaGeometry = new THREE.BoxGeometry(espessuraPainel, alturaDivisoria, this.profundidade - espessuraPainel);
+                        const divisoriaMesh = new THREE.Mesh(divisoriaGeometry, materialArmario);
+                        // Position divider between columns
+                        divisoriaMesh.position.x = -this.largura / 2 + j * (this.largura / this.numColunas);
+                        divisoriaMesh.position.z = espessuraPainel/2; 
+                        divisoriaMesh.name = `${this.prefixo}_divisoria_${j}`;
+                        this.armarioGroup.add(divisoriaMesh);
+                    }
+                }
+
+                // Nichos interativos (Interactive Compartments/Niches) - Invisible, for raycasting
+                const nichoMaterialInterativo = new THREE.MeshBasicMaterial({ visible: false }); 
+                const alturaRealNicho = (this.altura - espessuraPainel * (this.numLinhas + 1)) / this.numLinhas;
+                const larguraRealNicho = (this.largura - espessuraPainel * (this.numColunas + 1)) / this.numColunas;
+
+
+                for (let i = 0; i < this.numLinhas; i++) { 
+                    for (let j = 0; j < this.numColunas; j++) { 
+                        const nichoGeometry = new THREE.BoxGeometry(larguraRealNicho, alturaRealNicho, this.profundidade * 0.9);
+                        const nichoMesh = new THREE.Mesh(nichoGeometry, nichoMaterialInterativo);
+                        nichoMesh.name = `${this.prefixo}_L${i + 1}C${j + 1}`; // e.g., armario_L1C1
+                        
+                        // Position nicho within its column and row
+                        nichoMesh.position.x = -this.largura / 2 + espessuraPainel + larguraRealNicho / 2 + j * (larguraRealNicho + espessuraPainel);
+                        nichoMesh.position.y = -this.altura / 2 + espessuraPainel + alturaRealNicho / 2 + i * (alturaRealNicho + espessuraPainel);
+                        nichoMesh.position.z = 0; // Centered in depth for interaction volume
+                        
+                        this.armarioGroup.add(nichoMesh);
+                        this.nichos[nichoMesh.name] = nichoMesh;
+                    }
+                }
+
+                // Portas (Doors)
+                const larguraPorta = larguraRealNicho; // Door width matches nicho width
+                const alturaPorta = this.altura - (espessuraPainel * 2); // Full inner height for door
+                const espessuraPortaReal = 0.025; // Thickness of the door itself
+                const corPorta = 0xAAB7B8; // Light grey for doors
+                const materialPorta = new THREE.MeshStandardMaterial({ 
+                    color: corPorta, 
+                    roughness: 0.75, 
+                    metalness: 0.15, 
+                    side: THREE.DoubleSide,
+                    transparent: false, // Ensure doors are not transparent
+                    opacity: 1.0      // Ensure doors are opaque
+                });
+
+                for (let j = 0; j < this.numColunas; j++) { // Create a door for each column
+                    const portaPivot = new THREE.Group(); // Pivot group for rotation
+                    // Position pivot at the "hinge" side of the door column
+                    portaPivot.position.x = -this.largura / 2 + j * (this.largura / this.numColunas) + espessuraPainel / 2;
+                    portaPivot.position.y = 0; // Vertically centered with cabinet structure
+                    portaPivot.position.z = this.profundidade / 2 - espessuraPainel / 2; // At the front of the cabinet structure
+
+                    const portaGeometry = new THREE.BoxGeometry(larguraPorta, alturaPorta, espessuraPortaReal);
+                    const portaMesh = new THREE.Mesh(portaGeometry, materialPorta);
+                    portaMesh.name = `${this.prefixo}_porta_mesh_${j}`;
+                    // Offset door mesh so its logical "left" edge aligns with the pivot's x position
+                    portaMesh.position.x = larguraPorta / 2; 
+                    
+                    portaPivot.add(portaMesh);
+                    
+                    portaPivot.userData.isOpen = false;
+                    portaPivot.userData.isAnimating = false;
+                    portaPivot.name = `porta_pivot_coluna_${j}`;
+                    this.armarioGroup.add(portaPivot);
+                    this.portas.push(portaPivot);
+                }
+            }
+
+            highlight(codigoNicho) {
+                const nicho = this.nichos[codigoNicho];
+                if (nicho) {
+                    // Remove previous highlight if any
+                    if (this.nichoSelecionadoMesh) {
+                        this.armarioGroup.remove(this.nichoSelecionadoMesh);
+                        this.nichoSelecionadoMesh.geometry.dispose();
+                        this.nichoSelecionadoMesh.material.dispose();
+                        this.nichoSelecionadoMesh = null;
+                    }
+                    // Create new highlight material and mesh
+                    const highlightMaterial = new THREE.MeshStandardMaterial({
+                        color: 0xFF8C00, // Orange color for highlight
+                        emissive: 0xcc5500,
+                        emissiveIntensity: 0.7,
+                        transparent: true,
+                        opacity: 0.45,
+                        depthTest: false // Render highlight on top
+                    });
+                    const highlightedMesh = new THREE.Mesh(nicho.geometry.clone(), highlightMaterial);
+                    highlightedMesh.position.copy(nicho.position);
+                    highlightedMesh.rotation.copy(nicho.rotation);
+                    highlightedMesh.scale.set(1.03, 1.03, 1.03); // Slightly larger than nicho
+                    highlightedMesh.name = `highlighted_${codigoNicho}`;
+                    this.armarioGroup.add(highlightedMesh);
+                    this.nichoSelecionadoMesh = highlightedMesh;
+                    // Remove highlight after a short duration
+                    setTimeout(() => {
+                        if (this.nichoSelecionadoMesh && this.nichoSelecionadoMesh.name === `highlighted_${codigoNicho}`) {
+                            this.armarioGroup.remove(this.nichoSelecionadoMesh);
+                            this.nichoSelecionadoMesh.geometry.dispose();
+                            this.nichoSelecionadoMesh.material.dispose();
+                            this.nichoSelecionadoMesh = null;
+                        }
+                    }, 1200);
+                } else {
+                    console.warn(`Nicho com código "${codigoNicho}" não encontrado para destaque.`);
+                }
+            }
+
+            getArmarioGroup() {
+                return this.armarioGroup;
+            }
+
+            alternarPorta(index) { // index is the column index (0 for left, 1 for right in a 2-door cabinet)
+                if (index >= 0 && index < this.portas.length) {
+                    const portaPivot = this.portas[index];
+                    portaPivot.userData.isOpen = !portaPivot.userData.isOpen;
+                    let targetRotationY;
+
+                    // Determine door opening direction based on its index (for two doors)
+                    if (this.numColunas === 1) { // Should not happen with current setup but good for robustness
+                        targetRotationY = portaPivot.userData.isOpen ? Math.PI / 2.1 : 0; // Single door opens to the right
+                    } else { // Assuming numColunas is 2
+                        if (index === 0) { // Left door (column 0)
+                            targetRotationY = portaPivot.userData.isOpen ? -Math.PI / 2.1 : 0; // Opens to the left (negative Y rotation)
+                        } else { // Right door (column 1)
+                            targetRotationY = portaPivot.userData.isOpen ? Math.PI / 2.1 : 0; // Opens to the right (positive Y rotation)
+                        }
+                    }
+                    
+                    // Add or update door animation in the global list
+                    doorsToAnimate = doorsToAnimate.filter(anim => anim.door !== portaPivot); // Remove existing animation for this door
+                    doorsToAnimate.push({ door: portaPivot, targetRotation: targetRotationY });
+                }
+            }
+        }
+
+        function criarMesaComComputadores() { 
+            const larguraMesa = 2.8; 
+            const profundidadeMesa = 1.4;
+            const alturaTotalMesa = 0.75;
+            const espessuraTampo = 0.05;
+            const corTampo = 0x967969; // Brownish color for tabletop
+            const corPernas = 0x5C4033; // Darker brown for legs
+
+            const mesaGroup = new THREE.Group();
+            mesaGroup.name = "grupo_mesa";
+
+            // Tabletop
+            const tampoGeometry = new THREE.BoxGeometry(larguraMesa, espessuraTampo, profundidadeMesa);
+            const tampoMaterial = new THREE.MeshStandardMaterial({ color: corTampo, roughness: 0.7, metalness: 0.2 });
+            const tampo = new THREE.Mesh(tampoGeometry, tampoMaterial);
+            tampo.position.y = alturaTotalMesa - espessuraTampo / 2;
+            tampo.castShadow = true;
+            tampo.receiveShadow = true;
+            mesaGroup.add(tampo);
+
+            // Table Legs
+            const alturaPerna = alturaTotalMesa - espessuraTampo;
+            const raioPerna = 0.035;
+            const pernaGeometry = new THREE.CylinderGeometry(raioPerna, raioPerna, alturaPerna, 16);
+            const pernaMaterial = new THREE.MeshStandardMaterial({ color: corPernas, roughness: 0.8 });
+
+            const offsetX = larguraMesa / 2 - raioPerna * 2;
+            const offsetZ = profundidadeMesa / 2 - raioPerna * 2;
+
+            const posicoesPernas = [
+                new THREE.Vector3(offsetX, alturaPerna / 2, offsetZ),
+                new THREE.Vector3(-offsetX, alturaPerna / 2, offsetZ),
+                new THREE.Vector3(offsetX, alturaPerna / 2, -offsetZ),
+                new THREE.Vector3(-offsetX, alturaPerna / 2, -offsetZ),
+            ];
+
+            posicoesPernas.forEach(pos => {
+                const perna = new THREE.Mesh(pernaGeometry, pernaMaterial);
+                perna.position.copy(pos);
+                perna.castShadow = true;
+                perna.receiveShadow = true;
+                mesaGroup.add(perna);
+            });
+            
+            // Computers (Monitors)
+            const numComputadoresTotal = 4;
+            const numComputadoresPorLado = 2;
+            const alturaMonitor = 0.38;
+            const larguraMonitor = 0.58;
+            const profundidadeCaixaMonitor = 0.04;
+            const corCaixaMonitor = 0x1A1A1A; // Dark grey/black for monitor casing
+
+            for (let i = 0; i < numComputadoresTotal; i++) {
+                const monitorGroup = new THREE.Group();
+                const monitorBoxGeo = new THREE.BoxGeometry(larguraMonitor, alturaMonitor, profundidadeCaixaMonitor);
+                const monitorMaterial = new THREE.MeshStandardMaterial({ color: corCaixaMonitor, roughness: 0.6, metalness: 0.4 });
+                const monitorMesh = new THREE.Mesh(monitorBoxGeo, monitorMaterial);
+                monitorMesh.castShadow = true;
+                
+                // Monitor Screen
+                const screenGeo = new THREE.PlaneGeometry(larguraMonitor * 0.9, alturaMonitor * 0.88);
+                const screenMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x2266AA, emissive: 0x113366, emissiveIntensity: 0.5, side: THREE.DoubleSide 
+                });
+                const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+                screenMesh.position.z = profundidadeCaixaMonitor / 2 + 0.002; // Slightly in front of casing
+                monitorMesh.add(screenMesh);
+                monitorGroup.add(monitorMesh);
+                
+                monitorGroup.position.y = alturaTotalMesa + alturaMonitor / 2; // Place monitor on the table
+                
+                const k = i % numComputadoresPorLado; // Index of computer on its side of the table (0 or 1)
+                monitorGroup.position.x = (k + 0.5) * (larguraMesa / numComputadoresPorLado) - larguraMesa / 2; // Distribute along table width
+
+                // Position and orient monitors on opposite sides of the table
+                if (i < numComputadoresPorLado) { // First side
+                    monitorGroup.position.z = profundidadeMesa * 0.25; 
+                    monitorGroup.rotation.x = -Math.PI / 36; // Slight tilt
+                } else { // Second side (opposite)
+                    monitorGroup.position.z = -profundidadeMesa * 0.25;
+                    monitorGroup.rotation.x = -Math.PI / 36; // Slight tilt
+                    monitorGroup.rotation.y = Math.PI; // Rotate to face other direction
+                }
+                mesaGroup.add(monitorGroup);
+            }
+            return mesaGroup;
+        }
+
+        function criarCadeiras(mesaGroup, numCadeirasTotal, mesaLargura, mesaProfundidade, alturaBaseMesa) {
+            const corPrincipalCadeira = 0x3D3D3D; // Dark grey for chair
+            const materialCadeira = new THREE.MeshStandardMaterial({ color: corPrincipalCadeira, roughness: 0.65 });
+            const corMetalCadeira = 0x707070; // Grey for metal parts
+            const materialMetalCadeira = new THREE.MeshStandardMaterial({ color: corMetalCadeira, roughness: 0.4, metalness: 0.7 });
+            const alturaAssentoDoChao = 0.45; // Height of the seat from the floor
+            const numCadeirasPorLado = numCadeirasTotal / 2;
+
+            for (let i = 0; i < numCadeirasTotal; i++) {
+                const cadeiraGroup = new THREE.Group();
+                // Seat
+                const tamAssento = 0.42;
+                const espAssento = 0.07;
+                const assentoGeometry = new THREE.BoxGeometry(tamAssento, espAssento, tamAssento * 0.95);
+                const assento = new THREE.Mesh(assentoGeometry, materialCadeira);
+                assento.position.y = alturaAssentoDoChao;
+                assento.castShadow = true;
+
+                // Backrest
+                const largEncosto = tamAssento;
+                const altEncosto = 0.58;
+                const espEncosto = 0.06;
+                const encostoGeometry = new THREE.BoxGeometry(largEncosto, altEncosto, espEncosto);
+                const encosto = new THREE.Mesh(encostoGeometry, materialCadeira);
+                encosto.position.y = alturaAssentoDoChao + altEncosto / 2 - espAssento / 2.5;
+                encosto.position.z = -tamAssento / 2 * 0.9 + espEncosto / 2;
+                encosto.rotation.x = Math.PI / 20; // Slight tilt for backrest
+                encosto.castShadow = true;
+
+                // Central Post
+                const raioPoste = 0.03;
+                const altPoste = alturaAssentoDoChao - 0.08;
+                const posteGeometry = new THREE.CylinderGeometry(raioPoste, raioPoste * 1.1, altPoste, 16);
+                const poste = new THREE.Mesh(posteGeometry, materialMetalCadeira);
+                poste.position.y = altPoste / 2;
+                poste.castShadow = true;
+
+                // Base with Wheels (Starfish base)
+                const numPernasBase = 5;
+                const comprPernaBase = 0.28;
+                const espPernaBase = 0.035;
+                for (let k = 0; k < numPernasBase; k++) {
+                    const pernaBaseGroup = new THREE.Group(); 
+                    const pernaBaseGeo = new THREE.BoxGeometry(espPernaBase, espPernaBase * 1.1, comprPernaBase);
+                    const pernaBaseMesh = new THREE.Mesh(pernaBaseGeo, materialMetalCadeira);
+                    pernaBaseMesh.position.z = comprPernaBase / 2;
+                    pernaBaseMesh.position.y = espPernaBase * 0.55; // Slightly above floor for wheel clearance
+                    pernaBaseMesh.castShadow = true;
+                    // Wheel
+                    const raioRodinha = 0.03;
+                    const altRodinha = 0.028;
+                    const rodinhaGeo = new THREE.CylinderGeometry(raioRodinha, raioRodinha, altRodinha, 10);
+                    const rodinhaMesh = new THREE.Mesh(rodinhaGeo, materialCadeira); // Wheel color same as chair
+                    rodinhaMesh.rotation.z = Math.PI / 2; // Orient wheel vertically
+                    rodinhaMesh.position.set(0, raioRodinha * 0.9, comprPernaBase - raioRodinha * 0.4);
+                    pernaBaseMesh.add(rodinhaMesh);
+                    
+                    pernaBaseGroup.add(pernaBaseMesh);
+                    pernaBaseGroup.rotation.y = (k / numPernasBase) * Math.PI * 2; // Distribute legs radially
+                    cadeiraGroup.add(pernaBaseGroup);
+                }
+                cadeiraGroup.add(assento);
+                cadeiraGroup.add(encosto);
+                cadeiraGroup.add(poste);
+
+                const k_cadeira = i % numCadeirasPorLado; 
+                const xPos = (k_cadeira + 0.5) * (mesaLargura / numCadeirasPorLado) - mesaLargura / 2;
+                
+                const chairSeatDepth = tamAssento * 0.95;
+                const chairClearanceFromTableEdge = 0.35; // Adjusted clearance for chairs
+
+                let zPos;
+                if (i < numCadeirasPorLado) { 
+                    zPos = (mesaProfundidade / 2) + chairClearanceFromTableEdge + (chairSeatDepth / 2); 
+                    cadeiraGroup.rotation.y = Math.PI; // Face towards table center
+                } else { 
+                    zPos = -((mesaProfundidade / 2) + chairClearanceFromTableEdge + (chairSeatDepth / 2));
+                    cadeiraGroup.rotation.y = 0; // Face towards table center
+                }
+                cadeiraGroup.position.set(xPos, 0, zPos); // Position chair relative to mesaGroup
+                mesaGroup.add(cadeiraGroup); 
+            }
+        }
+
+        function criarParede(largura, altura, profundidade, cor, posicao, rotacaoY = 0) {
+            const wallGeometry = new THREE.BoxGeometry(largura, altura, profundidade);
+            const wallMaterial = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.9, side: THREE.DoubleSide });
+            const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+            wall.position.copy(posicao);
+            wall.rotation.y = rotacaoY;
+            wall.receiveShadow = true; 
+            scene.add(wall);
+            return wall;
+        }
+
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x454555); // Dark grey background
+
+            const canvas = document.getElementById('viewerCanvas');
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true; // Enable shadows
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
+
+            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; // Smooth camera movement
+            controls.dampingFactor = 0.04;
+            controls.minDistance = 1.0; 
+            controls.maxDistance = 25; 
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); 
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2); 
+            directionalLight.position.set(10, 15, 12); 
+            directionalLight.castShadow = true;
+            // Configure shadow properties for better quality
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 50;
+            directionalLight.shadow.camera.left = -15; 
+            directionalLight.shadow.camera.right = 15;
+            directionalLight.shadow.camera.top = 15;
+            directionalLight.shadow.camera.bottom = -15;
+            scene.add(directionalLight);
+
+            // Floor
+            const floorGeometry = new THREE.PlaneGeometry(20, 20); 
+            const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x303030, roughness: 0.95, metalness: 0.1 });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2; // Rotate to be horizontal
+            floor.position.y = -0.01; // Slightly below objects
+            floor.receiveShadow = true; // Floor receives shadows
+            scene.add(floor);
+
+            // --- Scene Layout ---
+            const alturaParede = 3.0;
+            const espessuraParede = 0.2;
+            const corParede = 0xBCB6A9; // Light beige wall color
+
+            // Back Wall
+            const zParedeFundo = -4.5; 
+            criarParede(12, alturaParede, espessuraParede, corParede, new THREE.Vector3(0, alturaParede / 2, zParedeFundo - espessuraParede / 2), 0);
+
+            // Right Wall (optional, can be removed if not needed for the scene)
+            const xParedeDireita = 5.5; 
+            criarParede(Math.abs(zParedeFundo * 2.5), alturaParede, espessuraParede, corParede, new THREE.Vector3(xParedeDireita + espessuraParede / 2, alturaParede / 2, 0), Math.PI / 2);
+
+
+            // Mesa e Computadores Instanciação
+            const larguraMesaConst = 2.8;
+            const profundidadeMesaConst = 1.4;
+            const alturaTotalMesaConst = 0.75;
+            const mesa = criarMesaComComputadores();
+            scene.add(mesa);
+            mesa.position.set(0, 0, 0); // Position table in the center of the room
+            
+            mesa.traverse(child => { // Ensure all parts of the table cast/receive shadows
+                if(child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+            
+            // Create and add chairs to the table group
+            criarCadeiras(mesa, 4, larguraMesaConst, profundidadeMesaConst, alturaTotalMesaConst);
+            
+            // Armário Instanciação
+            const prefixoArmario = 'armarioPrincipal';
+            const larguraArmario = 1.8; // Width for a two-door cabinet
+            const alturaArmario = 2.1; 
+            const profundidadeArmario = 0.55;
+            armarioInstance = new Armario3D({ 
+                larg: larguraArmario,
+                alt: alturaArmario,
+                prof: profundidadeArmario,
+                nLin: 4, // Number of shelf levels
+                nCol: 2, // Two columns for two doors
+                prefix: prefixoArmario
+            });
+            const armarioGroup = armarioInstance.getArmarioGroup();
+            scene.add(armarioGroup);
+
+            // Position cabinet against the back wall, centered on X
+            armarioGroup.position.x = 0; 
+            armarioGroup.position.y = alturaArmario / 2; // Base of cabinet on the floor
+            armarioGroup.position.z = zParedeFundo + profundidadeArmario / 2 + 0.1; // Gap from back wall
+            armarioGroup.rotation.y = 0; // Facing away from back wall
+
+            armarioGroup.traverse(child => { // Ensure all parts of the cabinet cast/receive shadows
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            // Initial Camera Position and Target
+            camera.position.set(0.5, alturaTotalMesaConst + 1.8, 4.5); 
+            controls.target.set(0, alturaTotalMesaConst / 2 + 0.2, 0); // Look at table area
+            controls.update();
+
+
+            // Event Listener for Clicks (Interaction)
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            canvas.addEventListener('click', (event) => {
+                if (isFocusingOnObject) return; // Prevent interaction during focus animation
+
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                
+                // Check for intersection with interactive nichos first
+                const nichoIntersects = raycaster.intersectObjects(Object.values(armarioInstance.nichos), false); 
+
+                if (nichoIntersects.length > 0) {
+                    const nichoClicado = nichoIntersects[0].object;
+                     if (nichoClicado.name && nichoClicado.name.startsWith(prefixoArmario) && !nichoClicado.name.includes("highlighted")) {
+                        armarioInstance.highlight(nichoClicado.name); // Highlight the clicked nicho
+                        const nichoParts = nichoClicado.name.split('_'); 
+                        if (nichoParts.length >= 2) { 
+                            const infoLocalizacaoNicho = nichoParts[1]; // e.g., L1C1
+                            const indiceColunaPart = infoLocalizacaoNicho.indexOf('C');
+                            if (indiceColunaPart !== -1) {
+                                const stringColuna = infoLocalizacaoNicho.substring(indiceColunaPart + 1);
+                                const numeroColuna = parseInt(stringColuna, 10); // Column number (1 or 2)
+                                if (!isNaN(numeroColuna)) {
+                                    const indicePorta = numeroColuna - 1; // Door index (0 or 1)
+                                    armarioInstance.alternarPorta(indicePorta); // Toggle the corresponding door
+                                } else { console.error("Número da coluna do nicho inválido:", stringColuna); }
+                            } else { console.error("Formato de coluna não encontrado:", infoLocalizacaoNicho); }
+                        } else { console.error("Nome do nicho em formato incorreto:", nichoClicado.name); }
+                    }
+                } else {
+                    // If no nicho clicked, check for cabinet body click for focus
+                    const allArmarioObjects = [];
+                    armarioInstance.getArmarioGroup().traverse(obj => { // Get all meshes of the cabinet except nichos/highlights
+                        if (obj.isMesh && !Object.values(armarioInstance.nichos).includes(obj) && !obj.name.includes("highlighted")) {
+                            allArmarioObjects.push(obj);
+                        }
+                    });
+                    const cabinetIntersects = raycaster.intersectObjects(allArmarioObjects, false);
+
+                    if (cabinetIntersects.length > 0) {
+                        const clickedObject = cabinetIntersects[0].object;
+                        let isCabinetBodyPart = false;
+                        // Check if the clicked object is part of the main cabinet structure
+                        if (clickedObject.name.startsWith(armarioInstance.prefixo) && !clickedObject.name.match(/_L\d+C\d+/)) {
+                           isCabinetBodyPart = true;
+                        }
+
+                        if (isCabinetBodyPart) {
+                            const cabinetGroupToFocus = armarioInstance.getArmarioGroup();
+                            const cabinetWorldPosition = new THREE.Vector3();
+                            cabinetGroupToFocus.getWorldPosition(cabinetWorldPosition);
+
+                            // MODIFIED: Camera zoom adjustment
+                            const cameraOffsetDistance = 1.5 + (armarioInstance.profundidade / 2); // Closer distance for zoom
+                            
+                            const cabinetFrontDirection = new THREE.Vector3(0, 0, 1); // Cabinet's local front direction
+                            cabinetFrontDirection.applyQuaternion(cabinetGroupToFocus.quaternion); // Transform to world space
+
+                            targetCameraPosition.copy(cabinetWorldPosition).addScaledVector(cabinetFrontDirection, cameraOffsetDistance);
+                            // Adjust camera height to be roughly eye-level with the cabinet's mid-section
+                            targetCameraPosition.y = cabinetWorldPosition.y + armarioInstance.altura * 0.05; // Lower Y for more direct view
+                            
+                            targetControlsLookAt.copy(cabinetWorldPosition);
+                             // Look at the center of the cabinet's height
+                            targetControlsLookAt.y = cabinetWorldPosition.y; // Look at cabinet's vertical center
+
+
+                            isFocusingOnObject = true; // Start focus animation
+                            controls.enabled = false; // Disable orbit controls during animation
+                        }
+                    }
+                }
+            });
+
+            window.addEventListener('resize', onWindowResize); // Handle window resize
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animarPortasAtivas() {
+            const velocidadeRotacaoPorta = 0.09; // Speed of door opening/closing
+            for (let i = doorsToAnimate.length - 1; i >= 0; i--) {
+                const animacao = doorsToAnimate[i];
+                const porta = animacao.door;
+                const rotacaoAlvo = animacao.targetRotation;
+                const diferencaRotacao = rotacaoAlvo - porta.rotation.y;
+                // Animate door rotation smoothly
+                if (Math.abs(diferencaRotacao) > 0.01) {
+                    porta.rotation.y += Math.sign(diferencaRotacao) * Math.min(velocidadeRotacaoPorta, Math.abs(diferencaRotacao));
+                } else {
+                    porta.rotation.y = rotacaoAlvo; // Snap to target rotation
+                    doorsToAnimate.splice(i, 1); // Remove from animation list
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate); // Main animation loop
+
+            if (isFocusingOnObject) { // If camera is focusing on an object
+                camera.position.lerp(targetCameraPosition, focusAnimationSpeed); // Smoothly move camera
+                controls.target.lerp(targetControlsLookAt, focusAnimationSpeed); // Smoothly move control target
+
+                // camera.lookAt(controls.target); // Ensure camera keeps looking at the target during interpolation
+
+                // Check if animation is complete
+                if (camera.position.distanceTo(targetCameraPosition) < 0.01 && controls.target.distanceTo(targetControlsLookAt) < 0.01) {
+                    camera.position.copy(targetCameraPosition);
+                    controls.target.copy(targetControlsLookAt);
+                    isFocusingOnObject = false; // End focus animation
+                    controls.enabled = true; // Re-enable orbit controls
+                }
+            }
+            
+            if (controls.enabled) { // Only update controls if not focusing
+                 controls.update();
+            }
+
+            animarPortasAtivas(); // Animate any active doors
+            renderer.render(scene, camera); // Render the scene
+        }
+
+        init(); // Initialize the scene
+        animate(); // Start the animation loop
+    </script>
+</body>
+</html>

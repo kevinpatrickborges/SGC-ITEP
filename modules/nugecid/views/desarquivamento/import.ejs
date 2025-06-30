@@ -1,0 +1,22 @@
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Importar Desarquivamentos de Planilha</h3>
+  </div>
+  <div class="card-body">
+    <p class="card-text">
+      Selecione um arquivo XLSX para importar. A planilha deve conter as seguintes colunas na primeira aba:
+      <code>nomeCompleto</code>, <code>numDocumento</code>, <code>status</code>, <code>dataSolicitacao</code>, <code>setorDemandante</code>, etc.
+    </p>
+    <form action="/nugecid/desarquivamento/importar" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <div class="mb-3">
+        <label for="arquivo" class="form-label">Arquivo XLSX</label>
+        <input class="form-control" type="file" id="arquivo" name="arquivo" accept=".xlsx" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Enviar para Validação</button>
+      <a href="/nugecid/desarquivamento" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
