@@ -12,3 +12,25 @@
     <a href="/auth/logout" class="sei-logout" title="Sair"><i class="bi bi-box-arrow-right"></i></a>
   </div>
 </header>
+
+<!-- Ícones da Topbar -->
+<div class="ms-auto d-flex align-items-center">
+  <!-- Ícone de Notificações -->
+  <div class="nav-item">
+    <a class="nav-link" id="notification-bell" href="#" role="button" title="Ativar notificações">
+      <i class="fas fa-bell"></i>
+    </a>
+  </div>
+  
+  <!-- Menu do Usuário -->
+  <div class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" id="navbarDropdownUser" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="fas fa-user fa-fw"></i>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownUser">
+      <li><a class="dropdown-item" href="/usuarios/perfil">Perfil</a></li>
+      <li><hr class="dropdown-divider" /></li>
+      <li><a class="dropdown-item" href="/auth/logout">Sair</a></li>
+    </ul>
+  </div>
+</div>

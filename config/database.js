@@ -1,10 +1,12 @@
 const { Sequelize } = require('sequelize');
+const path = require('path');
 
 let sequelize;
 if ((process.env.DB_DIALECT || '').toLowerCase() === 'sqlite') {
+  const dbPath = path.resolve(__dirname, '../nugecid_itep.sqlite');
   sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: process.env.DB_STORAGE || './nugecid_itep.sqlite',
+    storage: dbPath,
     logging: false
   });
 } else {

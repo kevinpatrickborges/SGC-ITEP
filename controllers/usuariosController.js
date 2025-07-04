@@ -2,6 +2,8 @@
 // TODO: Implementar funções de autenticação, cadastro e controle de acesso
 const Usuario = require('../models/Usuario');
 const bcrypt = require('bcryptjs');
+const { validationResult } = require('express-validator');
+const { registrarAuditoria } = require('../middleware/auditoria');
 
 // Listar usuários
 exports.listarUsuarios = async (req, res) => {
@@ -40,9 +42,17 @@ exports.perfilUsuario = async (req, res) => {
 };
 
 // Cadastrar usuário
-const { registrarAuditoria } = require('../middleware/auditoria');
-
 exports.criarUsuario = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.render('usuarios/novo', {
+      title: res.__('Novo Usuário'),
+      error_msg: errors.array().map(e => e.msg).join(', '),
+      formData: req.body,
+      csrfToken: res.locals.csrfToken || (typeof req.csrfToken === 'function' ? req.csrfToken() : '')
+    });
+  }
+
   try {
     const { nome, matricula, email, senha, perfil } = req.body;
     const hash = await bcrypt.hash(senha, 10);
@@ -90,9 +100,53 @@ exports.excluirUsuario = async (req, res) => {
   }
 };
 
-// ====== API RESTful JSON ======
-const { validationResult } = require('express-validator');
+// Formulário de edição de usuário
+exports.getEditForm = async (req, res) => {
+  try {
+    const usuario = await Usuario.findByPk(req.params.id);
+    if (!usuario) {
+      req.flash('error_msg', res.__('Usuário não encontrado.'));
+      return res.redirect('/usuarios');
+    }
+    res.render('usuarios/editar', {
+      title: res.__('Editar Usuário'),
+      usuario,
+      csrfToken: res.locals.csrfToken || (typeof req.csrfToken === 'function' ? req.csrfToken() : '')
+    });
+  } catch (e) {
+    req.flash('error_msg', res.__('Erro ao carregar formulário de edição.'));
+    res.redirect('/usuarios');
+  }
+};
 
+// Processar edição de usuário
+exports.postEditForm = async (req, res) => {
+  try {
+    const { nome, matricula, email, perfil, senha } = req.body;
+    const usuario = await Usuario.findByPk(req.params.id);
+
+    if (!usuario) {
+      req.flash('error_msg', res.__('Usuário não encontrado.'));
+      return res.redirect('/usuarios');
+    }
+
+    const updateData = { nome, matricula, email, perfil };
+
+    if (senha) {
+      updateData.senha = await bcrypt.hash(senha, 10);
+    }
+
+    await usuario.update(updateData);
+    await registrarAuditoria(req, 'Edição de Usuário', `Usuário: ${email}`);
+    req.flash('success_msg', res.__('Usuário atualizado com sucesso!'));
+    res.redirect('/usuarios');
+  } catch (e) {
+    req.flash('error_msg', res.__('Erro ao atualizar usuário.'));
+    res.redirect(`/usuarios/${req.params.id}/editar`);
+  }
+};
+
+// ====== API RESTful JSON ======
 exports.apiListarUsuarios = async (req, res) => {
   try {
     const usuarios = await Usuario.findAll({ attributes: { exclude: ['senha'] }, order: [['createdAt', 'DESC']] });

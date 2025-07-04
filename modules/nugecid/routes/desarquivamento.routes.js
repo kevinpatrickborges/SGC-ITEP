@@ -32,6 +32,10 @@ router.post('/:id/excluir', /*checkAuth,*/ desarquivamentoController.deleteItem)
 // @desc    Atualizar um campo específico de um registro (edição inline)
 router.patch('/:id/atualizar-campo', /*checkAuth,*/ desarquivamentoController.patchUpdateField);
 
+// @route   POST /nugecid/desarquivamento/:id/prorrogar-prazo
+// @desc    Prorrogar o prazo de um desarquivamento
+router.post('/:id/prorrogar-prazo', /*checkAuth,*/ desarquivamentoController.prorrogarPrazo);
+
 // --- ROTAS DE IMPORTAÇÃO ---
 // @route   GET /nugecid/desarquivamento/importar
 // @desc    Exibir formulário de importação
@@ -55,5 +59,9 @@ router.get('/exportar/xlsx', /*checkAuth,*/ desarquivamentoController.exportXLSX
 // @route   GET /nugecid/desarquivamento/exportar/pdf
 // @desc    Exportar dados para PDF
 router.get('/exportar/pdf', /*checkAuth,*/ desarquivamentoController.exportPDF);
+
+// @route   POST /nugecid/desarquivamento/apagar-todos
+// @desc    Apagar todos os registros de desarquivamento (admin)
+router.post('/apagar-todos', /*checkAuth,*/ csrfProtection, desarquivamentoController.apagarTodos);
 
 module.exports = router;

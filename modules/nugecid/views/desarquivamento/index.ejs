@@ -3,7 +3,20 @@
     <h1 class="mt-4"><%= title %></h1>
     <p>Listagem de desarquivamentos do módulo NUGECID.</p>
 
-        <div class="d-flex justify-content-end mb-3">
+    <% if (success_msg && success_msg.length > 0) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= success_msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+      </div>
+    <% } %>
+    <% if (error_msg && error_msg.length > 0) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= error_msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+      </div>
+    <% } %>
+
+    <div class="d-flex justify-content-end mb-3">
         <a href="/nugecid/desarquivamento/novo" class="btn btn-primary me-2">
             <i class="fas fa-plus me-1"></i> Novo Registro
         </a>
@@ -19,21 +32,58 @@
                 <li><a class="dropdown-item" href="/nugecid/desarquivamento/exportar/pdf">Exportar para PDF</a></li>
             </ul>
         </div>
+        <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#modalApagarTodos">
+            <i class="fas fa-trash-alt me-1"></i> Apagar TODOS
+        </button>
     </div>
 
-    <!-- Formulário de Filtro -->
-    <div class="card mb-3">
-        <div class="card-body">
-            <h5 class="card-title">Filtrar por Status</h5>
+    <!-- Botão de Filtros -->
+    <div class="mb-3">
+        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse" aria-expanded="false" aria-controls="filtrosCollapse">
+            <i class="fas fa-filter me-1"></i> Filtros
+        </button>
+    </div>
+
+    <!-- Formulário de Filtro Colapsável -->
+    <div class="collapse" id="filtrosCollapse">
+        <div class="card card-body mb-3">
+            <h5 class="card-title">Filtrar por Status, Data e Pesquisa</h5>
             <form action="/nugecid/desarquivamento" method="GET">
+                <input type="hidden" name="sort" value="<%= sort %>">
+                <h6>Status</h6>
                 <div class="d-flex flex-wrap align-items-center mb-3">
                     <% allStatus.forEach(status => { %>
                         <input type="checkbox" class="btn-check" name="status" id="status_<%= status.replace(/\s+/g, '') %>" value="<%= status %>" autocomplete="off" <%= selectedStatus.includes(status) ? 'checked' : '' %>>
                         <label class="btn btn-outline-primary btn-sm me-2 mb-2" for="status_<%= status.replace(/\s+/g, '') %>"><%= status %></label>
                     <% }); %>
                 </div>
+                <hr>
+                <h6>Outros Filtros</h6>
+                <div class="row mb-3">
+                    <div class="col-md-3 mb-2">
+                        <label for="dataInicio" class="form-label">Data Inicial</label>
+                        <input type="date" class="form-control" id="dataInicio" name="dataInicio" value="<%= dataInicio || '' %>">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label for="dataFim" class="form-label">Data Final</label>
+                        <input type="date" class="form-control" id="dataFim" name="dataFim" value="<%= dataFim || '' %>">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label for="setor" class="form-label">Setor Demandante</label>
+                        <select class="form-select" id="setor" name="setor">
+                            <option value="">Todos</option>
+                            <% allSetores.forEach(setor => { %>
+                                <option value="<%= setor %>" <%= selectedSetor === setor ? 'selected' : '' %>><%= setor %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label for="pesquisa" class="form-label">Pesquisar</label>
+                        <input type="text" class="form-control" id="pesquisa" name="pesquisa" placeholder="Nº doc, nome..." value="<%= pesquisa || '' %>">
+                    </div>
+                </div>
                 <div>
-                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> Pesquisar</button>
                     <a href="/nugecid/desarquivamento" class="btn btn-outline-secondary">Limpar</a>
                 </div>
             </form>
@@ -46,89 +96,169 @@
             Registros
         </div>
         <div class="card-body">
-            <table id="desarquivamentoTable" class="table table-bordered table-hover">
-                <thead>
-                    <tr>
-                        <th>Nº Documento</th>
-                        <th>Nome Completo</th>
-                        <th>Status</th>
-                        <th>Setor Demandante</th>
-                        <th>Data Solicitação</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% 
-                        const statusStyles = {
-                            'Finalizado': 'table-row-finalizado',
-                            'Desarquivado': 'table-row-desarquivado',
-                            'Não coletado': 'table-row-nao-coletado',
-                            'Solicitado': 'table-row-solicitado',
-                            'Rearquivamento solicitado': 'table-row-rearquivamento-solicitado',
-                            'Retirado pelo setor': 'table-row-retirado-pelo-setor',
-                            'Não localizado': 'table-row-nao-localizado',
-                        };
-
-                        const badgeStyles = {
-                            'Finalizado': 'bg-secondary',
-                            'Desarquivado': 'bg-success',
-                            'Não coletado': 'bg-danger',
-                            'Solicitado': 'bg-primary',
-                            'Rearquivamento solicitado': 'bg-warning',
-                            'Retirado pelo setor': 'bg-success',
-                            'Não localizado': 'bg-warning',
-                        };
-                    %>
-                    <% desarquivamentos.forEach(item => { %>
-                        <tr class="<%= statusStyles[item.status] || '' %>">
-                            <td><%= item.numDocumento %></td>
-                            <td><%= item.nomeCompleto %></td>
-                            <td class="status-cell" data-id="<%= item.id %>" data-status="<%= item.status %>">
-                                <span class="badge <%= badgeStyles[item.status] || 'bg-light' %> status-badge"><%= item.status %></span>
-                                <select class="form-select status-select">
-                                    <% allStatus.forEach(status => { %>
-                                        <option value="<%= status %>" <%= item.status === status ? 'selected' : '' %>><%= status %></option>
-                                    <% }); %>
-                                </select>
-                            </td>
-                            <td><%= item.setorDemandante %></td>
-                            <td><%= new Date(item.dataSolicitacao).toLocaleDateString('pt-BR') %></td>
-                            <td class="text-center">
-                                <a href="/nugecid/desarquivamento/<%= item.id %>/editar" class="btn btn-warning btn-sm me-1" title="Editar">
-                                    <i class="bi bi-pencil-fill"></i>
+            <div class="table-responsive">
+                <table id="desarquivamentoTable" class="table table-bordered table-striped table-hover table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center">Nº Documento</th>
+                            <th class="text-center">Nome Completo</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Setor Demandante</th>
+                            <th class="text-center">
+                                <%
+                                const params = new URLSearchParams(queryParams);
+                                params.set('sort', sort === 'ASC' ? 'DESC' : 'ASC');
+                                const queryString = params.toString();
+                                %>
+                                <a href="?<%= queryString %>" class="text-decoration-none text-dark">
+                                    Data Solicitação
+                                    <% if (sort === 'ASC') { %>
+                                        <i class="bi bi-sort-up"></i>
+                                    <% } else { %>
+                                        <i class="bi bi-sort-down"></i>
+                                    <% } %>
                                 </a>
-                                <form action="/nugecid/desarquivamento/<%= item.id %>/excluir" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este registro?');">
-                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                    <button type="submit" class="btn btn-danger btn-sm" title="Excluir">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                </form>
-                            </td>
+                            </th>
+                            <th class="text-center">Ações</th>
                         </tr>
-                    <% }); %>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <% 
+                            const statusStyles = {
+                                'Finalizado': 'table-row-finalizado',
+                                'Desarquivado': 'table-row-desarquivado',
+                                'Não coletado': 'table-row-nao-coletado',
+                                'Solicitado': 'table-row-solicitado',
+                                'Rearquivamento solicitado': 'table-row-rearquivamento-solicitado',
+                                'Retirado pelo setor': 'table-row-retirado-pelo-setor',
+                                'Não localizado': 'table-row-nao-localizado',
+                            };
+
+                            const badgeStyles = {
+                                'Finalizado': 'bg-secondary',
+                                'Desarquivado': 'bg-success',
+                                'Não coletado': 'bg-danger',
+                                'Solicitado': 'bg-primary',
+                                'Rearquivamento solicitado': 'bg-warning',
+                                'Retirado pelo setor': 'bg-success',
+                                'Não localizado': 'bg-warning',
+                            };
+                        %>
+                        <% desarquivamentos.forEach(item => { 
+                            let linhaClasse = statusStyles[item.status] || '';
+                            let prazoVencido = false;
+                            if (item.status === 'Retirado pelo setor' && item.dataPrazoDevolucao) {
+                                if (new Date(item.dataPrazoDevolucao) < new Date()) {
+                                    prazoVencido = true;
+                                    linhaClasse = 'table-danger'; // Destaque para prazo vencido
+                                }
+                            }
+                        %>
+                            <tr class="<%= linhaClasse %>">
+                                <td class="align-middle"><%= item.numDocumento %></td>
+                                <td class="align-middle"><%= item.nomeCompleto %></td>
+                                <td class="text-center align-middle status-cell" data-id="<%= item.id %>" data-status="<%= item.status %>">
+                                    <span class="badge <%= badgeStyles[item.status] || 'bg-light' %> status-badge"><%= item.status %></span>
+                                    
+                                    <!-- Select para mudança de status (inicialmente oculto) -->
+                                    <select class="form-select status-select" style="display: none;">
+                                        <% allStatus.forEach(status => { %>
+                                            <option value="<%= status %>" <%= item.status === status ? 'selected' : '' %>><%= status %></option>
+                                        <% }); %>
+                                    </select>
+
+                                    <!-- Aviso de Prazo Vencido -->
+                                    <% if (prazoVencido) { %>
+                                        <div class="text-danger mt-1">
+                                            <small><i class="bi bi-clock-history"></i> Prazo Vencido</small>
+                                        </div>
+                                    <% } %>
+                                </td>
+                                <td class="align-middle"><%= item.setorDemandante %></td>
+                                <td class="align-middle text-center"><%= new Date(item.dataSolicitacao).toLocaleDateString('pt-BR') %></td>
+                                <td class="text-center align-middle">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item" href="/nugecid/desarquivamento/<%= item.id %>/editar">
+                                                    <i class="bi bi-pencil me-2"></i>Editar
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <form action="/nugecid/desarquivamento/<%= item.id %>/excluir" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este registro?');" style="margin: 0;">
+                                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        <i class="bi bi-trash me-2"></i>Excluir
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <% if (item.status === 'Retirado pelo setor') { %>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#prorrogarPrazoModal" data-id="<%= item.id %>">
+                                                        <i class="bi bi-calendar-plus me-2"></i>Prorrogar Prazo
+                                                    </button>
+                                                </li>
+                                            <% } %>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Modal de Prorrogação de Prazo -->
+<div class="modal fade" id="prorrogarPrazoModal" tabindex="-1" aria-labelledby="prorrogarPrazoModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="prorrogarPrazoForm" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="modal-header">
+          <h5 class="modal-title" id="prorrogarPrazoModalLabel">Prorrogar Prazo de Devolução</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="novaDataPrazo" class="form-label">Nova Data do Prazo</label>
+            <input type="date" class="form-control" id="novaDataPrazo" name="novaDataPrazo" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Nova Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('nugecid/views/desarquivamento/_modal_apagar_todos') %>
+
 <style>
   .table-hover tbody tr:hover {
-    background-color: rgba(0, 0, 0, 0.075) !important; /* Garante que o hover funcione sobre as cores */
+    background-color: rgba(0, 0, 0, 0.075) !important;
   }
   .status-badge { cursor: pointer; }
   .status-select { display: none; width: 150px; }
 
   /* Cores baseadas na imagem do usuário */
-  .table-row-retirado-pelo-setor { background-color: #28a745 !important; color: white !important; }
-  .table-row-desarquivado { background-color: #d4edda !important; }
-  .table-row-nao-localizado { background-color: #fff3cd !important; }
+  .table-row-retirado-pelo-setor { background-color: #cce5ff !important; } /* Azul claro */
+  .table-row-desarquivado { background-color: #d4edda !important; } /* Verde claro */
+  .table-row-nao-localizado { background-color: #fff3cd !important; } /* Amarelo claro */
   
   /* Cores adicionais para outros status */
-  .table-row-finalizado { background-color: #e2e3e5 !important; }
-  .table-row-solicitado { background-color: #cce5ff !important; }
-  .table-row-rearquivamento-solicitado { background-color: #ffeeba !important; }
-  .table-row-nao-coletado { background-color: #f8d7da !important; }
+  .table-row-finalizado { background-color: #f8f9fa !important; } /* Cinza bem claro */
+  .table-row-solicitado { background-color: #cfe2ff !important; } /* Azul um pouco mais forte */
+  .table-row-rearquivamento-solicitado { background-color: #fff3cd !important; } /* Amarelo claro */
+  .table-row-nao-coletado { background-color: #f8d7da !important; } /* Vermelho claro */
 
   /* Estilo para links e badges nas linhas coloridas */
   .table-row-retirado-pelo-setor a { color: white; text-decoration: underline; }
@@ -137,6 +267,16 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const prorrogarPrazoModal = document.getElementById('prorrogarPrazoModal');
+    if (prorrogarPrazoModal) {
+        prorrogarPrazoModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const desarquivamentoId = button.getAttribute('data-id');
+            const form = document.getElementById('prorrogarPrazoForm');
+            form.action = `/nugecid/desarquivamento/${desarquivamentoId}/prorrogar-prazo`;
+        });
+    }
+
     const csrfToken = '<%= csrfToken %>';
     const tableBody = document.querySelector('#desarquivamentoTable tbody');
 

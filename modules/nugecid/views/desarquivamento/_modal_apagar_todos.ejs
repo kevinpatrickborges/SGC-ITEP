@@ -1,0 +1,41 @@
+<%# Modal para exclusão total dos registros %>
+<div class="modal fade" id="modalApagarTodos" tabindex="-1" aria-labelledby="modalApagarTodosLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formApagarTodos" method="POST" action="/nugecid/desarquivamento/delete-all">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalApagarTodosLabel">Apagar TODOS os registros</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger">
+            <strong>Atenção!</strong> Esta ação é irreversível. Todos os registros de desarquivamento serão apagados.
+          </div>
+          <div class="mb-3">
+            <label for="usuarioAdmin" class="form-label">Usuário administrador</label>
+            <input type="text" class="form-control" id="usuarioAdmin" name="usuarioAdmin" required autocomplete="username">
+          </div>
+          <div class="mb-3">
+            <label for="senhaAdmin" class="form-label">Senha</label>
+            <input type="password" class="form-control" id="senhaAdmin" name="senhaAdmin" required autocomplete="current-password">
+          </div>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Apagar Tudo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Foco automático no campo usuário ao abrir o modal
+const modalApagarTodos = document.getElementById('modalApagarTodos');
+if (modalApagarTodos) {
+  modalApagarTodos.addEventListener('shown.bs.modal', function () {
+    document.getElementById('usuarioAdmin').focus();
+  });
+}
+</script>

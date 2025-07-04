@@ -5,6 +5,7 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
+      await queryInterface.sequelize.query('DROP TABLE IF EXISTS `Desarquivamentos_backup`;', { transaction });
       // The recommended workaround for SQLite limitations with foreign keys and altering columns.
       await queryInterface.sequelize.query('PRAGMA foreign_keys=off;', { transaction });
 
@@ -53,6 +54,7 @@ module.exports = {
   async down(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
+      await queryInterface.sequelize.query('DROP TABLE IF EXISTS `Desarquivamentos_backup_down`;', { transaction });
       await queryInterface.sequelize.query('PRAGMA foreign_keys=off;', { transaction });
 
       await queryInterface.sequelize.query(

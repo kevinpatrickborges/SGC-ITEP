@@ -5,9 +5,25 @@ const excel = require('exceljs');
 const xlsx = require('xlsx');
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
+const { Sequelize } = require('sequelize');
 
 const MODULE_PATH = 'nugecid/views/desarquivamento';
 const REDIRECT_URL = '/nugecid/desarquivamento';
+
+// Função para adicionar dias úteis a uma data
+function addBusinessDays(startDate, days) {
+  let currentDate = new Date(startDate);
+  let addedDays = 0;
+  while (addedDays < days) {
+    currentDate.setDate(currentDate.getDate() + 1);
+    const dayOfWeek = currentDate.getDay();
+    // Ignora Sábado (6) e Domingo (0)
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      addedDays++;
+    }
+  }
+  return currentDate;
+}
 
 /**
  * @desc Exibe a lista de desarquivamentos com filtros
@@ -15,7 +31,7 @@ const REDIRECT_URL = '/nugecid/desarquivamento';
  */
 exports.getList = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, dataInicio, dataFim, pesquisa, setor, sort = 'DESC' } = req.query;
     const where = {};
 
     // Garante que o status seja sempre um array para a consulta e para a view
@@ -24,14 +40,52 @@ exports.getList = async (req, res) => {
     if (selectedStatus.length > 0) {
       where.status = { [Op.in]: selectedStatus };
     }
+    
+    // Filtro por setor
+    if (setor) {
+      where.setorDemandante = setor;
+    }
+
+    // Filtro por data (corrigido para funcionar quando inicial = final)
+    if (dataInicio && dataFim && dataInicio === dataFim) {
+      // Busca registros exatamente naquele dia (independente de hora)
+      where.dataSolicitacao = dataInicio;
+    } else {
+      if (dataInicio) {
+        where.dataSolicitacao = where.dataSolicitacao || {};
+        where.dataSolicitacao[Op.gte] = new Date(dataInicio);
+      }
+      if (dataFim) {
+        where.dataSolicitacao = where.dataSolicitacao || {};
+        const dataFinal = new Date(dataFim);
+        dataFinal.setHours(23,59,59,999);
+        where.dataSolicitacao[Op.lte] = dataFinal;
+      }
+    }
+
+    // Filtro de pesquisa (nome ou documento)
+    if (pesquisa && pesquisa.trim() !== '') {
+      where[Op.or] = [
+        { nomeCompleto: { [Op.like]: `%${pesquisa}%` } },
+        { numDocumento: { [Op.like]: `%${pesquisa}%` } },
+        { setorDemandante: { [Op.like]: `%${pesquisa}%` } }
+      ];
+    }
 
     const desarquivamentos = await Desarquivamento.findAll({
       where,
-      order: [['dataSolicitacao', 'DESC']],
+      order: [['dataSolicitacao', sort.toUpperCase() === 'ASC' ? 'ASC' : 'DESC']],
       include: ['criadoPor', 'atualizadoPor']
     });
 
     const allStatus = Desarquivamento.getAttributes().status.values;
+
+    // Busca todos os setores distintos para popular o filtro
+    const allSetores = await Desarquivamento.findAll({
+      attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('setorDemandante')), 'setorDemandante']],
+      order: [['setorDemandante', 'ASC']],
+      raw: true,
+    }).then(results => results.map(item => item.setorDemandante));
 
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
@@ -40,8 +94,15 @@ exports.getList = async (req, res) => {
     res.render(`${MODULE_PATH}/index`, {
       title: 'NUGECID – Desarquivamentos',
       desarquivamentos,
-      allStatus, // Passa todos os status para renderizar os checkboxes
+      allStatus,
+      allSetores, // Passa todos os setores para o filtro
       selectedStatus, // Passa os status selecionados para marcar os checkboxes
+      selectedSetor: setor || '', // Passa o setor selecionado
+      sort, // Passa a ordenação atual
+      dataInicio: req.query.dataInicio || '',
+      dataFim: req.query.dataFim || '',
+      pesquisa: req.query.pesquisa || '',
+      queryParams: req.query, // Passa o objeto query para a view
       user: req.session.user,
       layout: 'layout'
     });
@@ -230,17 +291,27 @@ exports.getImportForm = (req, res) => {
 
 // Helper to convert Excel serial dates to JS Date objects
 const convertToDate = (value) => {
-    if (value instanceof Date) return value;
-    if (value === null || value === undefined || value === '') return null;
+    if (!value || typeof value === 'string' && value.trim().toLowerCase() === 'n/a') {
+        return null;
+    }
+    if (value instanceof Date && !isNaN(value)) {
+        return value;
+    }
 
-    // Check if it's a number or a string that looks like a number (Excel serial date)
+    // Tenta converter de DD/MM/YYYY para um formato que o JS entende
+    if (typeof value === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+        const parts = value.split('/');
+        const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        if (!isNaN(date.getTime())) {
+            return date;
+        }
+    }
+    
+    // Tenta converter de número (data serial do Excel)
     if (!isNaN(value)) {
         const num = Number(value);
-        // Heuristic for Excel serial dates (numbers between 1 and ~100000)
         if (num > 1 && num < 100000) {
-            // Formula to convert Excel serial date to JS Date
             const date = new Date((num - 25569) * 86400 * 1000);
-            // Adjust for timezone offset to get correct local date
             const userOffset = date.getTimezoneOffset() * 60000;
             const adjustedDate = new Date(date.getTime() + userOffset);
             if (!isNaN(adjustedDate.getTime())) {
@@ -248,14 +319,10 @@ const convertToDate = (value) => {
             }
         }
     }
-    // Fallback for standard date strings
-    if (typeof value === 'string') {
-        const date = new Date(value);
-        if (!isNaN(date.getTime())) {
-            return date;
-        }
-    }
-    return value; // Return original value if conversion fails
+    
+    // Última tentativa com o construtor Date
+    const date = new Date(value);
+    return !isNaN(date.getTime()) ? date : null;
 };
 
 // Helper to normalize header keys for reliable mapping
@@ -342,54 +409,71 @@ exports.postImport = async (req, res) => {
 exports.postConfirmImport = async (req, res) => {
   try {
     const dados = JSON.parse(req.body.dadosImportacao);
-    let criados = 0;
-    let atualizados = 0;
-    const processadosNoLote = new Set(); // Para evitar duplicidade no próprio lote
-    const ignoradosDuplicadosNoLote = [];
+    const resultados = {
+      sucesso: [],
+      falha: []
+    };
 
-    for (const item of dados) {
-      if (!item.numDocumento) continue;
-      const numDocStr = String(item.numDocumento);
+    const processadosNoLote = new Set();
 
-      // Evita duplicidade dentro do próprio lote
+    for (const [index, item] of dados.entries()) {
+      const linha = index + 2; // +2 para corresponder à linha da planilha (cabeçalho + 1-based index)
+      const numDocStr = item.numDocumento ? String(item.numDocumento) : null;
+
+      if (!numDocStr) {
+        resultados.falha.push({ linha, item, motivo: 'Número de documento ausente.' });
+        continue;
+      }
+
       if (processadosNoLote.has(numDocStr)) {
-        ignoradosDuplicadosNoLote.push(numDocStr);
+        resultados.falha.push({ linha, item, motivo: 'Número de documento duplicado no arquivo.' });
         continue;
       }
       processadosNoLote.add(numDocStr);
 
-      // Substitui verificação manual por upsert atômico
       try {
-        const [record, created] = await Desarquivamento.upsert({
-          ...item,
-        }, {
-          returning: true
-        });
+        console.log(`[Importação] Processando linha ${linha}, Doc: ${numDocStr}`);
+        
+        // Lógica de restauração manual para soft-delete
+        const existing = await Desarquivamento.findOne({ where: { numDocumento: numDocStr }, paranoid: false });
 
-        if (created) {
-          criados++;
+        if (existing) {
+          // Se existe, mas está 'apagado', restaura primeiro
+          if (existing.deletedAt) {
+            await existing.restore();
+            console.log(`[Importação] Linha ${linha} - Registro restaurado.`);
+          }
+          
+          // Atualiza com os novos dados
+          const dadosParaUpdate = { ...item, setorDemandante: item.setorDemandante || 'Não informado', updatedBy: req.session.user.id };
+          await existing.update(dadosParaUpdate);
+          console.log(`[Importação] Linha ${linha} - Status: ATUALIZADO`);
+          resultados.sucesso.push({ linha, item, status: 'Atualizado' });
+
         } else {
-          atualizados++;
+          // Se não existe, cria um novo
+          const dadosParaCreate = { ...item, setorDemandante: item.setorDemandante || 'Não informado', createdBy: req.session.user.id, updatedBy: req.session.user.id };
+          await Desarquivamento.create(dadosParaCreate);
+          console.log(`[Importação] Linha ${linha} - Status: CRIADO`);
+          resultados.sucesso.push({ linha, item, status: 'Criado' });
         }
+
       } catch (error) {
-        console.error('Erro durante upsert:', error);
-        throw error;
+        console.error(`[Importação] Erro na linha ${linha}:`, error);
+        resultados.falha.push({ linha, item, motivo: `Erro no banco de dados: ${error.message}` });
       }
     }
 
-    let msg = `Importação concluída! ${criados} registros criados e ${atualizados} atualizados.`;
-    if (ignoradosDuplicadosNoLote.length > 0) {
-      msg += ` Os seguintes documentos foram ignorados por duplicidade no arquivo: ${ignoradosDuplicadosNoLote.join(', ')}.`;
-    }
-    req.flash('success_msg', msg);
-    res.redirect(REDIRECT_URL);
+    res.render(`${MODULE_PATH}/import-result`, {
+      title: 'Resultado da Importação',
+      resultados,
+      user: req.session.user,
+      layout: 'layout'
+    });
+
   } catch (error) {
     console.error('Erro ao confirmar a importação:', error);
-    if (error.name === 'SequelizeUniqueConstraintError') {
-      req.flash('error_msg', 'Já existe um registro com o mesmo número de documento. Nenhum dado foi duplicado.');
-    } else {
-      req.flash('error_msg', 'Ocorreu um erro ao salvar os dados importados.');
-    }
+    req.flash('error_msg', 'Ocorreu um erro crítico durante a importação.');
     res.redirect(REDIRECT_URL);
   }
 };
@@ -543,6 +627,12 @@ exports.patchUpdateField = async (req, res) => {
 
     registro[field] = value;
     registro.updatedBy = req.session.user.id;
+
+    // Se o status for "Retirado pelo setor", calcula o prazo de devolução
+    if (field === 'status' && value === 'Retirado pelo setor' && !registro.dataPrazoDevolucao) {
+      registro.dataPrazoDevolucao = addBusinessDays(new Date(), 5);
+    }
+
     await registro.save();
 
     res.json({ success: true, message: 'Status atualizado com sucesso.' });
@@ -573,22 +663,83 @@ exports.deleteItem = async (req, res) => {
   }
 };
 
-// Exclui todos os registros (requer autenticação de admin)
-exports.deleteAllRecords = async (req, res) => {
+/**
+ * @desc Apaga todos os registros de desarquivamento após autenticação de admin
+ * @route POST /nugecid/desarquivamento/apagar-todos
+ */
+exports.apagarTodos = async (req, res) => {
+  const { usuarioAdmin, senhaAdmin } = req.body;
+  const db = require('../../../models');
+  const Usuario = db.Usuario;
+  const bcrypt = require('bcryptjs');
+
   try {
-    const { username, password } = req.body;
+    console.log('[apagarTodos] usuarioAdmin recebido:', usuarioAdmin);
+    // Busca usuário admin (apenas se email for 'admin')
+    if (usuarioAdmin !== 'admin') {
+      console.log('[apagarTodos] Usuário digitado não é "admin".');
+      req.flash('error_msg', 'Usuário administrador não encontrado ou não é admin.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+    const usuario = await Usuario.findOne({
+      where: { email: 'admin' },
+      include: [{ model: db.Role, as: 'role', where: { nome: 'admin' }, required: true }]
+    });
+    console.log('[apagarTodos] Resultado da busca pelo admin:', usuario ? usuario.toJSON() : usuario);
+    if (!usuario) {
+      console.log('[apagarTodos] Usuário admin não encontrado no banco ou não tem role admin.');
+      req.flash('error_msg', 'Usuário administrador não encontrado ou não é admin.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+    // Confere senha
+    const senhaOk = await bcrypt.compare(senhaAdmin, usuario.senha);
+    console.log('[apagarTodos] Resultado da comparação de senha:', senhaOk);
+    if (!senhaOk) {
+      console.log('[apagarTodos] Senha incorreta para admin.');
+      req.flash('error_msg', 'Senha incorreta.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+    // Apaga todos os registros
+    await Desarquivamento.destroy({ where: {}, truncate: true });
+    console.log('[apagarTodos] Todos os registros de desarquivamento foram apagados!');
+    req.flash('success_msg', 'Todos os registros foram apagados com sucesso!');
+    res.redirect('/nugecid/desarquivamento');
+  } catch (err) {
+    console.error('Erro ao apagar todos os registros:', err);
+    req.flash('error_msg', 'Erro ao apagar registros.');
+    res.redirect('/nugecid/desarquivamento');
+  }
+};
+
+/**
+ * @desc Prorroga o prazo de devolução de um desarquivamento
+ * @route POST /nugecid/desarquivamento/:id/prorrogar-prazo
+ */
+exports.prorrogarPrazo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { novaDataPrazo } = req.body;
+    const desarquivamento = await Desarquivamento.findByPk(id);
+
+    if (!desarquivamento) {
+      req.flash('error_msg', 'Registro não encontrado.');
+      return res.redirect(REDIRECT_URL);
+    }
     
-    // Verifica credenciais de administrador
-    if (username !== process.env.ADMIN_USER || password !== process.env.ADMIN_PASS) {
-      return res.status(401).send('Credenciais de administrador inválidas');
+    if (desarquivamento.status !== 'Retirado pelo setor') {
+      req.flash('error_msg', 'Só é possível prorrogar o prazo de itens retirados pelo setor.');
+      return res.redirect(REDIRECT_URL);
     }
 
-    // Executa a exclusão em massa
-    const deletedCount = await Desarquivamento.destroy({ where: {}, truncate: true });
-    
-    res.send(`Todos os ${deletedCount} registros foram excluídos com sucesso.`);
+    desarquivamento.dataPrazoDevolucao = new Date(novaDataPrazo);
+    desarquivamento.updatedBy = req.session.user.id;
+    await desarquivamento.save();
+
+    req.flash('success_msg', 'Prazo de devolução prorrogado com sucesso!');
+    res.redirect(REDIRECT_URL);
   } catch (error) {
-    console.error('Erro ao excluir registros:', error);
-    res.status(500).send('Erro interno do servidor');
+    console.error('Erro ao prorrogar prazo:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao prorrogar o prazo.');
+    res.redirect(REDIRECT_URL);
   }
 };

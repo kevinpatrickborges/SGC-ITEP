@@ -9,6 +9,7 @@ const i18n = require('i18n');
 const expressLayouts = require('express-ejs-layouts');
 const { sequelize } = require('./config/database');
 const cleanupJob = require('./jobs/cleanup');
+const { ensureAuthenticated } = require('./middlewares/auth');
 
 const app = express();
 
@@ -93,7 +94,7 @@ async function startServer() {
     // Rotas do Módulo NUGECID
     const desarquivamentoController = require('./modules/nugecid/controllers/desarquivamentoController');
     app.use('/nugecid/desarquivamento', require('./modules/nugecid/routes/desarquivamento.routes.js'));
-    app.post('/nugecid/desarquivamento/delete-all', desarquivamentoController.deleteAllRecords);
+    app.post('/nugecid/desarquivamento/delete-all', desarquivamentoController.apagarTodos);
 
     // Rotas legadas (a serem desativadas ou migradas)
     // app.use('/nugecid', require('./modules/nugecid/nugecid.routes')); // Desativada temporariamente
@@ -108,6 +109,22 @@ async function startServer() {
     app.use('/api/v1/relatorios', require('./routes/relatorios'));
     app.use('/api/v1/dashboard', require('./routes/dashboard'));
     console.log('Routes loaded successfully.');
+
+    // Rotas da API
+    const vestigiosApiRoutes = require('./routes/api/vestigios');
+    const dashboardApiRoutes = require('./routes/api/dashboard');
+    const authApiRoutes = require('./routes/api/auth');
+    const exportApiRoutes = require('./routes/api/export');
+    const notificationsApiRoutes = require('./routes/api/notifications');
+    const pythonServicesApiRoutes = require('./routes/api/python_services');
+
+    // API Endpoints
+    app.use('/api/vestigios', ensureAuthenticated, vestigiosApiRoutes);
+    app.use('/api/dashboard', ensureAuthenticated, dashboardApiRoutes);
+    app.use('/api/auth', authApiRoutes);
+    app.use('/api/export', ensureAuthenticated, exportApiRoutes);
+    app.use('/api/notifications', notificationsApiRoutes);
+    app.use('/api/python', ensureAuthenticated, pythonServicesApiRoutes);
 
     // --- HANDLER 404 ---
     app.use((req, res) => {

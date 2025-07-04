@@ -82,6 +82,11 @@ const Desarquivamento = sequelize.define('Desarquivamento', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  // Campo 14: DATA PRAZO DEVOLUÇÃO
+  dataPrazoDevolucao: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   createdBy: {
     type: DataTypes.INTEGER,
     references: {

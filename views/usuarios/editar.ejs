@@ -1,0 +1,43 @@
+<div class="container-fluid">
+    <h1 class="mt-4"><%= title %></h1>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-user-edit me-1"></i>
+            <%= __('Dados do Usuário') %>
+        </div>
+        <div class="card-body">
+            <form action="/usuarios/<%= usuario.id %>/editar" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="mb-3">
+                    <label for="nome" class="form-label"><%= __('Nome') %></label>
+                    <input type="text" class="form-control" id="nome" name="nome" value="<%= usuario.nome %>" required>
+                </div>
+                <div class="mb-3">
+                    <label for="matricula" class="form-label"><%= __('Matrícula') %></label>
+                    <input type="text" class="form-control" id="matricula" name="matricula" value="<%= usuario.matricula %>">
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label"><%= __('Email') %></label>
+                    <input type="text" class="form-control" id="email" name="email" value="<%= usuario.email %>" required>
+                </div>
+                <div class="mb-3">
+                    <label for="perfil" class="form-label"><%= __('Perfil') %></label>
+                    <select class="form-select" id="perfil" name="perfil">
+                        <option value="admin" <%= usuario.perfil === 'admin' ? 'selected' : '' %>>Admin</option>
+                        <option value="tecnico" <%= usuario.perfil === 'tecnico' ? 'selected' : '' %>>Técnico</option>
+                        <option value="auditor" <%= usuario.perfil === 'auditor' ? 'selected' : '' %>>Auditor</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="senha" class="form-label"><%= __('Nova Senha') %></label>
+                    <input type="password" class="form-control" id="senha" name="senha">
+                    <div class="form-text"><%= __('Deixe em branco para não alterar a senha.') %></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary"><%= __('Salvar Alterações') %></button>
+                <a href="/usuarios" class="btn btn-secondary"><%= __('Cancelar') %></a>
+            </form>
+        </div>
+    </div>
+</div> 

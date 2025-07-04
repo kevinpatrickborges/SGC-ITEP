@@ -72,67 +72,8 @@ const renderDashboard = async (req, res) => {
 // API para obter estatísticas para os gráficos
 const getDashboardStats = async (req, res) => {
   try {
-    // 1. Cards
-    const totalDesarquivamentos = await Desarquivamento.count();
-    const desarquivamentosEmPosse = await Desarquivamento.count({ where: { status: 'Em posse' } });
-    const solicitacoesRecentes = await Desarquivamento.count({
-      where: {
-        dataSolicitacao: { [Op.gte]: new Date(new Date() - 30 * 24 * 60 * 60 * 1000) }
-      }
-    });
-    const vestigiosUrgentes = 0; // Placeholder
-
-    // 2. Gráfico de Pizza: Distribuição por Tipo (Físico/Digital)
-    const distribuicaoPorTipo = await Desarquivamento.findAll({
-      attributes: ['tipoDesarquivamento', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
-      group: ['tipoDesarquivamento'],
-      raw: true
-    });
-
-    // 3. Gráfico de Pizza: Distribuição por Status
-    const distribuicaoPorStatus = await Desarquivamento.findAll({
-      attributes: ['status', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
-      group: ['status'],
-      raw: true
-    });
-
-    // 4. Gráfico de Linha: Solicitações Mensais (últimos 6 meses)
-    const meses = [];
-    const hoje = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-      const mesNome = data.toLocaleString('pt-BR', { month: 'short' });
-      meses.push({ data, mes: mesNome.charAt(0).toUpperCase() + mesNome.slice(1) });
-    }
-    const solicitacoesMensais = await Promise.all(meses.map(async (item) => {
-      const startDate = item.data;
-      const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
-      const count = await Desarquivamento.count({
-        where: { dataSolicitacao: { [Op.between]: [startDate, endDate] } }
-      });
-      return { mes: item.mes, count };
-    }));
-
-    // 5. Gráfico de Barras: Top 5 Tipos de Documento
-    const distribuicaoPorTipoDocumento = await Desarquivamento.findAll({
-        attributes: ['tipoDocumento', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
-        group: ['tipoDocumento'],
-        order: [[Sequelize.fn('COUNT', Sequelize.col('id')), 'DESC']],
-        limit: 5,
-        raw: true
-    });
-
-    // Retornar todos os dados
-    res.json({
-      totalDesarquivamentos,
-      desarquivamentosEmPosse,
-      solicitacoesRecentes,
-      vestigiosUrgentes,
-      distribuicaoPorTipo,
-      distribuicaoPorStatus,
-      solicitacoesMensais,
-      distribuicaoPorTipoDocumento
-    });
+    const stats = await statisticsService.getDashboardStats();
+    res.json(stats);
   } catch (error) {
     console.error('Erro ao obter estatísticas do dashboard:', error);
     res.status(500).json({ error: 'Erro ao obter estatísticas' });

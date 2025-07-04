@@ -26,8 +26,8 @@ function validarSenha(senha) {
   return erros;
 }
 
-// Middleware de validação de senha
-const validarSenhaMiddleware = [
+// Middleware para validação de senha na CRIAÇÃO de usuário (obrigatório)
+const validarSenhaCriacaoMiddleware = [
   body('senha')
     .notEmpty().withMessage('A senha é obrigatória')
     .custom((senha) => {
@@ -36,17 +36,25 @@ const validarSenhaMiddleware = [
         throw new Error(erros.join(', '));
       }
       return true;
+    })
+];
+
+// Middleware para validação de senha na EDIÇÃO de usuário (opcional)
+const validarSenhaEdicaoMiddleware = [
+  body('senha')
+    .if(body('senha').notEmpty()) // Só valida se o campo não estiver vazio
+    .custom((senha) => {
+      const erros = validarSenha(senha);
+      if (erros.length > 0) {
+        throw new Error(erros.join(', '));
+      }
+      return true;
     }),
-  
-  // Middleware para processar os resultados da validação
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      if (req.originalUrl.startsWith('/api/')) {
-        return res.status(400).json({ errors: errors.array() });
-      }
       req.flash('error_msg', errors.array().map(e => e.msg).join(', '));
-      return res.redirect('back');
+      return res.redirect(req.header('Referer') || '/');
     }
     next();
   }
@@ -54,5 +62,6 @@ const validarSenhaMiddleware = [
 
 module.exports = {
   validarSenha,
-  validarSenhaMiddleware
+  validarSenhaCriacaoMiddleware,
+  validarSenhaEdicaoMiddleware
 }; 

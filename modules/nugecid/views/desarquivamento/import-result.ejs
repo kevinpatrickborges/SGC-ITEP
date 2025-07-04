@@ -1,0 +1,79 @@
+<div class="container-fluid">
+    <h1 class="mt-4"><%= title %></h1>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-clipboard-check me-1"></i>
+            Resumo da Importação
+        </div>
+        <div class="card-body">
+            <p><strong>Total de Registros Processados:</strong> <%= resultados.sucesso.length + resultados.falha.length %></p>
+            <p class="text-success"><strong>Registros Importados com Sucesso:</strong> <%= resultados.sucesso.length %></p>
+            <p class="text-danger"><strong>Registros com Falha:</strong> <%= resultados.falha.length %></p>
+            <a href="/nugecid/desarquivamento" class="btn btn-primary">Voltar para a Listagem</a>
+            <a href="/nugecid/desarquivamento/importar" class="btn btn-secondary">Importar Outro Arquivo</a>
+        </div>
+    </div>
+
+    <% if (resultados.falha.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                Detalhes dos Registros com Falha
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Linha na Planilha</th>
+                            <th>Nº do Documento</th>
+                            <th>Nome Completo</th>
+                            <th>Motivo da Falha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% resultados.falha.forEach(r => { %>
+                            <tr>
+                                <td><%= r.linha %></td>
+                                <td><%= r.item.numDocumento || 'N/A' %></td>
+                                <td><%= r.item.nomeCompleto || 'N/A' %></td>
+                                <td><%= r.motivo %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% } %>
+
+    <% if (resultados.sucesso.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-check-circle me-1"></i>
+                Detalhes dos Registros Importados
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Linha na Planilha</th>
+                            <th>Nº do Documento</th>
+                            <th>Nome Completo</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% resultados.sucesso.forEach(r => { %>
+                            <tr>
+                                <td><%= r.linha %></td>
+                                <td><%= r.item.numDocumento %></td>
+                                <td><%= r.item.nomeCompleto %></td>
+                                <td><span class="badge bg-info"><%= r.status %></span></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% } %>
+</div> 

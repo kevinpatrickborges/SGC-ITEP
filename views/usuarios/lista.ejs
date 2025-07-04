@@ -24,12 +24,13 @@
         <td><%= u.email %></td>
         <td><span class="badge bg-info"><%= u.perfil %></span></td>
         <td><%= u.createdAt ? u.createdAt.toLocaleString('pt-BR') : '' %></td>
-        <td>
-          <a href="/usuarios/<%= u.id %>" class="btn btn-sm btn-outline-info">Detalhes</a>
-          <form action="/usuarios/<%= u.id %>/excluir" method="POST" class="d-inline" onsubmit="return confirm('Excluir este usuário?');">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
-</form>
+        <td class="text-center">
+          <a href="/usuarios/<%= u.id %>" class="btn btn-sm btn-outline-info"><%= __('Detalhes') %></a>
+          <a href="/usuarios/<%= u.id %>/editar" class="btn btn-sm btn-outline-warning"><%= __('Editar') %></a>
+          <form action="/usuarios/<%= u.id %>/excluir" method="POST" style="display:inline;" onsubmit="return confirm('<%= __('Tem certeza que deseja excluir este usuário?') %>');">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn-sm btn-outline-danger"><%= __('Excluir') %></button>
+          </form>
         </td>
       </tr>
     <% }); %>
