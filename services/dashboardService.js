@@ -7,11 +7,52 @@ const { Op, Sequelize } = require('sequelize');
 exports.getDashboardStats = async () => {
   try {
     const totalDesarquivamentos = await Desarquivamento.count();
-    const desarquivamentosEmPosse = await Desarquivamento.count({ where: { status: 'Em posse' } });
-    const solicitacoesRecentes = await Desarquivamento.count({
-      where: { dataSolicitacao: { [Op.gte]: new Date(new Date() - 30 * 24 * 60 * 60 * 1000) } }
+    const desarquivamentosEmPosse = await Desarquivamento.count({
+      where: {
+        status: {
+          [Op.in]: ['Em posse', 'Retirado pelo setor', 'Desarquivado']
+        }
+      }
     });
-    const vestigiosUrgentes = 0;
+    const solicitacoesRecentes = await Desarquivamento.count({
+      where: { createdAt: { [Op.gte]: new Date(new Date() - 30 * 24 * 60 * 60 * 1000) } }
+    });
+
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    const today = new Date();
+
+    const vestigiosUrgentes = await Desarquivamento.count({
+      where: {
+        [Op.or]: [
+          // 1. Retirado pelo setor com prazo vencido
+          {
+            status: 'Retirado pelo setor',
+            dataPrazoDevolucao: { [Op.lt]: today }
+          },
+          // 2. Desarquivado ou Não coletado há mais de 5 dias
+          {
+            status: { [Op.in]: ['Desarquivado', 'Não coletado'] },
+            updatedAt: { [Op.lt]: fiveDaysAgo }
+          },
+          // 3. Solicitado há mais de 5 dias
+          {
+            status: 'Solicitado',
+            dataSolicitacao: { [Op.lt]: fiveDaysAgo }
+          },
+          // 4. Rearquivamento solicitado há mais de 5 dias
+          {
+            status: 'Rearquivamento solicitado',
+            updatedAt: { [Op.lt]: fiveDaysAgo }
+          },
+          // 5. Não localizado há mais de 5 dias
+          {
+            status: 'Não localizado',
+            updatedAt: { [Op.lt]: fiveDaysAgo }
+          }
+        ]
+      }
+    });
 
     const distribuicaoPorTipo = await Desarquivamento.findAll({
       attributes: ['tipoDesarquivamento', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
@@ -35,7 +76,7 @@ exports.getDashboardStats = async () => {
 
     const solicitacoesMensais = await Promise.all(meses.map(async (item) => {
       const count = await Desarquivamento.count({
-        where: { dataSolicitacao: { 
+        where: { createdAt: { 
           [Op.gte]: item.data, 
           [Op.lt]: new Date(item.data.getFullYear(), item.data.getMonth() + 1, 1) 
         }}

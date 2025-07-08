@@ -42,55 +42,10 @@
     </div>
   </div>
   
-  <!-- Gráficos -->
-  <div class="row mb-4">
-    <div class="col-xl-6 mb-4">
-      <div class="chart-container">
-        <h4 class="chart-title">Distribuição por Tipo</h4>
-        <div class="chart-wrapper">
-          <canvas id="tipoDesarquivamentoChart"></canvas>
-          <div class="chart-error">Erro ao carregar dados</div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-xl-6 mb-4">
-      <div class="chart-container">
-        <h4 class="chart-title">Distribuição por Status</h4>
-        <div class="chart-wrapper">
-          <canvas id="statusChart"></canvas>
-          <div class="chart-error">Erro ao carregar dados</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <div class="row mb-4">
-    <div class="col-xl-6 mb-4">
-      <div class="chart-container">
-        <h4 class="chart-title">Solicitações Mensais</h4>
-        <div class="chart-wrapper">
-          <canvas id="solicitacoesMensaisChart"></canvas>
-          <div class="chart-error">Erro ao carregar dados</div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-xl-6 mb-4">
-      <div class="chart-container">
-        <h4 class="chart-title">Top 5 Tipos de Documento</h4>
-        <div class="chart-wrapper">
-          <canvas id="tipoDocumentoChart"></canvas>
-          <div class="chart-error">Erro ao carregar dados</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Tabela de registros recentes -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="chart-container">
+  <div class="row">
+    <!-- Tabela de registros recentes -->
+    <div class="col-xl-8 col-lg-7">
+      <div class="chart-container h-100">
         <h4 class="chart-title">Registros Recentes</h4>
         <div class="table-responsive">
           <table class="table recent-table">
@@ -126,12 +81,10 @@
         </div>
       </div>
     </div>
-  </div>
-  
-  <!-- Seção de usuários ativos -->
-  <div class="row mb-4">
-    <div class="col-xl-6 mb-4">
-      <div class="chart-container">
+    
+    <!-- Seção de usuários ativos -->
+    <div class="col-xl-4 col-lg-5">
+      <div class="chart-container h-100">
         <h4 class="chart-title">Usuários Ativos</h4>
         <div class="card-value mb-3"><%= Object.values(usersByIp || {}).reduce((a,b) => a+b, 0) %> usuários online</div>
         <div class="table-responsive">

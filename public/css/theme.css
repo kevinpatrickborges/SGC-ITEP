@@ -1,0 +1,80 @@
+:root {
+  --primary-blue: #2C3E50;
+  --secondary-blue: #34495E;
+  --light-gray: #F8F9FA;
+  --medium-gray: #CED4DA;
+  --dark-gray: #6C757D;
+  --text-color: #212529;
+}
+
+body {
+  background-color: var(--light-gray);
+  color: var(--text-color);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+/* Sobrescrevendo estilos do Bootstrap e outros */
+.card {
+  border-radius: 8px;
+  border-color: var(--medium-gray);
+}
+
+.btn-primary {
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-blue);
+  border-color: var(--secondary-blue);
+}
+
+.btn-outline-primary {
+  color: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-blue);
+  color: #fff;
+}
+
+.form-control {
+  border-color: var(--medium-gray);
+}
+
+.form-control:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 0.25rem rgba(44, 62, 80, 0.25); /* Cor do primary-blue com transparência */
+}
+
+.table {
+  --bs-table-bg: var(--light-gray);
+  --bs-table-striped-bg: #F0F2F5; /* Um cinza um pouco mais escuro para linhas alternadas */
+  --bs-table-hover-bg: #E9ECEF; /* Cinza para hover */
+  border-color: var(--medium-gray);
+}
+
+.table th,
+.table td {
+  border-color: var(--medium-gray);
+}
+
+/* Estilos para o spinner de carregamento */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-blue);
+  animation: spin 1s ease-in-out infinite;
+  -webkit-animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { -webkit-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+  to { -webkit-transform: rotate(360deg); }
+}

@@ -9,6 +9,7 @@ const i18n = require('i18n');
 const expressLayouts = require('express-ejs-layouts');
 const { sequelize } = require('./config/database');
 const cleanupJob = require('./jobs/cleanup');
+const startCleanupTrashJob = require('./jobs/cleanupTrash');
 const { ensureAuthenticated } = require('./middlewares/auth');
 
 const app = express();
@@ -150,6 +151,7 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`Server is running at http://localhost:${PORT}`);
       cleanupJob.start();
+      startCleanupTrashJob();
       try {
         const { default: open } = require('open');
         open(`http://localhost:${PORT}`);

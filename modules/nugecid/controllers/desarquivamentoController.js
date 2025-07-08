@@ -1,11 +1,10 @@
 const Desarquivamento = require('../../../models/Desarquivamento');
 const { body, validationResult } = require('express-validator');
 const { Op } = require('sequelize');
-const excel = require('exceljs');
-const xlsx = require('xlsx');
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
 const { Sequelize } = require('sequelize');
+const { lerXLSX, escreverXLSX } = require('../../../services/planilhaService');
 
 const MODULE_PATH = 'nugecid/views/desarquivamento';
 const REDIRECT_URL = '/nugecid/desarquivamento';
@@ -152,18 +151,47 @@ exports.postNewForm = [
   ...validateForm,
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.render(`${MODULE_PATH}/form`, {
-        title: 'Novo Desarquivamento',
-        desarquivamento: req.body,
-        errors: errors.array(),
-  
-        user: req.session.user,
-        layout: 'layout'
-      });
-    }
+    // Move the check for numDocumento to before the main validation
+    const { numDocumento } = req.body;
 
     try {
+      if (numDocumento) {
+        const normalizedDoc = numDocumento.trim();
+        // Verifica inclusive registros soft-deletados
+        const existingDoc = await Desarquivamento.findOne({
+          where: { numDocumento: { [Op.eq]: normalizedDoc } },
+          paranoid: false
+        });
+        if (existingDoc) {
+          if (existingDoc.deletedAt === null) {
+            const customError = {
+              type: 'field',
+              value: numDocumento,
+              msg: `O número de documento '${numDocumento}' já está em uso.`,
+              path: 'numDocumento',
+              location: 'body'
+            };
+            // Manually add the error to the validation result
+            errors.errors.push(customError);
+          } else {
+            // Existe registro com mesmo numDocumento, porém soft-deletado.
+            // Apaga permanentemente esse registro para permitir criação de um novo.
+            await existingDoc.destroy({ force: true });
+            // Prossegue para criação de um NOVO registro logo abaixo.
+          }
+        }
+      }
+
+      if (!errors.isEmpty()) {
+        return res.status(400).render(`${MODULE_PATH}/form`, {
+          title: 'Novo Desarquivamento',
+          desarquivamento: req.body,
+          errors: errors.array(),
+          user: req.session.user,
+          layout: 'layout'
+        });
+      }
+
       if (req.body.status === 'Devolvido' && !req.body.dataDevolucao) {
         req.body.dataDevolucao = new Date();
       }
@@ -177,13 +205,21 @@ exports.postNewForm = [
       req.flash('success_msg', 'Registro de desarquivamento criado com sucesso!');
       res.redirect(REDIRECT_URL);
     } catch (error) {
-      console.error('Erro ao criar desarquivamento:', error);
-      req.flash('error_msg', 'Erro ao criar o registro. Tente novamente.');
-      res.render(`${MODULE_PATH}/form`, {
+       // This catch block will now handle unexpected errors, 
+       // as the validation handles the unique constraint.
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        const field = error.errors[0].path;
+        const value = error.errors[0].value;
+        req.flash('error_msg', `O valor '${value}' para o campo ${field} já existe. Por favor, verifique os dados.`);
+      } else {
+        req.flash('error_msg', 'Ocorreu um erro inesperado ao criar o registro. Tente novamente.');
+      }
+      console.error('Erro detalhado ao criar desarquivamento:', error);
+      
+      res.status(500).render(`${MODULE_PATH}/form`, {
         title: 'Novo Desarquivamento',
         desarquivamento: req.body,
-  
-        errors: [{ msg: 'Ocorreu um erro no servidor ao salvar o registro.' }],
+        errors: [{ msg: 'Erro interno do servidor. Contacte o administrador.' }],
         user: req.session.user,
         layout: 'layout'
       });
@@ -367,6 +403,30 @@ const normalizeDataKeys = (data) => {
     return normalizedData;
 };
 
+// Função utilitária para sanitizar valores vindos do Excel (evita objetos/arrays)
+const sanitizeValue = (val) => {
+  if (val === null || val === undefined) return null;
+  if (Array.isArray(val)) return val.map(v => sanitizeValue(v)).join(', ');
+  if (typeof val === 'object') {
+    // ExcelJS pode entregar objetos com propriedades w (formatted), v (raw), text, result, richText
+    if (val.text) return String(val.text);
+    if (val.w) return String(val.w);
+    if (val.v !== undefined) return String(val.v);
+    if (val.result) return String(val.result);
+    if (val.richText) return val.richText.map(rt => rt.text).join('');
+    try { return JSON.stringify(val); } catch { return String(val); }
+  }
+  return String(val);
+};
+
+const sanitizeRow = (row) => {
+  const obj = {};
+  for (const key in row) {
+    obj[key] = sanitizeValue(row[key]);
+  }
+  return obj;
+};
+
 exports.postImport = async (req, res) => {
   if (!req.file) {
     req.flash('error_msg', 'Nenhum arquivo enviado.');
@@ -374,11 +434,7 @@ exports.postImport = async (req, res) => {
   }
 
   try {
-    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    // Use raw: true to get numbers for dates, which our converter handles
-    const jsonData = xlsx.utils.sheet_to_json(sheet, { raw: true });
+    const jsonData = await lerXLSX(req.file.buffer);
 
     const data = jsonData.map(row => {
         const normalizedRow = normalizeDataKeys(row);
@@ -409,6 +465,7 @@ exports.postImport = async (req, res) => {
 exports.postConfirmImport = async (req, res) => {
   try {
     const dados = JSON.parse(req.body.dadosImportacao);
+    const dadosSanitizados = dados.map(sanitizeRow);
     const resultados = {
       sucesso: [],
       falha: []
@@ -416,8 +473,9 @@ exports.postConfirmImport = async (req, res) => {
 
     const processadosNoLote = new Set();
 
-    for (const [index, item] of dados.entries()) {
-      const linha = index + 2; // +2 para corresponder à linha da planilha (cabeçalho + 1-based index)
+    for (const [index, itemOriginal] of dadosSanitizados.entries()) {
+      const item = itemOriginal;
+      const linha = index + 2;
       const numDocStr = item.numDocumento ? String(item.numDocumento) : null;
 
       if (!numDocStr) {
@@ -487,11 +545,7 @@ exports.exportXLSX = async (req, res) => {
             return res.redirect('/nugecid/desarquivamento');
         }
 
-        const workbook = new excel.Workbook();
-        const worksheet = workbook.addWorksheet('Desarquivamentos');
-
-        // Definir cabeçalhos personalizados, ordem e largura das colunas
-        worksheet.columns = [
+        const columns = [
             { header: 'Nº', key: 'num', width: 5 },
             { header: 'DESARQUIVAMENTO FÍSICO/DIGITAL', key: 'tipoDesarquivamento', width: 25 },
             { header: 'STATUS', key: 'status', width: 15 },
@@ -508,38 +562,19 @@ exports.exportXLSX = async (req, res) => {
             { header: 'SOLICITAÇÃO DE PRORROGAÇÃO DE PRAZO DE DESARQUIVAMENTO', key: 'prazoSolicitado', width: 50 }
         ];
 
-        // Mapear e adicionar dados, incluindo o número sequencial
         const data = registros.map((reg, index) => ({
             num: index + 1,
-            ...reg
+            ...reg,
+            dataSolicitacao: reg.dataSolicitacao ? new Date(reg.dataSolicitacao) : null,
+            dataDesarquivamento: reg.dataDesarquivamento ? new Date(reg.dataDesarquivamento) : null,
+            dataDevolucao: reg.dataDevolucao ? new Date(reg.dataDevolucao) : null,
         }));
-        worksheet.addRows(data);
-        
-        // Estilizar o cabeçalho para ficar igual ao modelo
-        worksheet.getRow(1).eachCell((cell) => {
-            cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'FF4472C4' } // Azul padrão do Excel
-            };
-            cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-            cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            };
-        });
 
-        // Ajustar altura da linha do cabeçalho para melhor visualização
-        worksheet.getRow(1).height = 45;
+        const buffer = await escreverXLSX(data, columns);
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename=Controle_de_Desarquivamento.xlsx');
-
-        await workbook.xlsx.write(res);
-        res.end();
+        res.send(buffer);
 
     } catch (error) {
         console.error('Erro ao exportar para XLSX:', error);
@@ -557,7 +592,7 @@ exports.exportPDF = async (req, res) => {
             return res.redirect('/nugecid/desarquivamento');
         }
 
-        const doc = new PDFDocument({ layout: 'landscape', margin: 40 });
+        const doc = new PDFDocument({ margin: 40 });
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename=relatorio_desarquivamentos.pdf');
@@ -568,31 +603,30 @@ exports.exportPDF = async (req, res) => {
         doc.fontSize(16).text('Relatório de Desarquivamentos', { align: 'center' });
         doc.moveDown();
 
-        // Cabeçalho da Tabela
-        const tableTop = doc.y;
-        const itemWidth = (doc.page.width - doc.page.margins.left - doc.page.margins.right) / 5;
-        doc.fontSize(10).font('Helvetica-Bold');
-        doc.text('Nome Completo', doc.x, doc.y, { width: itemWidth, align: 'left' });
-        doc.text('Nº Documento', doc.x + itemWidth, doc.y, { width: itemWidth, align: 'left' });
-        doc.text('Setor Demandante', doc.x + itemWidth * 2, doc.y, { width: itemWidth, align: 'left' });
-        doc.text('Data Solicitação', doc.x + itemWidth * 3, doc.y, { width: itemWidth, align: 'left' });
-        doc.text('Status', doc.x + itemWidth * 4, doc.y, { width: itemWidth, align: 'left' });
-        doc.moveDown();
-        doc.font('Helvetica');
-
-        // Linhas da Tabela
+        // Linhas dos Registros
         registros.forEach(item => {
-            const y = doc.y;
-            doc.fontSize(9);
-            doc.text(item.nomeCompleto || '', doc.page.margins.left, y, { width: itemWidth });
-            doc.text(item.numDocumento || '', doc.page.margins.left + itemWidth, y, { width: itemWidth });
-            doc.text(item.setorDemandante || '', doc.page.margins.left + itemWidth * 2, y, { width: itemWidth });
-            doc.text(item.dataSolicitacao ? new Date(item.dataSolicitacao).toLocaleDateString('pt-BR') : '', doc.page.margins.left + itemWidth * 3, y, { width: itemWidth });
-            doc.text(item.status || '', doc.page.margins.left + itemWidth * 4, y, { width: itemWidth });
-            doc.moveDown();
+            doc.fontSize(10).font('Helvetica-Bold').text(`Nº Documento:`, { continued: true });
+            doc.font('Helvetica').text(` ${item.numDocumento || 'N/A'}`);
+
+            doc.fontSize(10).font('Helvetica-Bold').text(`Nome Completo:`, { continued: true });
+            doc.font('Helvetica').text(` ${item.nomeCompleto || 'N/A'}`);
+
+            doc.fontSize(10).font('Helvetica-Bold').text(`Status:`, { continued: true });
+            doc.font('Helvetica').text(` ${item.status || 'N/A'}`);
+
+            doc.fontSize(10).font('Helvetica-Bold').text(`Setor Demandante:`, { continued: true });
+            doc.font('Helvetica').text(` ${item.setorDemandante || 'N/A'}`);
+
+            doc.fontSize(10).font('Helvetica-Bold').text(`Data Solicitação:`, { continued: true });
+            doc.font('Helvetica').text(` ${item.dataSolicitacao ? new Date(item.dataSolicitacao).toLocaleDateString('pt-BR') : 'N/A'}`);
+
+            doc.moveDown(); // Espaço entre os registros
+
             // Adiciona nova página se necessário
-            if (doc.y > doc.page.height - doc.page.margins.bottom) {
+            if (doc.y > doc.page.height - doc.page.margins.bottom - 50) { // -50 para margem de segurança
                 doc.addPage();
+                doc.fontSize(16).text('Relatório de Desarquivamentos (continuação)', { align: 'center' });
+                doc.moveDown();
             }
         });
 
@@ -741,5 +775,197 @@ exports.prorrogarPrazo = async (req, res) => {
     console.error('Erro ao prorrogar prazo:', error);
     req.flash('error_msg', 'Ocorreu um erro ao prorrogar o prazo.');
     res.redirect(REDIRECT_URL);
+  }
+};
+
+/**
+ * @desc Gera um recibo em PDF para um desarquivamento
+ * @route GET /nugecid/desarquivamento/:id/recibo
+ */
+exports.gerarRecibo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const desarquivamento = await Desarquivamento.findByPk(id);
+
+    if (!desarquivamento) {
+      req.flash('error_msg', 'Registro não encontrado.');
+      return res.redirect(REDIRECT_URL);
+    }
+
+    const doc = new PDFDocument({ margin: 50 });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=recibo_${desarquivamento.numDocumento}.pdf`);
+
+    doc.pipe(res);
+
+    // Cabeçalho
+    doc.fontSize(18).text('Recibo de Retirada de Documento', { align: 'center' });
+    doc.moveDown(2);
+
+    // Corpo do Recibo
+    doc.fontSize(12);
+    doc.text(`Pelo presente, declaramos que o documento abaixo especificado foi retirado do arquivo em ${new Date(desarquivamento.dataDesarquivamento).toLocaleDateString('pt-BR')}.`);
+    doc.moveDown();
+
+    // Detalhes do Documento
+    doc.font('Helvetica-Bold').text('Nome do Documento:', { continued: true });
+    doc.font('Helvetica').text(` ${desarquivamento.nomeCompleto}`);
+    doc.font('Helvetica-Bold').text('Número do Documento:', { continued: true });
+    doc.font('Helvetica').text(` ${desarquivamento.numDocumento}`);
+    doc.font('Helvetica-Bold').text('Setor Demandante:', { continued: true });
+    doc.font('Helvetica').text(` ${desarquivamento.setorDemandante}`);
+    doc.font('Helvetica-Bold').text('Servidor Responsável:', { continued: true });
+    doc.font('Helvetica').text(` ${desarquivamento.servidorResponsavel}`);
+    doc.moveDown(3);
+
+    // Assinaturas
+    doc.text('________________________________________');
+    doc.text(`${desarquivamento.servidorResponsavel}`);
+    doc.text('(Assinatura do Servidor Responsável)');
+    doc.moveDown(2);
+
+    doc.text('________________________________________');
+    doc.text('Responsável pelo Arquivo');
+
+    doc.end();
+
+  } catch (error) {
+    console.error('Erro ao gerar recibo:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao gerar o recibo.');
+    res.redirect(REDIRECT_URL);
+  }
+};
+
+/**
+ * @desc Exibe a lista de desarquivamentos na lixeira (soft-deletados)
+ * @route GET /nugecid/desarquivamento/lixeira
+ */
+exports.getTrashList = async (req, res) => {
+  try {
+    const lixeira = await Desarquivamento.findAll({
+      where: { deletedAt: { [Op.ne]: null } },
+      paranoid: false, // Inclui registros soft-deletados
+      order: [['deletedAt', 'DESC']]
+    });
+
+    res.render(`${MODULE_PATH}/lixeira`, {
+      title: 'Lixeira de Desarquivamentos',
+      lixeira,
+      user: req.session.user,
+      layout: 'layout'
+    });
+  } catch (error) {
+    console.error('Erro ao buscar itens da lixeira:', error);
+    req.flash('error_msg', 'Não foi possível carregar a lixeira.');
+    res.redirect(REDIRECT_URL);
+  }
+};
+
+/**
+ * @desc Exclui permanentemente um desarquivamento da lixeira
+ * @route POST /nugecid/desarquivamento/:id/excluir-permanente
+ */
+exports.deletePermanent = async (req, res) => {
+  const { id } = req.params;
+  const { usuarioAdmin, senhaAdmin } = req.body;
+  const db = require('../../../models');
+  const Usuario = db.Usuario;
+  const bcrypt = require('bcryptjs');
+
+  try {
+    // Autenticação do administrador
+    const usuario = await Usuario.findOne({
+      where: { email: 'admin' }, // Assume que o admin tem email 'admin'
+      include: [{ model: db.Role, as: 'role', where: { nome: 'admin' }, required: true }]
+    });
+
+    if (!usuario) {
+      req.flash('error_msg', 'Usuário administrador não encontrado ou não tem role admin.');
+      return res.redirect(`${REDIRECT_URL}/lixeira`);
+    }
+
+    const senhaOk = await bcrypt.compare(senhaAdmin, usuario.senha);
+    if (!senhaOk) {
+      req.flash('error_msg', 'Senha incorreta.');
+      return res.redirect(`${REDIRECT_URL}/lixeira`);
+    }
+
+    const desarquivamento = await Desarquivamento.findByPk(id, { paranoid: false }); // Busca mesmo se soft-deletado
+
+    if (!desarquivamento) {
+      req.flash('error_msg', 'Registro não encontrado na lixeira.');
+      return res.redirect(`${REDIRECT_URL}/lixeira`);
+    }
+
+    await desarquivamento.destroy({ force: true }); // Exclusão permanente
+    req.flash('success_msg', 'Registro excluído permanentemente com sucesso!');
+    res.redirect(`${REDIRECT_URL}/lixeira`);
+  } catch (error) {
+    console.error('Erro ao excluir permanentemente o registro:', error);
+    req.flash('error_msg', 'Erro ao excluir permanentemente o registro. Tente novamente.');
+    res.redirect(`${REDIRECT_URL}/lixeira`);
+  }
+};
+
+/**
+ * @desc Esvazia a lixeira (exclui permanentemente todos os registros soft-deletados)
+ * @route POST /nugecid/desarquivamento/esvaziar-lixeira
+ */
+exports.emptyTrash = async (req, res) => {
+  const { usuarioAdmin, senhaAdmin } = req.body;
+  const db = require('../../../models');
+  const Usuario = db.Usuario;
+  const bcrypt = require('bcryptjs');
+
+  try {
+    // Autenticação do administrador
+    const usuario = await Usuario.findOne({
+      where: { email: 'admin' },
+      include: [{ model: db.Role, as: 'role', where: { nome: 'admin' }, required: true }]
+    });
+
+    if (!usuario) {
+      req.flash('error_msg', 'Usuário administrador não encontrado ou não tem role admin.');
+      return res.redirect(`${REDIRECT_URL}/lixeira`);
+    }
+
+    const senhaOk = await bcrypt.compare(senhaAdmin, usuario.senha);
+    if (!senhaOk) {
+      req.flash('error_msg', 'Senha incorreta.');
+      return res.redirect(`${REDIRECT_URL}/lixeira`);
+    }
+
+    // Exclui permanentemente todos os registros soft-deletados
+    await Desarquivamento.destroy({ where: { deletedAt: { [Op.ne]: null } }, force: true });
+    req.flash('success_msg', 'Lixeira esvaziada com sucesso!');
+    res.redirect(`${REDIRECT_URL}/lixeira`);
+  } catch (err) {
+    console.error('Erro ao esvaziar a lixeira:', err);
+    req.flash('error_msg', 'Erro ao esvaziar a lixeira.');
+    res.redirect(`${REDIRECT_URL}/lixeira`);
+  }
+};
+
+/**
+ * @desc Restaura um item da lixeira
+ * @route POST /nugecid/desarquivamento/:id/restaurar
+ */
+exports.restoreItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const desarquivamento = await Desarquivamento.findByPk(id, { paranoid: false }); // Busca mesmo se soft-deletado
+
+    if (!desarquivamento) {
+      req.flash('error_msg', 'Registro não encontrado na lixeira.');
+      return res.redirect(`${REDIRECT_URL}/lixeira`);
+    }
+
+    await desarquivamento.restore(); // Restaura o registro
+    req.flash('success_msg', 'Registro restaurado com sucesso!');
+    res.redirect(`${REDIRECT_URL}/lixeira`);
+  } catch (error) {
+    console.error('Erro ao restaurar o registro:', error);
+    req.flash('error_msg', 'Erro ao restaurar o registro. Tente novamente.');
+    res.redirect(`${REDIRECT_URL}/lixeira`);
   }
 };

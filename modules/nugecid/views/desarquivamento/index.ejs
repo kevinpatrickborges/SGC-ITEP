@@ -35,6 +35,9 @@
         <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#modalApagarTodos">
             <i class="fas fa-trash-alt me-1"></i> Apagar TODOS
         </button>
+        <a href="/nugecid/desarquivamento/lixeira" class="btn btn-outline-secondary ms-2">
+            <i class="fas fa-trash me-1"></i> Lixeira
+        </a>
     </div>
 
     <!-- Botão de Filtros -->
@@ -201,6 +204,14 @@
                                                     <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#prorrogarPrazoModal" data-id="<%= item.id %>">
                                                         <i class="bi bi-calendar-plus me-2"></i>Prorrogar Prazo
                                                     </button>
+                                                </li>
+                                            <% } %>
+                                            <% if (item.status === 'Retirado pelo setor') { %>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="/nugecid/desarquivamento/<%= item.id %>/recibo" target="_blank">
+                                                        <i class="bi bi-receipt me-2"></i>Gerar Recibo
+                                                    </a>
                                                 </li>
                                             <% } %>
                                         </ul>

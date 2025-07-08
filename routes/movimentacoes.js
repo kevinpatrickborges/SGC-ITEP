@@ -4,6 +4,9 @@ const movimentacoesController = require('../controllers/movimentacoesController'
 const multer = require('multer');
 const path = require('path');
 
+// Importa os validadores
+const { validateNewMovimentacao, validateUpdateMovimentacao } = movimentacoesController;
+
 // Configuração de upload de termo/anexo
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -21,6 +24,10 @@ const roleRequired = require('../middlewares/roleRequired');
 
 router.get('/vestigio/:vestigioId', auth, roleRequired(['admin','tecnico','auditor']), movimentacoesController.listarMovimentacoesVestigio);
 router.get('/vestigio/:vestigioId/nova', auth, roleRequired(['admin','tecnico']), movimentacoesController.formNovaMovimentacao);
-router.post('/vestigio/:vestigioId/nova', auth, roleRequired(['admin','tecnico']), upload.single('anexo'), movimentacoesController.criarMovimentacao);
+router.post('/vestigio/:vestigioId/nova', auth, roleRequired(['admin','tecnico']), upload.single('anexo'), validateNewMovimentacao, movimentacoesController.criarMovimentacao);
+
+// Rotas para edição de movimentação
+router.get('/:id/editar', auth, roleRequired(['admin','tecnico']), movimentacoesController.formEditarMovimentacao);
+router.post('/:id/editar', auth, roleRequired(['admin','tecnico']), upload.single('anexo'), validateUpdateMovimentacao, movimentacoesController.editarMovimentacao);
 
 module.exports = router;

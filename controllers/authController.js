@@ -13,14 +13,6 @@ const JWT_REFRESH_EXPIRES_IN = '7d';
 
 /** Exibe tela de login */
 exports.getLogin = async (req, res) => {
-  // Cria admin padrão se não existir nenhum usuário
-  const Usuario = require('../models/Usuario');
-  const bcrypt = require('bcryptjs');
-  const count = await Usuario.count();
-  if (count === 0) {
-    const hash = await bcrypt.hash('admin', 10);
-    await Usuario.create({ nome: 'Administrador', matricula: 'admin', email: 'admin@localhost', senha: hash, perfil: 'admin' });
-  }
   res.render('auth/login', {
     title: res.__('Login'),
     locale: req.getLocale(),
@@ -36,31 +28,42 @@ exports.getRegister = (req, res) => {
 };
 
 /** Processa cadastro de usuário */
-exports.postRegister = async (req, res) => {
-  // DEBUG: Log do token CSRF, cookies e sessão no POST de registro
-  console.log('POST /auth/register - Body:', req.body);
-  console.log('POST /auth/register - Cookies:', req.headers.cookie);
-  console.log('POST /auth/register - Sessão:', req.session);
-  // O token enviado pelo form estará em req.body._csrf
-  console.log('POST /auth/register - CSRF recebido:', req.body._csrf);
+exports.postRegister = [
+  // 1. Validar e sanitizar os campos.
+  body('nome', 'O nome é obrigatório.').trim().isLength({ min: 1 }).escape(),
+  body('email', 'Por favor, insira um email válido.').isEmail().normalizeEmail(),
+  body('senha').isLength({ min: 4 }).withMessage('A senha deve ter pelo menos 4 caracteres.'),
 
-  const Usuario = require('../models/Usuario');
-  const bcrypt = require('bcryptjs');
-  const { nome, email, senha, perfil } = req.body;
-  if (!nome || !email || !senha) {
-    return res.render('auth/register', { error_msg: 'Preencha todos os campos.' });
+  // 2. Processar a requisição após a validação.
+  async (req, res, next) => {
+    // Extrai os erros de validação da requisição.
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      // Existem erros. Renderiza o formulário novamente com os valores e mensagens de erro.
+      return res.render('auth/register', {
+        title: 'Cadastro de Usuário',
+        nome: req.body.nome,
+        email: req.body.email,
+        error_msg: errors.array().map(e => e.msg).join(', ')
+      });
+    }
+
+    // Dados do formulário são válidos.
+    const { nome, email, senha, perfil } = req.body;
+    try {
+      const exists = await Usuario.findOne({ where: { email } });
+      if (exists) {
+        return res.render('auth/register', { error_msg: 'E-mail já cadastrado.' });
+      }
+      const hash = await bcrypt.hash(senha, 10);
+      await Usuario.create({ nome, email, senha: hash, perfil });
+      res.render('auth/register', { success_msg: 'Usuário criado com sucesso!' });
+    } catch (err) {
+      return next(err);
+    }
   }
-  if (senha.length < 4) {
-    return res.render('auth/register', { error_msg: 'A senha deve ter pelo menos 4 caracteres.' });
-  }
-  const exists = await Usuario.findOne({ where: { email } });
-  if (exists) {
-    return res.render('auth/register', { error_msg: 'E-mail já cadastrado.' });
-  }
-  const hash = await bcrypt.hash(senha, 10);
-  await Usuario.create({ nome, email, senha: hash, perfil });
-  res.render('auth/register', { success_msg: 'Usuário criado com sucesso!' });
-};
+];
 
 /** Processa login */
 exports.postLogin = async (req, res) => {

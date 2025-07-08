@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function loadDashboardData() {
-    fetch('/api/v1/dashboard/stats')
+    fetch('/api/dashboard/stats')
       .then(response => {
         if (!response.ok) throw new Error('Erro ao carregar dados do dashboard');
         return response.json();

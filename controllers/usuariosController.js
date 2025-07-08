@@ -2,7 +2,23 @@
 // TODO: Implementar funções de autenticação, cadastro e controle de acesso
 const Usuario = require('../models/Usuario');
 const bcrypt = require('bcryptjs');
-const { validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
+
+// Middleware de validação para novos usuários
+exports.validateNewUser = [
+  body('nome', 'O nome é obrigatório').trim().notEmpty().escape(),
+  body('email', 'Por favor, insira um email válido').isEmail().normalizeEmail(),
+  body('senha', 'A senha deve ter no mínimo 6 caracteres').isLength({ min: 6 }),
+  body('perfil', 'O perfil é obrigatório').trim().notEmpty()
+];
+
+// Middleware de validação para edição de usuários
+exports.validateUpdateUser = [
+  body('nome', 'O nome é obrigatório').trim().notEmpty().escape(),
+  body('email', 'Por favor, insira um email válido').isEmail().normalizeEmail(),
+  body('senha', 'A senha deve ter no mínimo 6 caracteres').optional({ checkFalsy: true }).isLength({ min: 6 }),
+  body('perfil', 'O perfil é obrigatório').trim().notEmpty()
+];
 const { registrarAuditoria } = require('../middleware/auditoria');
 
 // Listar usuários
@@ -121,6 +137,16 @@ exports.getEditForm = async (req, res) => {
 
 // Processar edição de usuário
 exports.postEditForm = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.render('usuarios/editar', {
+      title: res.__('Editar Usuário'),
+      error_msg: errors.array().map(e => e.msg).join(', '),
+      usuario: { id: req.params.id, ...req.body },
+      csrfToken: res.locals.csrfToken || (typeof req.csrfToken === 'function' ? req.csrfToken() : '')
+    });
+  }
+
   try {
     const { nome, matricula, email, perfil, senha } = req.body;
     const usuario = await Usuario.findByPk(req.params.id);

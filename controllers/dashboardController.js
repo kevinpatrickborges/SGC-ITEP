@@ -1,8 +1,8 @@
 // Controlador do dashboard
 // Mostra usuários ativos por IP e estatísticas de vestígios
 const sessionStore = require('express-session').Store;
-const Desarquivamento = require('../models/Desarquivamento');
-const { Op, Sequelize } = require('sequelize');
+const { Desarquivamento } = require('../models');
+const { Op } = require('sequelize');
 const statisticsService = require('../services/statisticsService');
 
 // Função para contar usuários ativos por IP com heartbeat
@@ -27,14 +27,36 @@ let getActiveUsersByIP = (sessionStoreInstance) => {
 // Renderiza a página principal do dashboard
 const renderDashboard = async (req, res) => {
   try {
-    // Obter contagens básicas para os cards
+    // Obter contagens básicas para os cards usando o modelo Desarquivamento
     const totalDesarquivamentos = await Desarquivamento.count();
-    const desarquivamentosEmPosse = await Desarquivamento.count({ where: { status: 'Em posse' } });
+    const desarquivamentosEmPosse = await Desarquivamento.count({
+      where: {
+        status: {
+          [Op.in]: ['Em posse', 'Retirado pelo setor', 'Desarquivado']
+        }
+      }
+    });
     const solicitacoesRecentes = await Desarquivamento.count({
       where: {
-        dataSolicitacao: {
+        createdAt: { // Usando createdAt como data da solicitação
           [Op.gte]: new Date(new Date() - 30 * 24 * 60 * 60 * 1000) // últimos 30 dias
         }
+      }
+    });
+    
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    const today = new Date();
+
+    const vestigiosUrgentes = await Desarquivamento.count({
+      where: {
+        [Op.or]: [
+          { status: 'Retirado pelo setor', dataPrazoDevolucao: { [Op.lt]: today } },
+          { status: { [Op.in]: ['Desarquivado', 'Não coletado'] }, updatedAt: { [Op.lt]: fiveDaysAgo } },
+          { status: 'Solicitado', dataSolicitacao: { [Op.lt]: fiveDaysAgo } },
+          { status: 'Rearquivamento solicitado', updatedAt: { [Op.lt]: fiveDaysAgo } },
+          { status: 'Não localizado', updatedAt: { [Op.lt]: fiveDaysAgo } }
+        ]
       }
     });
     
@@ -42,7 +64,7 @@ const renderDashboard = async (req, res) => {
     const registrosRecentes = await Desarquivamento.findAll({
       limit: 10,
       order: [['createdAt', 'DESC']],
-      attributes: ['id', 'nomeCompleto', 'tipoDocumento', 'numDocumento', 'status', 'createdAt']
+      attributes: ['id', 'nomeCompleto', 'tipoDocumento', 'numDocumento', 'status', 'createdAt'] 
     });
     
     // Buscar usuários ativos por IP (se possível)
@@ -60,8 +82,8 @@ const renderDashboard = async (req, res) => {
       desarquivamentosEmPosse,
       usersByIp,
       solicitacoesRecentes,
-      registrosRecentes,
-      vestigiosUrgentes: 0 // Placeholder, mantido por compatibilidade
+      vestigiosUrgentes,
+      registrosRecentes
     });
   } catch (error) {
     console.error('Erro ao renderizar dashboard:', error);
@@ -83,13 +105,11 @@ const getDashboardStats = async (req, res) => {
 // Renderiza a página de estatísticas avançadas
 const renderStatistics = async (req, res) => {
   try {
-    const stats = await statisticsService.getStatistics();
+    const stats = await statisticsService.getDashboardStats();
     res.render('dashboard/estatisticas', {
       title: 'Estatísticas do Sistema',
       layout: 'layout',
-      stats: stats,
-      // Passar a função de formatação para a view
-      formatMonth: (ano, mes) => `${mes.toString().padStart(2, '0')}/${ano}`
+      stats: stats
     });
   } catch (error) {
     console.error(error);

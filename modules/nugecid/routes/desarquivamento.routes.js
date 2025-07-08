@@ -28,6 +28,10 @@ router.post('/:id/editar', /*checkAuth,*/ desarquivamentoController.postEditForm
 // @desc    Excluir (soft delete) um desarquivamento
 router.post('/:id/excluir', /*checkAuth,*/ desarquivamentoController.deleteItem);
 
+// @route   GET /nugecid/desarquivamento/:id/recibo
+// @desc    Gerar recibo de retirada em PDF
+router.get('/:id/recibo', /*checkAuth,*/ desarquivamentoController.gerarRecibo);
+
 // @route   PATCH /nugecid/desarquivamento/:id/atualizar-campo
 // @desc    Atualizar um campo específico de um registro (edição inline)
 router.patch('/:id/atualizar-campo', /*checkAuth,*/ desarquivamentoController.patchUpdateField);
@@ -63,5 +67,22 @@ router.get('/exportar/pdf', /*checkAuth,*/ desarquivamentoController.exportPDF);
 // @route   POST /nugecid/desarquivamento/apagar-todos
 // @desc    Apagar todos os registros de desarquivamento (admin)
 router.post('/apagar-todos', /*checkAuth,*/ csrfProtection, desarquivamentoController.apagarTodos);
+
+// --- ROTAS DA LIXEIRA ---
+// @route   GET /nugecid/desarquivamento/lixeira
+// @desc    Exibir itens na lixeira
+router.get('/lixeira', /*checkAuth,*/ desarquivamentoController.getTrashList);
+
+// @route   POST /nugecid/desarquivamento/:id/restaurar
+// @desc    Restaurar um item da lixeira
+router.post('/:id/restaurar', /*checkAuth,*/ csrfProtection, desarquivamentoController.restoreItem);
+
+// @route   POST /nugecid/desarquivamento/:id/excluir-permanente
+// @desc    Excluir permanentemente um item da lixeira
+router.post('/:id/excluir-permanente', /*checkAuth,*/ csrfProtection, desarquivamentoController.deletePermanent);
+
+// @route   POST /nugecid/desarquivamento/esvaziar-lixeira
+// @desc    Esvaziar a lixeira (excluir todos permanentemente)
+router.post('/esvaziar-lixeira', /*checkAuth,*/ csrfProtection, desarquivamentoController.emptyTrash);
 
 module.exports = router;

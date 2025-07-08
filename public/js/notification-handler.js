@@ -1,4 +1,7 @@
 // public/js/notification-handler.js
+// Desktop notifications, once displayed, are managed by the operating system.
+// The web application can create them, but cannot directly revoke or remove them.
+// Users may need to manually dismiss persistent notifications from their OS notification center.
 
 document.addEventListener('DOMContentLoaded', () => {
     const notificationButton = document.getElementById('notification-bell');

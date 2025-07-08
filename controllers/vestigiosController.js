@@ -2,7 +2,29 @@ const Vestigio = require('../models/Vestigio');
 const Localizacao = require('../models/Localizacao');
 const { Op } = require('sequelize');
 const path = require('path');
-const { validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
+
+// Middleware de validação para novos vestígios
+exports.validateNewVestigio = [
+  body('tipo', 'O tipo é obrigatório').trim().notEmpty().escape(),
+  body('numeroLaudo', 'O número do laudo é obrigatório').trim().notEmpty().escape(),
+  body('descricao', 'A descrição é obrigatória').trim().notEmpty().escape(),
+  body('origem', 'A origem é obrigatória').trim().notEmpty().escape(),
+  body('dataEntrada', 'A data de entrada é obrigatória').isISO8601().toDate(),
+  body('responsavelNome', 'O nome do responsável é obrigatório').trim().notEmpty().escape(),
+  body('responsavelMatricula', 'A matrícula do responsável é obrigatória').trim().notEmpty().escape()
+];
+
+// Middleware de validação para edição de vestígios
+exports.validateUpdateVestigio = [
+  body('tipo', 'O tipo é obrigatório').optional().trim().notEmpty().escape(),
+  body('numeroLaudo', 'O número do laudo é obrigatório').optional().trim().notEmpty().escape(),
+  body('descricao', 'A descrição é obrigatória').optional().trim().notEmpty().escape(),
+  body('origem', 'A origem é obrigatória').optional().trim().notEmpty().escape(),
+  body('dataEntrada', 'A data de entrada é obrigatória').optional().isISO8601().toDate(),
+  body('responsavelNome', 'O nome do responsável é obrigatório').optional().trim().notEmpty().escape(),
+  body('responsavelMatricula', 'A matrícula do responsável é obrigatória').optional().trim().notEmpty().escape()
+];
 
 // Listar vestígios (com busca rápida)
 exports.listarVestigios = async (req, res) => {
@@ -56,6 +78,18 @@ const logAuditoria = require('../utils/logAuditoria');
 const { gerarCatalogacao } = require('../utils/catalogacaoVestigio');
 
 exports.criarVestigio = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const locais = await Localizacao.findAll();
+    return res.render('vestigios/novo', {
+      title: res.__('Cadastro de Vestígio'),
+      locais,
+      error_msg: errors.array().map(e => e.msg).join(', '),
+      formData: req.body,
+      csrfToken: res.locals.csrfToken || (typeof req.csrfToken === 'function' ? req.csrfToken() : '')
+    });
+  }
+
   try {
     // Suporte a múltiplos anexos
     let anexos = [];
@@ -121,6 +155,55 @@ exports.deletarVestigio = async (req, res) => {
   } catch (e) {
     req.flash('error_msg', res.__('Erro ao excluir vestígio.'));
     res.redirect('/vestigios');
+  }
+};
+
+// Formulário de edição de vestígio
+exports.formEditarVestigio = async (req, res) => {
+  const vestigio = await Vestigio.findByPk(req.params.id);
+  const locais = await Localizacao.findAll();
+  if (!vestigio) {
+    req.flash('error_msg', 'Vestígio não encontrado.');
+    return res.redirect('/vestigios');
+  }
+  res.render('vestigios/editar', {
+    title: 'Editar Vestígio',
+    vestigio,
+    locais,
+    csrfToken: res.locals.csrfToken || (typeof req.csrfToken === 'function' ? req.csrfToken() : '')
+  });
+};
+
+// Processar edição de vestígio
+exports.postEditVestigio = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const vestigio = await Vestigio.findByPk(req.params.id);
+    const locais = await Localizacao.findAll();
+    return res.render('vestigios/editar', {
+      title: 'Editar Vestígio',
+      vestigio,
+      locais,
+      error_msg: errors.array().map(e => e.msg).join(', '),
+      formData: req.body,
+      csrfToken: res.locals.csrfToken || (typeof req.csrfToken === 'function' ? req.csrfToken() : '')
+    });
+  }
+
+  try {
+    const vestigio = await Vestigio.findByPk(req.params.id);
+    if (!vestigio) {
+      req.flash('error_msg', 'Vestígio não encontrado.');
+      return res.redirect('/vestigios');
+    }
+
+    await vestigio.update(req.body);
+    await logAuditoria(req.user?.id, 'update', 'Vestigio', vestigio.id, req.body);
+    req.flash('success_msg', 'Vestígio atualizado com sucesso!');
+    res.redirect('/vestigios');
+  } catch (e) {
+    req.flash('error_msg', 'Erro ao atualizar vestígio.');
+    res.redirect(`/vestigios/${req.params.id}/editar`);
   }
 };
 

@@ -4,8 +4,10 @@ const vestigiosController = require('../controllers/vestigiosController');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const { body } = require('express-validator');
 const checkJwt = require('../middlewares/jwt');
+
+// Importa os validadores
+const { validateNewVestigio, validateUpdateVestigio } = vestigiosController;
 
 // Configuração de upload de anexos
 // Garante que a pasta de uploads existe
@@ -45,15 +47,16 @@ const roleRequired = require('../middlewares/roleRequired');
 
 router.get('/', auth, roleRequired(['admin','tecnico','auditor']), vestigiosController.listarVestigios);
 
-
-
 router.get('/novo', auth, roleRequired(['admin','tecnico']), vestigiosController.formNovoVestigio);
-router.post('/novo', auth, roleRequired(['admin','tecnico']), upload.array('anexos', 5), vestigiosController.criarVestigio);
+router.post('/novo', auth, roleRequired(['admin','tecnico']), upload.array('anexos', 5), validateNewVestigio, vestigiosController.criarVestigio);
 router.get('/:id', auth, roleRequired(['admin','tecnico','auditor']), vestigiosController.detalheVestigio);
 router.post('/:id/delete', auth, roleRequired(['admin']), vestigiosController.deletarVestigio);
 
+// Rotas para editar vestígio
+router.get('/:id/editar', auth, roleRequired(['admin','tecnico']), vestigiosController.formEditarVestigio);
+router.post('/:id/editar', auth, roleRequired(['admin','tecnico']), upload.array('anexos', 5), validateUpdateVestigio, vestigiosController.postEditVestigio);
+
 // Visualização 3D do vestígio
 router.get('/:id/view3d', auth, roleRequired(['admin','tecnico','auditor']), vestigiosController.view3d);
-
 
 module.exports = router;

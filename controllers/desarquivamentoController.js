@@ -56,9 +56,9 @@ const validateForm = [
   body('numDocumento').notEmpty().trim().withMessage('Nº do Documento é obrigatório.'),
   body('numProcesso').optional({ checkFalsy: true }).trim(),
   body('tipoDocumento').optional({ checkFalsy: true }).trim(),
-  body('dataSolicitacao').isISO8601().toDate().withMessage('Data de solicitação inválida.'),
-  body('dataDesarquivamento').optional({ checkFalsy: true }).isISO8601().toDate(),
-  body('dataDevolucao').optional({ checkFalsy: true }).isISO8601().toDate(),
+  body('dataSolicitacao').isISO8601().withMessage('Data de solicitação inválida.'),
+  body('dataDesarquivamento').optional({ checkFalsy: true }).isISO8601(),
+  body('dataDevolucao').optional({ checkFalsy: true }).isISO8601(),
   body('setorDemandante').notEmpty().trim().withMessage('Setor demandante é obrigatório.'),
   body('servidorResponsavel').optional({ checkFalsy: true }).trim(),
   body('finalidade').notEmpty().trim().withMessage('Finalidade é obrigatória.'),
@@ -86,8 +86,24 @@ exports.postNewForm = [
         req.body.dataDevolucao = new Date();
       }
 
+      const fixDate = (input) => {
+        if (!input) return input;
+        if (input instanceof Date) {
+          const copy = new Date(input.getTime());
+          copy.setHours(12, 0, 0, 0);
+          return copy;
+        }
+        // Esperamos string YYYY-MM-DD
+        const [y, m, d] = input.split('-').map(Number);
+        return new Date(y, m - 1, d, 12, 0, 0);
+      };
+
       await Desarquivamento.create({
         ...req.body,
+        dataSolicitacao: fixDate(req.body.dataSolicitacao),
+        dataDesarquivamento: fixDate(req.body.dataDesarquivamento),
+        dataDevolucao: fixDate(req.body.dataDevolucao),
+        dataPrazoDevolucao: fixDate(req.body.dataPrazoDevolucao),
         createdBy: req.session.user.id,
         updatedBy: req.session.user.id
       });
@@ -139,14 +155,27 @@ exports.postEditForm = [
         return res.redirect('/desarquivamentos');
       }
 
-      // Atualiza o registro
-      Object.assign(desarquivamento, req.body);
-      desarquivamento.updatedBy = req.session.user.id;
+      const fixDate = (input) => {
+        if (!input) return input;
+        if (input instanceof Date) {
+          const copy = new Date(input.getTime());
+          copy.setHours(12, 0, 0, 0);
+          return copy;
+        }
+        // Esperamos string YYYY-MM-DD
+        const [y, m, d] = input.split('-').map(Number);
+        return new Date(y, m - 1, d, 12, 0, 0);
+      };
 
-      // Regra de negócio para data de devolução
-      if (req.body.status === 'Devolvido' && !desarquivamento.dataDevolucao) {
-        desarquivamento.dataDevolucao = new Date();
-      }
+      // Atualiza o registro
+      Object.assign(desarquivamento, {
+        ...req.body,
+        dataSolicitacao: fixDate(req.body.dataSolicitacao),
+        dataDesarquivamento: fixDate(req.body.dataDesarquivamento),
+        dataDevolucao: fixDate(req.body.dataDevolucao),
+        dataPrazoDevolucao: fixDate(req.body.dataPrazoDevolucao)
+      });
+      desarquivamento.updatedBy = req.session.user.id;
 
       await desarquivamento.save();
 

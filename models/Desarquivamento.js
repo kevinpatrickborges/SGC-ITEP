@@ -34,8 +34,7 @@ const Desarquivamento = sequelize.define('Desarquivamento', {
   // Campo 4: Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA
   numDocumento: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   // Campo 5: Nº PROCESSO
   numProcesso: {
