@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('./nugecid.controller');
+const desarquivamentoRoutes = require('./routes/desarquivamento.routes');
 const { ensureAuthenticated, checkRole } = require('../../middlewares/auth'); // Supondo que o middleware de auth esteja neste caminho
 
 // Middleware para verificar permissões do NUGECID
@@ -22,5 +23,7 @@ router.post('/editar/:id', ensureAuthenticated, canEditNugecid, controller.edita
 
 // Rota para deletar (cancelar) um registro
 router.post('/deletar/:id', ensureAuthenticated, canEditNugecid, controller.deletar);
+
+router.use('/desarquivamento', desarquivamentoRoutes);
 
 module.exports = router;

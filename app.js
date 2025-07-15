@@ -93,12 +93,11 @@ async function startServer() {
     app.use(csrfProtection);
 
     // Rotas do Módulo NUGECID
+    app.use('/nugecid', require('./modules/nugecid/nugecid.routes'));
     const desarquivamentoController = require('./modules/nugecid/controllers/desarquivamentoController');
-    app.use('/nugecid/desarquivamento', require('./modules/nugecid/routes/desarquivamento.routes.js'));
     app.post('/nugecid/desarquivamento/delete-all', desarquivamentoController.apagarTodos);
 
     // Rotas legadas (a serem desativadas ou migradas)
-    // app.use('/nugecid', require('./modules/nugecid/nugecid.routes')); // Desativada temporariamente
     app.use('/arquivo-morto', require('./routes/arquivoMorto.routes.js'));
     // app.use('/desarquivamentos', require('./routes/desarquivamentos.routes.js')); // Desativada e substituída pela rota do módulo
     app.use('/api/export', require('./routes/api/export'));

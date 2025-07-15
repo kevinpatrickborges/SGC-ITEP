@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Detalhes do Desarquivamento</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>Detalhes do Desarquivamento</h1>
+    <p><strong>ID:</strong> <%= desarquivamento.id %></p>
+    <p><strong>Tipo de Documento:</strong> <%= desarquivamento.tipo_documento %></p>
+    <p><strong>Nome:</strong> <%= desarquivamento.nome %></p>
+    <p><strong>Número do Documento:</strong> <%= desarquivamento.numero_documento %></p>
+    <p><strong>Observação:</strong> <%= desarquivamento.observacao %></p>
+    <p><strong>Número do Processo Eletrônico:</strong> <%= desarquivamento.num_processo_eletronico %></p>
+    <p><strong>Data do Desarquivamento:</strong> <%= new Date(desarquivamento.data_desarquivamento).toLocaleDateString('pt-BR') %></p>
+    <a href="/nugecid/desarquivamento/<%= desarquivamento.id %>/termo" class="btn">Gerar Termo de Desarquivamento</a>
+</body>
+</html>

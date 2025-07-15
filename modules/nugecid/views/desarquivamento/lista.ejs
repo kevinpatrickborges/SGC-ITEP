@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lista de Desarquivamentos</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <h1>Lista de Desarquivamentos</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome Completo</th>
+                <th>Número do Documento</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% desarquivamentos.forEach(function(desarquivamento) { %>
+                <tr>
+                    <td><%= desarquivamento.id %></td>
+                    <td><%= desarquivamento.nomeCompleto %></td>
+                    <td><%= desarquivamento.numDocumento %></td>
+                    <td><%= desarquivamento.status %></td>
+                    <td>
+                        <a href="/nugecid/desarquivamento/<%= desarquivamento.id %>">Detalhes</a>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+</body>
+</html>
