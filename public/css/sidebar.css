@@ -10,6 +10,7 @@
   flex-direction: column;
   z-index: 1000;
   padding: 0.8rem 0;
+  position: fixed;
 }
 
 .sei-menu-search {
@@ -193,4 +194,3 @@
 .sei-sidebar.collapsed:hover .has-submenu > a::after {
   display: block;
 }
-
