@@ -159,8 +159,9 @@ async function startServer() {
       cleanupJob.start();
       startCleanupTrashJob();
       try {
-        const { default: open } = require('open');
-        open(`http://localhost:${PORT}`);
+        import('open').then(({ default: open }) => {
+          open(`http://localhost:${PORT}`);
+        });
       } catch (error) {
         console.error('Could not open browser:', error);
       }

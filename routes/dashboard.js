@@ -37,4 +37,13 @@ router.post('/ping', auth, (req, res) => {
 // Rota para a página de estatísticas avançadas
 router.get('/estatisticas', auth, roleRequired(['admin', 'tecnico']), renderStatistics);
 
+// Rota para o novo dashboard moderno
+router.get('/moderno', auth, (req, res) => {
+  res.render('dashboard-moderno', {
+    title: 'Dashboard Moderno - SGC-ITEP',
+    user: req.user,
+    layout: false // Não usar layout padrão
+  });
+});
+
 module.exports = router;
