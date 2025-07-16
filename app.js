@@ -7,6 +7,7 @@ const flash = require('connect-flash');
 const path = require('path');
 const i18n = require('i18n');
 const expressLayouts = require('express-ejs-layouts');
+const methodOverride = require('method-override');
 const { sequelize } = require('./config/database');
 const cleanupJob = require('./jobs/cleanup');
 const startCleanupTrashJob = require('./jobs/cleanupTrash');
@@ -19,6 +20,7 @@ require('./config/i18n')(app);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(methodOverride('_method'));
 
 // 1. Cookie Parser - DEVE VIR ANTES da session.
 
@@ -51,7 +53,10 @@ app.use((req, res, next) => {
 app.use(addCsrfTokenToLocals);
 app.set('layout', 'layout');
 app.set('view engine', 'ejs');
-app.set('views', [path.join(__dirname, 'views'), path.join(__dirname, 'modules')]);
+app.set('views', [
+  path.join(__dirname, 'views'),
+  path.join(__dirname, 'modules/nugecid/views')
+]);
 
 // --- FUNÇÃO DE STARTUP ASYNC ---
 async function startServer() {
@@ -88,14 +93,16 @@ async function startServer() {
     app.use('/importacao', require('./routes/importacao'));
     app.use('/relatorios', require('./routes/relatorios'));
     app.use('/publicacoes', require('./routes/publicacoes.routes.js'));
+
+    // Rotas de importação (sem CSRF global, pois é tratado na própria rota)
+    app.use('/nugecid/desarquivamento/importar', require('./modules/nugecid/routes/desarquivamento.import.routes'));
+
     // Aplica a proteção CSRF a todas as rotas que vêm a seguir.
     // Rotas que não devem ser protegidas (ex: APIs sem estado) devem ser declaradas ANTES desta linha.
     app.use(csrfProtection);
 
     // Rotas do Módulo NUGECID
     app.use('/nugecid', require('./modules/nugecid/nugecid.routes'));
-    const desarquivamentoController = require('./modules/nugecid/controllers/desarquivamentoController');
-    app.post('/nugecid/desarquivamento/delete-all', desarquivamentoController.apagarTodos);
 
     // Rotas legadas (a serem desativadas ou migradas)
     app.use('/arquivo-morto', require('./routes/arquivoMorto.routes.js'));
@@ -139,7 +146,7 @@ async function startServer() {
       if (err === invalidCsrfTokenError) {
         console.warn('CSRF Token inválido detectado para a rota:', req.path);
         req.flash('error_msg', 'Sua sessão expirou ou o formulário é inválido. Por favor, tente novamente.');
-        res.status(403).redirect('back');
+        res.status(403).redirect(req.get('Referrer') || '/');
       } else {
         next(err);
       }

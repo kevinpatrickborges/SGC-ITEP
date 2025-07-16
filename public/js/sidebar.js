@@ -1,69 +1,44 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // --- Search Functionality ---
-    const searchInput = document.querySelector('.sei-menu-search');
-    const menu = document.querySelector('.sei-menu');
 
-    if (searchInput && menu) {
-        const menuItems = Array.from(menu.querySelectorAll('li'));
-        searchInput.addEventListener('input', function () {
-            const searchTerm = this.value.toLowerCase().trim();
-            menuItems.forEach(function (li) {
-                if (li.classList.contains('has-submenu')) {
-                    const parentLink = li.querySelector('a');
-                    const parentText = parentLink.textContent.toLowerCase();
-                    const submenuItems = li.querySelectorAll('.submenu li');
-                    let hasVisibleChild = false;
-                    submenuItems.forEach(function (subLi) {
-                        const subText = subLi.textContent.toLowerCase();
-                        if (subText.includes(searchTerm)) {
-                            subLi.style.display = '';
-                            hasVisibleChild = true;
-                        } else {
-                            subLi.style.display = 'none';
-                        }
-                    });
-                    if (parentText.includes(searchTerm) || hasVisibleChild) {
-                        li.style.display = '';
-                    } else {
-                        li.style.display = 'none';
-                    }
-                } else if (!li.closest('.submenu')) {
-                    const linkText = li.textContent.toLowerCase();
-                    if (linkText.includes(searchTerm)) {
-                        li.style.display = '';
-                    } else {
-                        li.style.display = 'none';
-                    }
-                }
-            });
-        });
-    }
-
-    // --- Sidebar Collapse Functionality ---
     const sidebar = document.querySelector('.sei-sidebar');
-    const toggleButton = document.querySelector('#sidebar-toggle');
+    const desktopToggle = document.querySelector('.sidebar-desktop-toggle');
+    const mobileToggle = document.querySelector('.sidebar-mobile-toggle');
+    let sidebarOverlay = document.querySelector('.sidebar-overlay');
 
-    if (sidebar && toggleButton) {
-        const applySidebarState = () => {
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            sidebar.classList.toggle('collapsed', isCollapsed);
-        };
-
-        toggleButton.addEventListener('click', function () {
-            sidebar.classList.toggle('collapsed');
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-
-            // If we are collapsing the sidebar, ensure any open submenus are closed
-            if (sidebar.classList.contains('collapsed')) {
-                const openSubmenus = sidebar.querySelectorAll('.submenu.show');
-                openSubmenus.forEach(submenu => {
-                    const collapseInstance = bootstrap.Collapse.getInstance(submenu) || new bootstrap.Collapse(submenu);
-                    collapseInstance.hide();
-                });
-            }
-        });
-
-        // Apply state on page load
-        applySidebarState();
+    // Criar o overlay se ele não existir
+    if (!sidebarOverlay) {
+        sidebarOverlay = document.createElement('div');
+        sidebarOverlay.className = 'sidebar-overlay';
+        document.body.appendChild(sidebarOverlay);
     }
+
+    // --- Lógica para Encolher/Expandir em Desktop ---
+    if (desktopToggle && sidebar) {
+        // Aplicar estado salvo no carregamento da página
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebar.classList.add('is-collapsed');
+        }
+
+        desktopToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('is-collapsed');
+            // Salvar o estado no localStorage
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('is-collapsed'));
+        });
+    }
+
+    // --- Lógica para Abrir/Fechar em Mobile ---
+    if (mobileToggle && sidebar) {
+        mobileToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.add('is-open');
+            sidebarOverlay.classList.add('is-visible');
+        });
+    }
+
+    // Fechar a sidebar mobile ao clicar no overlay
+    sidebarOverlay.addEventListener('click', () => {
+        sidebar.classList.remove('is-open');
+        sidebarOverlay.classList.remove('is-visible');
+    });
+
 });

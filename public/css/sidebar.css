@@ -1,196 +1,172 @@
 /* ========================================
-   Sidebar Styles (SEI RN Inspired)
+   Sidebar & Main Content Layout
    ======================================== */
+body {
+  overflow-x: hidden;
+  background-color: var(--neutral-50);
+}
+
+.sei-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
 .sei-sidebar {
-  background: #1C3B37; /* Dark Green/Teal from SEI */
-  width: 230px;
-  min-width: 230px;
-  height: 100vh;
+  background-color: var(--primary-800); /* Fundo escuro da paleta */
+  border-right: none; /* Remove a borda desnecessária */
+  width: 250px;
+  min-width: 250px;
   display: flex;
   flex-direction: column;
-  z-index: 1000;
-  padding: 0.8rem 0;
+  z-index: 1010;
   position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  transition: width 0.3s ease, min-width 0.3s ease;
 }
 
-.sei-menu-search {
-  width: 90%;
-  padding: 0.5rem 0.7rem;
-  border-radius: 2px;
-  border: 1px solid #4a6e68;
-  margin-bottom: 1rem;
-  background: #FFF;
-  color: #333;
-  margin-left: auto;
-  margin-right: auto;
-  font-size: 0.9rem;
+.sei-main-content {
+  flex-grow: 1;
+  padding-left: 250px; /* Default sidebar width */
+  transition: padding-left 0.3s ease;
+  width: 100%;
 }
 
-.sei-menu-search::placeholder {
-  color: #888;
+/* ========================================
+   Sidebar Header (Logo Area)
+   ======================================== */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.15rem 1rem;
+  height: 60px;
+  border-bottom: 1px solid var(--primary-700); /* Borda com tom mais claro da paleta */
+  white-space: nowrap;
+  overflow: hidden;
 }
 
+.sidebar-header img {
+  height: 32px;
+  margin-right: 0.75rem;
+  transition: margin 0.3s ease;
+}
+
+.sidebar-header span {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #fff; /* Texto branco para contraste */
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* ========================================
+   Sidebar Menu Items
+   ======================================== */
 .sei-menu {
   list-style: none;
-  padding: 0;
+  padding: 1rem 0.75rem;
   margin: 0;
   overflow-y: auto;
   flex-grow: 1;
-  color: #e3eaf5; /* Default text color for the menu */
-}
-
-.sei-menu li {
-  margin: 0 0.5rem 0.2rem 0.5rem;
 }
 
 .sei-menu li a {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  color: inherit; /* Inherit color from .sei-menu */
+  gap: 0.9rem;
+  color: var(--primary-100); /* Cor de texto mais suave da paleta */
   text-decoration: none;
-  padding: 0.6rem 0.9rem;
-  border-radius: 2px;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
   font-size: 0.95rem;
-  transition: background 0.2s, color 0.2s;
-  position: relative;
-  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s, color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-/* Active and hover states */
-.sei-menu li a:hover,
-.sei-menu li.active > a,
-.sei-menu li a[aria-expanded="true"] {
-  background: #2a524c; /* Lighter Green/Teal for selection */
-  color: #fff;
+.sei-menu li a:hover {
+  background-color: var(--primary-700); /* Cor de hover da paleta */
+  color: #fff; /* Texto branco no hover */
+}
+
+.sei-menu li.active > a {
+  background-color: #fff; /* Fundo branco para item ativo */
+  color: var(--primary-800); /* Texto escuro para item ativo */
+  font-weight: 600;
 }
 
 .sei-menu li a i {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   width: 20px;
   text-align: center;
-  opacity: 0.9;
+}
+
+.sei-menu li a span {
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
 
 /* ========================================
-   Submenu Styles
+   Collapsed State (Desktop)
    ======================================== */
-
-/* CSS-only arrow (font-independent) */
-.has-submenu > a::after {
-  content: '';
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  width: 0;
-  height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 5px solid currentColor; /* Use the link's color */
-  transform: translateY(-50%);
-  transition: transform 0.2s ease-in-out;
+.sei-sidebar.is-collapsed {
+  width: 80px;
+  min-width: 80px;
 }
 
-/* Rotate arrow when expanded */
-.has-submenu > a[aria-expanded="true"]::after {
-  transform: translateY(-50%) rotate(90deg);
+.sei-sidebar.is-collapsed + .sei-main-content {
+  padding-left: 80px;
 }
 
-/* Submenu container */
-.submenu {
-  list-style: none;
-  padding-left: 0;
-  margin-top: 0.3rem;
-  background: transparent;
-}
-
-.submenu.collapse:not(.show) {
-  display: none;
-}
-
-/* Submenu item links */
-.submenu li a {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem; /* Space between icon and text */
-  padding: 0.5rem 0.9rem;
-  padding-left: 2rem; /* Indent the whole item */
-  font-size: 0.9rem;
-  color: #bdcdca; /* Dimmed color for sub-items */
-}
-
-.submenu li a:hover,
-.submenu li.active a {
-  color: #fff;
-  background: none; /* No background change on submenu hover */
-}
-
-/* Style for submenu icons */
-.submenu li a i {
-  font-size: 1rem; /* Slightly smaller than main menu icons */
-  width: 20px;
-  text-align: center;
-  opacity: 0.8;
-}
-
-/* ========================================
-   Collapsed Sidebar Styles
-   ======================================== */
-
-.sei-sidebar {
-  transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out;
-}
-
-.sei-sidebar .sei-menu li a span {
-    transition: opacity 0.2s, width 0.2s;
-    white-space: nowrap;
-}
-
-.sei-sidebar.collapsed {
-  width: 70px; /* Width when collapsed */
-  min-width: 70px;
-}
-
-.sei-sidebar.collapsed .sei-menu-search {
-  display: none;
-}
-
-.sei-sidebar.collapsed .sei-menu li a span {
-  opacity: 0;
-  width: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.sei-sidebar.collapsed .sei-menu li a {
+.sei-sidebar.is-collapsed .sidebar-header {
   justify-content: center;
 }
 
-.sei-sidebar.collapsed .has-submenu > a::after {
-  display: none;
+.sei-sidebar.is-collapsed .sidebar-header img {
+  margin-right: 0;
 }
 
-/* --- Temporary expansion on hover when collapsed --- */
-.sei-sidebar.collapsed:hover {
-  width: 230px;
-  min-width: 230px;
+.sei-sidebar.is-collapsed .sidebar-header span,
+.sei-sidebar.is-collapsed .sei-menu li a span {
+  opacity: 0;
+  width: 0;
+  pointer-events: none;
 }
 
-.sei-sidebar.collapsed:hover .sei-menu-search {
-  display: block;
+.sei-sidebar.is-collapsed .sei-menu li a {
+  justify-content: center;
 }
 
-.sei-sidebar.collapsed:hover .sei-menu li a span {
-  opacity: 1;
-  width: auto;
-  overflow: visible;
-  pointer-events: auto;
-}
+/* ========================================
+   Responsive State (Mobile)
+   ======================================== */
+@media (max-width: 992px) {
+  .sei-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
 
-.sei-sidebar.collapsed:hover .sei-menu li a {
-  justify-content: flex-start; /* Return to default alignment */
-}
+  .sei-sidebar.is-open {
+    transform: translateX(0);
+    box-shadow: 0 0 2rem rgba(0,0,0,0.15);
+  }
 
-.sei-sidebar.collapsed:hover .has-submenu > a::after {
-  display: block;
+  .sei-main-content {
+    padding-left: 0;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1005;
+    display: none;
+  }
+
+  .sidebar-overlay.is-visible {
+    display: block;
+  }
 }

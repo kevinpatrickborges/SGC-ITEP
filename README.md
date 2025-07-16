@@ -3,7 +3,7 @@
 Sistema de Gestão Documental para o Instituto Técnico-Científico de Perícia.
 
 ## Descrição
-O SGC-ITEP é um sistema web para a gestão de documentos do ITEP, com foco inicial no desarquivamento de prontuários do NUGECID e na gestão da custódia de vestígios.
+O SGC-ITEP é um sistema web para a gestão de documentos do ITEP, com foco inicial no desarquivamento de prontuários do NUGECID.
 
 ## Como rodar localmente
 1. Instale Node.js (recomendado 18+)
@@ -40,7 +40,7 @@ O SGC-ITEP é um sistema web para a gestão de documentos do ITEP, com foco inic
 
 ## Funcionalidades
 - **Gestão de Desarquivamento (NUGECID):**
-  - Registrar pedidos de desarquivamento de prontuários.
+  - Registrar pedidos de desarquivamento de prontuários como em planilha.
   - Controlar status do pedido (solicitado, em posse, devolvido).
   - Registrar motivo e solicitante.
   - Visualizar lista de pedidos.
@@ -58,7 +58,6 @@ O SGC-ITEP é um sistema web para a gestão de documentos do ITEP, com foco inic
   - Dashboard estatístico.
   - API RESTful versionada (`/api/v1`) com autenticação JWT.
   - Logs de auditoria de ações críticas.
-  - Internacionalização (pt-BR/en-US).
 
 ---
 

@@ -10,7 +10,8 @@ async function lerXLSX(buffer) {
   await workbook.xlsx.load(buffer);
   const worksheet = workbook.worksheets[0];
   const jsonData = [];
-  const headers = worksheet.getRow(1).values.filter(Boolean); // Filtra valores nulos/vazios
+  // Normaliza os cabeçalhos removendo espaços em branco e filtra valores vazios
+  const headers = worksheet.getRow(1).values.map(h => (typeof h === 'string' ? h.trim() : h)).filter(Boolean);
 
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber > 1) { // Ignora o cabeçalho
@@ -64,7 +65,27 @@ async function escreverXLSX(data, columns) {
   return buffer;
 }
 
+/**
+ * Mapeia as colunas de um array de registros para novos nomes de chave.
+ * @param {Array<Object>} registros O array de registros da planilha.
+ * @param {Object} mapeamento Um objeto onde as chaves são os nomes das colunas na planilha e os valores são os novos nomes de chave.
+ * @returns {Array<Object>} Um novo array de registros com as chaves mapeadas.
+ */
+function mapearColunas(registros, mapeamento) {
+  return registros.map(registro => {
+    const novoRegistro = {};
+    for (const chaveOriginal in registro) {
+      if (mapeamento[chaveOriginal]) {
+        const novaChave = mapeamento[chaveOriginal];
+        novoRegistro[novaChave] = registro[chaveOriginal];
+      }
+    }
+    return novoRegistro;
+  });
+}
+
 module.exports = {
   lerXLSX,
-  escreverXLSX
+  escreverXLSX,
+  mapearColunas
 };

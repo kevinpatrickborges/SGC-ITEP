@@ -1,13 +1,15 @@
-<link rel="stylesheet" href="/css/sidebar.css">
 <nav class="sei-sidebar">
-  <input type="text" class="sei-menu-search" placeholder="Pesquisar no Menu">
+  <div class="sidebar-header">
+    <img src="/img/itep_logo.png" alt="ITEP Logo">
+    <span>SGC-ITEP</span>
+  </div>
   <ul class="sei-menu">
     <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> <span>Painel de Controle</span></a></li>
     <li class="has-submenu">
-      <a href="#" role="button" data-bs-toggle="collapse" data-bs-target="#nugecidSubmenu" aria-expanded="true" aria-controls="nugecidSubmenu">
+      <a href="#" role="button" data-bs-toggle="collapse" data-bs-target="#nugecidSubmenu" aria-expanded="false" aria-controls="nugecidSubmenu">
         <i class="bi bi-archive"></i> <span>NUGECID</span>
       </a>
-      <ul class="collapse show submenu" id="nugecidSubmenu">
+      <ul class="collapse submenu" id="nugecidSubmenu">
         <li><a href="/nugecid/desarquivamento"><i class="bi bi-file-earmark-zip"></i> <span>Desarquivamento</span></a></li>
       </ul>
     </li>
@@ -15,6 +17,5 @@
     <li><a href="/relatorios"><i class="bi bi-bar-chart-line"></i> <span>Relatórios</span></a></li>
     <li><a href="/importacao/importacao"><i class="bi bi-upload"></i> <span>Importação</span></a></li>
     <li><a href="/sobre"><i class="bi bi-info-circle"></i> <span>Sobre</span></a></li>
-    <li><a href="/auth/logout"><i class="bi bi-box-arrow-right"></i> <span>Sair</span></a></li>
   </ul>
 </nav>

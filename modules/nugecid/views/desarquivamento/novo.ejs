@@ -1,0 +1,86 @@
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Novo Desarquivamento</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Detalhes do Registro</h6>
+        </div>
+        <div class="card-body">
+            <form action="/nugecid/desarquivamento" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="nomeCompleto">Nome Completo</label>
+                        <input type="text" id="nomeCompleto" name="nomeCompleto" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label for="solicitacao">Tipo de Solicitação</label>
+                        <select id="solicitacao" name="solicitacao" class="form-control">
+                            <option value="Físico">Físico</option>
+                            <option value="Digital">Digital</option>
+                            <option value="Não Localizado">Não Localizado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="numNic">Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA</label>
+                        <input type="text" id="numNic" name="numNic" class="form-control">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label for="numProcesso">Nº do Processo</label>
+                        <input type="text" id="numProcesso" name="numProcesso" class="form-control">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="tipoDocumento">Tipo de Documento</label>
+                        <input type="text" id="tipoDocumento" name="tipoDocumento" class="form-control">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label for="setorDemandante">Setor Demandante</label>
+                        <input type="text" id="setorDemandante" name="setorDemandante" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="dataSolicitacao">Data de Solicitação</label>
+                        <input type="date" id="dataSolicitacao" name="dataSolicitacao" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label for="servidorResponsavel">Servidor Responsável (Matrícula)</label>
+                        <input type="text" id="servidorResponsavel" name="servidorResponsavel" class="form-control">
+                    </div>
+                </div>
+
+                <hr>
+                <h6 class="text-muted">Campos Opcionais (Pós-Criação)</h6>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="dataDesarquivamento">Data de Desarquivamento (SAG)</label>
+                        <input type="date" id="dataDesarquivamento" name="dataDesarquivamento" class="form-control">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label for="dataDevolucao">Data de Devolução pelo Setor</label>
+                        <input type="date" id="dataDevolucao" name="dataDevolucao" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="solicitacaoProrrogacao">Solicitação de Prorrogação de Prazo</label>
+                    <textarea id="solicitacaoProrrogacao" name="solicitacaoProrrogacao" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <a href="/nugecid/desarquivamento" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

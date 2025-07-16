@@ -1,34 +1,261 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Lista de Desarquivamentos</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <h1>Lista de Desarquivamentos</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nome Completo</th>
-                <th>Número do Documento</th>
-                <th>Status</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% desarquivamentos.forEach(function(desarquivamento) { %>
-                <tr>
-                    <td><%= desarquivamento.id %></td>
-                    <td><%= desarquivamento.nomeCompleto %></td>
-                    <td><%= desarquivamento.numDocumento %></td>
-                    <td><%= desarquivamento.status %></td>
-                    <td>
-                        <a href="/nugecid/desarquivamento/<%= desarquivamento.id %>">Detalhes</a>
-                    </td>
-                </tr>
-            <% }); %>
-        </tbody>
-    </table>
-</body>
-</html>
+<style>
+    /* Garante que a tabela tenha uma aparência de planilha com bordas visíveis */
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #e3e6f0; /* Cor da borda padrão do tema */
+    }
+
+    /* Estilo para o link clicável no nome */
+    .link-discreto {
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .link-discreto:hover {
+        text-decoration: underline;
+    }
+</style>
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Desarquivamentos</h1>
+
+    <!-- Formulário de Pesquisa Recolhível -->
+    <div class="card shadow mb-4">
+<%
+    // Verifica se algum filtro está ativo para decidir se o painel deve iniciar aberto
+    const isActive = (typeof search !== 'undefined' && search) ||
+                     (typeof numDocumento !== 'undefined' && numDocumento) ||
+                     (typeof status !== 'undefined' && status) ||
+                     (typeof dataInicio !== 'undefined' && dataInicio) ||
+                     (typeof dataFim !== 'undefined' && dataFim);
+%>
+        <a href="#collapseCardFiltros" data-bs-toggle="collapse" role="button" aria-expanded="<%= isActive ? 'true' : 'false' %>" aria-controls="collapseCardFiltros" class="d-block card-header py-3 text-decoration-none">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-filter"></i> Filtros de Pesquisa
+                </h6>
+                <i class="fas <%= isActive ? 'fa-chevron-up' : 'fa-chevron-down' %> text-primary"></i>
+            </div>
+        </a>
+        <div class="collapse <%= isActive ? 'show' : '' %>" id="collapseCardFiltros">
+            <div class="card-body">
+                <form action="/nugecid/desarquivamento" method="GET">
+                    <div class="row">
+                        <div class="col-md-4 form-group">
+                            <label for="search">Nome Completo</label>
+                            <input type="text" id="search" name="search" class="form-control" placeholder="Pesquisar por nome..." value="<%= typeof search !== 'undefined' ? search : '' %>">
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label for="numDocumento">Número do Documento</label>
+                            <input type="text" id="numDocumento" name="numDocumento" class="form-control" placeholder="Pesquisar por número..." value="<%= typeof numDocumento !== 'undefined' ? numDocumento : '' %>">
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label for="status">Status</label>
+                            <select id="status" name="status" class="form-control">
+                                <option value="">Todos os Status</option>
+                                <% 
+                                    const statusOptionsFiltro = [
+                                        'Finalizado', 'Desarquivado', 'Não coletado', 'Solicitado', 
+                                        'Rearquivamento solicitado', 'Retirado pelo setor', 'Não localizado'
+                                    ];
+                                    statusOptionsFiltro.forEach(option => { %>
+                                        <option value="<%= option %>" <%= typeof status !== 'undefined' && status === option ? 'selected' : '' %>>
+                                            <%= option %>
+                                        </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 form-group">
+                            <label for="dataInicio">Data de Solicitação (Início)</label>
+                            <input type="date" id="dataInicio" name="dataInicio" class="form-control" value="<%= typeof dataInicio !== 'undefined' ? dataInicio : '' %>">
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label for="dataFim">Data de Solicitação (Fim)</label>
+                            <input type="date" id="dataFim" name="dataFim" class="form-control" value="<%= typeof dataFim !== 'undefined' ? dataFim : '' %>">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Pesquisar
+                            </button>
+                            <a href="/nugecid/desarquivamento" class="btn btn-secondary">
+                                <i class="fas fa-eraser"></i> Limpar Filtros
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Lista de Desarquivamentos</h6>
+            <div class="btn-toolbar" role="toolbar">
+                <div class="btn-group me-2" role="group">
+                    <a href="/api/export/desarquivamentos/excel" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </a>
+                    <a href="/api/export/desarquivamentos/pdf" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </a>
+                </div>
+                <div class="btn-group me-2" role="group">
+                    <a href="/nugecid/desarquivamento/importar" class="btn btn-success btn-sm">
+                        <i class="fas fa-file-import"></i> Importar Planilha
+                    </a>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="/nugecid/desarquivamento/novo" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Novo
+                </a>
+                    <a href="/nugecid/desarquivamento/lixeira" class="btn btn-warning btn-sm">
+                        <i class="fas fa-trash"></i> Lixeira
+                    </a>
+                    <% if (user && user.role === 'admin') { %>
+                        <form id="deleteAllForm" action="/nugecid/desarquivamento/delete-all?_method=POST" method="POST" style="display: inline;">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">
+                                <i class="fas fa-exclamation-triangle"></i> Excluir Todos
+                            </button>
+                        </form>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Nome Completo</th>
+                            <th>Número do Documento</th>
+                            <th>Setor Demandante</th>
+                            <th>Data da Solicitação</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (typeof desarquivamentos !== 'undefined' && desarquivamentos.length > 0) { %>
+                            <% 
+                                const statusOptions = [
+                                    'Finalizado', 'Desarquivado', 'Não coletado', 'Solicitado', 
+                                    'Rearquivamento solicitado', 'Retirado pelo setor', 'Não localizado'
+                                ];
+                            %>
+                            <% desarquivamentos.forEach(function(desarquivamento) { 
+                                let dataSolicitacaoFormatada = 'N/A';
+                                if (desarquivamento.dataSolicitacao) {
+                                    const data = new Date(desarquivamento.dataSolicitacao);
+                                    const dia = String(data.getUTCDate()).padStart(2, '0');
+                                    const mes = String(data.getUTCMonth() + 1).padStart(2, '0');
+                                    const ano = data.getUTCFullYear();
+                                    dataSolicitacaoFormatada = `${dia}/${mes}/${ano}`;
+                                }
+                            %>
+                                <tr>
+                                    <td>
+                                        <a href="/nugecid/desarquivamento/<%= desarquivamento.id %>" class="link-discreto">
+                                            <%= desarquivamento.nomeCompleto || 'N/A' %>
+                                        </a>
+                                    </td>
+                                    <td><%= desarquivamento.numDocumento || 'N/A' %></td>
+                                    <td><%= desarquivamento.setorDemandante || 'N/A' %></td>
+                                    <td><%= dataSolicitacaoFormatada %></td>
+                                    <td>
+                                        <form action="/nugecid/desarquivamento/<%= desarquivamento.id %>/status" method="POST" class="form-inline">
+                                            <select name="status" class="form-control form-control-sm" onchange="this.form.submit()">
+                                                <% statusOptions.forEach(option => { %>
+                                                    <option value="<%= option %>" <%= desarquivamento.status === option ? 'selected' : '' %>>
+                                                        <%= option %>
+                                                    </option>
+                                                <% }); %>
+                                            </select>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <a href="/nugecid/desarquivamento/<%= desarquivamento.id %>" class="btn btn-info btn-circle btn-sm" title="Detalhes">
+                                            <i class="fas fa-info-circle"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-danger btn-circle btn-sm" title="Mover para Lixeira" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-id="<%= desarquivamento.id %>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" class="text-center">Nenhum desarquivamento encontrado.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Para confirmar a exclusão, por favor, insira sua senha.</p>
+                <form id="deleteForm" method="POST">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('deleteForm').submit();">Confirmar Exclusão</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Script do colapso dos filtros
+    const collapseElement = document.getElementById('collapseCardFiltros');
+    const icon = document.querySelector('a[href="#collapseCardFiltros"] .fas');
+
+    if (collapseElement && icon) {
+        collapseElement.addEventListener('show.bs.collapse', function () {
+            icon.classList.remove('fa-chevron-down').addClass('fa-chevron-up');
+        });
+        collapseElement.addEventListener('hide.bs.collapse', function () {
+            icon.classList.remove('fa-chevron-up').addClass('fa-chevron-down');
+        });
+    }
+
+    // Script da modal de exclusão
+    const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+    if (confirmDeleteModal) {
+        confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const form = document.getElementById('deleteForm');
+            form.action = `/nugecid/desarquivamento/${id}?_method=DELETE`;
+        });
+    }
+});
+
+function confirmDeleteAll() {
+    if (confirm('ATENÇÃO: Esta ação é irreversível e excluirá TODOS os registros de desarquivamento. Deseja continuar?')) {
+        document.getElementById('deleteAllForm').submit();
+    }
+}
+</script>

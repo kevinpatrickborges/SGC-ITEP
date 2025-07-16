@@ -1,0 +1,68 @@
+'use strict';
+
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    const transaction = await queryInterface.sequelize.transaction();
+    try {
+      // Renomear a tabela original
+      await queryInterface.sequelize.query('ALTER TABLE Desarquivamentos RENAME TO Desarquivamentos_old;', { transaction });
+
+      // Criar a nova tabela com a estrutura correta (sem o UNIQUE em numDocumento)
+      await queryInterface.sequelize.query(`
+        CREATE TABLE Desarquivamentos (
+          id UUID PRIMARY KEY,
+          tipoDesarquivamento TEXT CHECK(tipoDesarquivamento IN ('Físico', 'Digital', 'Não Localizado')) NOT NULL,
+          status TEXT CHECK(status IN ('Finalizado', 'Desarquivado', 'Não coletado', 'Solicitado', 'Rearquivamento solicitado', 'Retirado pelo setor', 'Não localizado')) DEFAULT 'Solicitado',
+          nomeCompleto TEXT NOT NULL,
+          numDocumento TEXT NOT NULL,
+          numProcesso TEXT,
+          tipoDocumento TEXT,
+          dataSolicitacao DATETIME NOT NULL,
+          dataDesarquivamento DATETIME,
+          dataDevolucao DATETIME,
+          setorDemandante TEXT NOT NULL,
+          servidorResponsavel TEXT,
+          finalidade TEXT,
+          prazoSolicitado TEXT,
+          dataPrazoDevolucao DATETIME,
+          createdBy INTEGER REFERENCES Usuarios(id),
+          updatedBy INTEGER REFERENCES Usuarios(id),
+          createdAt DATETIME NOT NULL,
+          updatedAt DATETIME NOT NULL,
+          deletedAt DATETIME
+        );
+      `, { transaction });
+
+      // Copiar os dados da tabela antiga para a nova
+      await queryInterface.sequelize.query('INSERT INTO Desarquivamentos SELECT * FROM Desarquivamentos_old;', { transaction });
+
+      // Criar o índice parcial (UNIQUE apenas para registros não deletados)
+      await queryInterface.sequelize.query('CREATE UNIQUE INDEX idx_desarquivamentos_numDocumento_active ON Desarquivamentos(numDocumento) WHERE deletedAt IS NULL;', { transaction });
+
+      // Remover a tabela antiga
+      await queryInterface.sequelize.query('DROP TABLE Desarquivamentos_old;', { transaction });
+
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  },
+
+  async down(queryInterface, Sequelize) {
+    const transaction = await queryInterface.sequelize.transaction();
+    try {
+      // O downgrade é complexo e arriscado, então vamos apenas remover o índice parcial
+      // e o usuário pode restaurar um backup se necessário.
+      await queryInterface.sequelize.query('DROP INDEX IF EXISTS idx_desarquivamentos_numDocumento_active;', { transaction });
+      
+      // Idealmente, recriaríamos a tabela com o UNIQUE, mas isso é destrutivo.
+      // Esta abordagem é mais segura para um downgrade.
+      
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+};

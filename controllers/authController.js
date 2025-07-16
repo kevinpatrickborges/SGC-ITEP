@@ -84,14 +84,22 @@ exports.postLogin = async (req, res) => {
   console.log('Usuário encontrado:', user);
 
   if (!user || !user.senha) {
-    return res.render('auth/login', { error_msg: 'Usuário não encontrado.', layout: 'login_layout' });
+    return res.render('auth/login', { 
+      error_msg: 'Usuário não encontrado.', 
+      layout: 'login_layout',
+      matricula: matricula || '' // Preserva o valor digitado
+    });
   }
 
   const senhaCorreta = await bcrypt.compare(senha || '', user.senha);
   console.log('Senha correta?', senhaCorreta);
 
   if (!senhaCorreta) {
-    return res.render('auth/login', { error_msg: 'Senha incorreta.', layout: 'login_layout' });
+    return res.render('auth/login', { 
+      error_msg: 'Senha incorreta.', 
+      layout: 'login_layout',
+      matricula: matricula || '' // Preserva o valor digitado
+    });
   }
 
   req.session.user = {

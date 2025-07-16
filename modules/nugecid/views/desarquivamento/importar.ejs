@@ -1,0 +1,75 @@
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Importar Desarquivamentos</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Upload de Planilha (.xlsx)</h6>
+        </div>
+        <div class="card-body">
+            <% if (mensagem) { %>
+                <div class="alert alert-success"><%= mensagem %></div>
+            <% } %>
+            <% if (erros && erros.length > 0) { %>
+                <div class="alert alert-danger">
+                    <ul>
+                        <% erros.forEach(function(erro) { %>
+                            <li><%= erro %></li>
+                        <% }); %>
+                    </ul>
+                </div>
+            <% } %>
+
+            <form action="/nugecid/desarquivamento/importar/preview" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="form-group">
+                    <label for="planilha">Selecione a planilha:</label>
+                    <input type="file" name="planilha" id="planilha" class="form-control" accept=".xlsx" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-eye"></i> Visualizar Importação
+                </button>
+                <a href="/nugecid/desarquivamento" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <% if (preview && preview.length > 0) { %>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Pré-visualização dos Dados</h6>
+            </div>
+            <div class="card-body">
+                <p>Abaixo estão todos os dados da sua planilha. Se estiverem corretos, confirme a importação.</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <% Object.keys(preview[0]).forEach(function(header) { %>
+                                    <th><%= header %></th>
+                                <% }); %>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% preview.forEach(function(row) { %>
+                                <tr>
+                                    <% Object.values(row).forEach(function(value) { %>
+                                        <td><%= value %></td>
+                                    <% }); %>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                <form action="/nugecid/desarquivamento/importar/confirmar" method="POST">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="arquivoTemp" value="<%= arquivoTemp %>">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Confirmar Importação
+                    </button>
+                </form>
+            </div>
+        </div>
+    <% } %>
+</div>

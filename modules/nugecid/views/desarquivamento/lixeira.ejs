@@ -1,75 +1,56 @@
-<%# views/nugecid/desarquivamento/lixeira.ejs %>
 <div class="container-fluid">
-    <h1 class="mt-4"><%= title %></h1>
-    <p>Registros de desarquivamento excluídos (lixeira).</p>
+    <h1 class="h3 mb-4 text-gray-800">Lixeira de Desarquivamentos</h1>
 
-    <% if (success_msg && success_msg.length > 0) { %>
-      <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <%= success_msg %>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-      </div>
-    <% } %>
-    <% if (error_msg && error_msg.length > 0) { %>
-      <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <%= error_msg %>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-      </div>
-    <% } %>
-
-    <div class="d-flex justify-content-end mb-3">
-        <a href="/nugecid/desarquivamento" class="btn btn-secondary me-2">
-            <i class="fas fa-arrow-left me-1"></i> Voltar para Desarquivamentos
-        </a>
-        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalEsvaziarLixeira">
-            <i class="fas fa-trash-alt me-1"></i> Esvaziar Lixeira
-        </button>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header">
-            <i class="fas fa-table me-1"></i>
-            Itens na Lixeira
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Itens Excluídos</h6>
+            <div>
+                <% if (typeof desarquivamentos !== 'undefined' && desarquivamentos.length > 0) { %>
+                    <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#esvaziarLixeiraModal">
+                        <i class="fas fa-trash-alt"></i> Esvaziar Lixeira
+                    </button>
+                <% } %>
+                <a href="/nugecid/desarquivamento" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> Voltar para a Lista
+                </a>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover table-sm">
-                    <thead class="table-light">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
                         <tr>
-                            <th class="text-center">Nº Documento</th>
-                            <th class="text-center">Nome Completo</th>
-                            <th class="text-center">Setor Demandante</th>
-                            <th class="text-center">Data Exclusão</th>
-                            <th class="text-center">Ações</th>
+                            <th>ID</th>
+                            <th>Nome Completo</th>
+                            <th>Data da Exclusão</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <% if (lixeira.length === 0) { %>
-                            <tr>
-                                <td colspan="5" class="text-center">Nenhum item na lixeira.</td>
-                            </tr>
-                        <% } else { %>
-                            <% lixeira.forEach(item => { %>
+                        <% if (typeof desarquivamentos !== 'undefined' && desarquivamentos.length > 0) { %>
+                            <% desarquivamentos.forEach(function(desarquivamento) { %>
                                 <tr>
-                                    <td class="align-middle"><%= item.numDocumento %></td>
-                                    <td class="align-middle"><%= item.nomeCompleto %></td>
-                                    <td class="align-middle"><%= item.setorDemandante %></td>
-                                    <td class="align-middle text-center"><%= new Date(item.deletedAt).toLocaleDateString('pt-BR') %></td>
-                                    <td class="text-center align-middle">
-                                        <form action="/nugecid/desarquivamento/<%= item.id %>/restaurar" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja restaurar este registro?');">
+                                    <td><%= desarquivamento.id %></td>
+                                    <td><%= desarquivamento.nomeCompleto || 'N/A' %></td>
+                                    <td><%= new Date(desarquivamento.deletedAt).toLocaleDateString('pt-BR') %></td>
+                                    <td>
+                                        <form action="/nugecid/desarquivamento/<%= desarquivamento.id %>/restaurar?_method=POST" method="POST" style="display: inline;">
                                             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                            <button type="submit" class="btn btn-sm btn-success" title="Restaurar">
-                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            <button type="submit" class="btn btn-success btn-circle btn-sm" title="Restaurar">
+                                                <i class="fas fa-undo"></i>
                                             </button>
                                         </form>
-                                        <form action="/nugecid/desarquivamento/<%= item.id %>/excluir-permanente" method="POST" style="display:inline; margin-left: 5px;" onsubmit="return confirm('Tem certeza que deseja EXCLUIR PERMANENTEMENTE este registro? Esta ação é irreversível!');">
-                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                            <button type="button" class="btn btn-sm btn-danger" title="Excluir Permanentemente" data-bs-toggle="modal" data-bs-target="#modalExcluirPermanente" data-id="<%= item.id %>">
-                                                <i class="bi bi-x-circle"></i>
-                                            </button>
-                                        </form>
+                                        <button type="button" class="btn btn-danger btn-circle btn-sm" title="Excluir Permanentemente"
+                                                onclick="abrirModalExclusao('<%= desarquivamento.id %>')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" class="text-center">A lixeira está vazia.</td>
+                            </tr>
                         <% } %>
                     </tbody>
                 </table>
@@ -78,78 +59,68 @@
     </div>
 </div>
 
-<!-- Modal para Exclusão Permanente Individual -->
-<div class="modal fade" id="modalExcluirPermanente" tabindex="-1" aria-labelledby="modalExcluirPermanenteLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="formExcluirPermanente" method="POST">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalExcluirPermanenteLabel">Confirmar Exclusão Permanente</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+<!-- Modal de Confirmação para Esvaziar Lixeira -->
+<div class="modal fade" id="esvaziarLixeiraModal" tabindex="-1" role="dialog" aria-labelledby="esvaziarLixeiraModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="esvaziarLixeiraModalLabel">Confirmar Esvaziar Lixeira</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="/nugecid/desarquivamento/lixeira/esvaziar" method="POST">
+                <div class="modal-body">
+                    <p>Para confirmar que deseja esvaziar a lixeira, por favor, insira sua senha. <strong>Esta ação é irreversível.</strong></p>
+                    <input type="hidden" name="_method" value="POST">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="form-group">
+                        <label for="passwordEsvaziar">Senha</label>
+                        <input type="password" class="form-control" id="passwordEsvaziar" name="password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Esvaziar Lixeira</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-body">
-          <p>Esta ação irá EXCLUIR PERMANENTEMENTE este registro da lixeira. Esta ação é irreversível.</p>
-          <p>Para confirmar, digite o usuário (email ou matrícula) e senha de um usuário administrador:</p>
-          <div class="mb-3">
-            <label for="usuarioAdminPerm" class="form-label">Usuário do Administrador</label>
-            <input type="text" class="form-control" id="usuarioAdminPerm" name="usuarioAdmin" required>
-          </div>
-          <div class="mb-3">
-            <label for="senhaAdminPerm" class="form-label">Senha do Administrador</label>
-            <input type="password" class="form-control" id="senhaAdminPerm" name="senhaAdmin" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-danger">Excluir Permanentemente</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
 
-<!-- Modal para Esvaziar Lixeira -->
-<div class="modal fade" id="modalEsvaziarLixeira" tabindex="-1" aria-labelledby="modalEsvaziarLixeiraLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form action="/nugecid/desarquivamento/esvaziar-lixeira" method="POST">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalEsvaziarLixeiraLabel">Esvaziar Lixeira</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="exclusaoModal" tabindex="-1" role="dialog" aria-labelledby="exclusaoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exclusaoModalLabel">Confirmar Exclusão Permanente</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="formExclusao" method="POST">
+                <div class="modal-body">
+                    <p>Para confirmar a exclusão permanente deste item, por favor, insira sua senha.</p>
+                    <input type="hidden" name="_method" value="DELETE">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Excluir Permanentemente</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-body">
-          <p>Esta ação irá EXCLUIR PERMANENTEMENTE TODOS os registros da lixeira. Esta ação é irreversível.</p>
-          <p>Para confirmar, digite o usuário (email ou matrícula) e senha de um usuário administrador:</p>
-          <div class="mb-3">
-            <label for="usuarioAdmin" class="form-label">Usuário do Administrador</label>
-            <input type="text" class="form-control" id="usuarioAdmin" name="usuarioAdmin" required>
-          </div>
-          <div class="mb-3">
-            <label for="senhaAdmin" class="form-label">Senha do Administrador</label>
-            <input type="password" class="form-control" id="senhaAdmin" name="senhaAdmin" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-danger">Esvaziar Lixeira Permanentemente</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const modalExcluirPermanente = document.getElementById('modalExcluirPermanente');
-    if (modalExcluirPermanente) {
-      modalExcluirPermanente.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget; // Botão que acionou o modal
-        const id = button.getAttribute('data-id');
-        const form = document.getElementById('formExcluirPermanente');
-        form.action = `/nugecid/desarquivamento/${id}/excluir-permanente`;
-      });
-    }
-  });
+function abrirModalExclusao(id) {
+    const form = document.getElementById('formExclusao');
+    form.action = `/nugecid/desarquivamento/${id}/force`;
+    $('#exclusaoModal').modal('show');
+}
 </script>

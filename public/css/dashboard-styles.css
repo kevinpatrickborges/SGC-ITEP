@@ -4,9 +4,9 @@ html, body, html {
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  background: #f4f6fa;
+  background: var(--neutral-50);
   font-family: 'Segoe UI', Arial, sans-serif;
-  color: #222;
+  color: var(--neutral-900);
 }
 
 .sei-app-wrapper {
@@ -27,6 +27,8 @@ html, body, html {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  margin-left: 230px;
+  transition: margin-left 0.3s ease-in-out;
 }
 
 
@@ -52,7 +54,7 @@ html, body, html {
 
 .sei-content {
   flex: 1;
-  background: #f4f6fa;
+  background: var(--neutral-50);
   padding: 2.2rem 2.5rem 1.5rem 2.5rem;
   min-width: 0;
   display: flex;
@@ -63,7 +65,7 @@ html, body, html {
   font-size: 1.4rem;
   font-weight: 600;
   margin-bottom: 1.2rem;
-  color: #0076bf;
+  color: var(--primary-700);
 }
 
 .sei-actions {
@@ -73,8 +75,8 @@ html, body, html {
 }
 
 .sei-action-btn {
-  background: #e3eaf5;
-  color: #0076bf;
+  background: var(--primary-100);
+  color: var(--primary-600);
   border: none;
   border-radius: 0.3rem;
   padding: 0.5rem 1.2rem;
@@ -86,7 +88,7 @@ html, body, html {
   transition: background 0.15s, color 0.15s;
 }
 .sei-action-btn:hover {
-  background: #0076bf;
+  background: var(--primary-500);
   color: #fff;
 }
 
@@ -108,7 +110,7 @@ html, body, html {
   align-items: center;
 }
 .sei-card-title {
-  color: #0076bf;
+  color: var(--primary-600);
   font-size: 1.1rem;
   font-weight: 500;
   margin-bottom: 0.4rem;
@@ -116,7 +118,7 @@ html, body, html {
 .sei-card-value {
   font-size: 2rem;
   font-weight: bold;
-  color: #233045;
+  color: var(--neutral-900);
 }
 
 .sei-table-section {
@@ -128,7 +130,7 @@ html, body, html {
 }
 .sei-table-title {
   font-weight: 600;
-  color: #0076bf;
+  color: var(--primary-700);
   margin-bottom: 0.7rem;
 }
 .sei-table {
@@ -139,31 +141,27 @@ html, body, html {
 }
 .sei-table th, .sei-table td {
   padding: 0.5rem 0.7rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--neutral-200);
   text-align: left;
 }
 .sei-table th {
-  background: #e3eaf5;
-  color: #233045;
+  background: var(--primary-50);
+  color: var(--primary-800);
   font-weight: 600;
 }
 .sei-table tr:last-child td {
   border-bottom: none;
 }
 .sei-status-recebido {
-  color: #388e3c;
+  color: var(--success-700);
   font-weight: 600;
 }
 .sei-status-processo {
-  color: #e65100;
+  color: var(--warning-900);
   font-weight: 600;
 }
-.sei-main-content {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: #f8f9fa;
+.sei-main-content.collapsed {
+  margin-left: 70px;
 }
 
 /* Responsividade */

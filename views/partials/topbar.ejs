@@ -1,36 +1,21 @@
-<link rel="stylesheet" href="/css/topbar.css">
 <header class="sei-topbar">
-  <div class="sei-logo topbar-left">
-    <button id="sidebar-toggle" class="btn btn-link text-white me-2">
+  <div class="topbar-left">
+    <!-- Botão para encolher/expandir em Desktop -->
+    <button class="sidebar-desktop-toggle sidebar-toggle-btn d-none d-lg-block" type="button">
       <i class="bi bi-list"></i>
     </button>
-    <img src="/img/itep_logo.png" alt="ITEP" height="32">
-    <span>NUGECID - ITEP</span>
+    <!-- Botão para abrir/fechar em Mobile -->
+    <button class="sidebar-mobile-toggle sidebar-toggle-btn d-lg-none" type="button">
+      <i class="bi bi-list"></i>
+    </button>
   </div>
   <div class="sei-topbar-right">
-    <a href="/usuarios/perfil" class="sei-user"><i class="bi bi-person-circle"></i> <%= currentUser ? currentUser.nome : 'Usuário' %></a>
-    <a href="/auth/logout" class="sei-logout" title="Sair"><i class="bi bi-box-arrow-right"></i></a>
+    <a href="/usuarios/perfil" class="sei-user">
+      <i class="bi bi-person-circle"></i> 
+      <span><%= currentUser ? currentUser.nome : 'Usuário' %></span>
+    </a>
+    <a href="/auth/logout" class="sei-logout" title="Sair">
+      <i class="bi bi-box-arrow-right"></i>
+    </a>
   </div>
 </header>
-
-<!-- Ícones da Topbar -->
-<div class="ms-auto d-flex align-items-center">
-  <!-- Ícone de Notificações -->
-  <div class="nav-item">
-    <a class="nav-link" id="notification-bell" href="#" role="button" title="Ativar notificações">
-      <i class="fas fa-bell"></i>
-    </a>
-  </div>
-  
-  <!-- Menu do Usuário -->
-  <div class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" id="navbarDropdownUser" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-      <i class="fas fa-user fa-fw"></i>
-    </a>
-    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownUser">
-      <li><a class="dropdown-item" href="/usuarios/perfil">Perfil</a></li>
-      <li><hr class="dropdown-divider" /></li>
-      <li><a class="dropdown-item" href="/auth/logout">Sair</a></li>
-    </ul>
-  </div>
-</div>

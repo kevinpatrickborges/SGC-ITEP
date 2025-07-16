@@ -1,121 +1,125 @@
-<div class="sei-content">
-  <div class="dashboard-container">
-  <h2 class="dashboard-title">Dashboard Analítico</h2>
-  <p class="dashboard-subtitle">Visão geral do sistema de gestão de desarquivamentos</p>
-  
-  <!-- Cards de estatísticas -->
-  <div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-4">
-      <div class="stat-card card-primary">
-        <i class="bi bi-box-seam card-icon"></i>
-        <div class="card-title">Total de Registros</div>
-        <div class="card-value" id="totalDesarquivamentos"><%= totalDesarquivamentos %></div>
-        <div class="card-description">Cadastrados no sistema</div>
-      </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-      <div class="stat-card card-success">
-        <i class="bi bi-shield-check card-icon"></i>
-        <div class="card-title">Em Posse</div>
-        <div class="card-value" id="desarquivamentosEmPosse"><%= desarquivamentosEmPosse %></div>
-        <div class="card-description">Registros em posse</div>
-      </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-      <div class="stat-card card-warning">
-        <i class="bi bi-arrow-left-right card-icon"></i>
-        <div class="card-title">Solicitações Recentes</div>
-        <div class="card-value" id="solicitacoesRecentes"><%= solicitacoesRecentes %></div>
-        <div class="card-description">Últimos 30 dias</div>
-      </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-      <div class="stat-card card-danger">
-        <i class="bi bi-exclamation-triangle card-icon"></i>
-        <div class="card-title">Atenção Urgente</div>
-        <div class="card-value" id="vestigiosUrgentes"><%= vestigiosUrgentes %></div>
-        <div class="card-description">Requerem ação imediata</div>
-      </div>
-    </div>
-  </div>
-  
-  <div class="row">
-    <!-- Tabela de registros recentes -->
-    <div class="col-xl-8 col-lg-7">
-      <div class="chart-container h-100">
-        <h4 class="chart-title">Registros Recentes</h4>
-        <div class="table-responsive">
-          <table class="table recent-table">
-            <thead>
-              <tr>
-                <th>Nome Completo</th>
-                <th>Tipo de Documento</th>
-                <th>Nº Documento</th>
-                <th>Status</th>
-                <th>Data de Criação</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% if (registrosRecentes && registrosRecentes.length > 0) { %>
-                <% registrosRecentes.forEach(function(registro) { %>
-                  <tr>
-                    <td><a href="/desarquivamentos/<%= registro.id %>"><%= registro.nomeCompleto %></a></td>
-                    <td><%= registro.tipoDocumento %></td>
-                    <td><%= registro.numDocumento %></td>
-                    <td>
-                      <span class="status-badge status-<%= registro.status.toLowerCase().replace(' ', '-') %>"><%= registro.status %></span>
-                    </td>
-                    <td><%= new Date(registro.createdAt).toLocaleDateString('pt-BR') %></td>
-                  </tr>
-                <% }); %>
-              <% } else { %>
-                <tr>
-                  <td colspan="5" class="text-center">Nenhum registro encontrado</td>
-                </tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Seção de usuários ativos -->
-    <div class="col-xl-4 col-lg-5">
-      <div class="chart-container h-100">
-        <h4 class="chart-title">Usuários Ativos</h4>
-        <div class="card-value mb-3"><%= Object.values(usersByIp || {}).reduce((a,b) => a+b, 0) %> usuários online</div>
-        <div class="table-responsive">
-          <table class="table recent-table">
-            <thead>
-              <tr>
-                <th>IP</th>
-                <th>Usuários Ativos</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% Object.entries(usersByIp || {}).forEach(function([ip, count]) { %>
-                <tr>
-                  <td><%= (ip === '::1' || ip === '127.0.0.1') ? 'localhost' : ip %></td>
-                  <td><%= count %></td>
-                </tr>
-              <% }) %>
-              <% if (Object.keys(usersByIp || {}).length === 0) { %>
-                <tr>
-                  <td colspan="2" class="text-center">Nenhum usuário ativo</td>
-                </tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-  </div>
-</div>
+<div class="dashboard-container">
+    <h2 class="dashboard-title">Dashboard Analítico</h2>
+    <p class="dashboard-subtitle">Visão geral do sistema de gestão de desarquivamentos</p>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/js/dashboard.js"></script>
-<script src="/js/heartbeat.js"></script>
+    <!-- Cards de estatísticas minimalistas -->
+    <div class="row mb-4">
+      <div class="col-xl-3 col-md-6 mb-4">
+        <a href="/desarquivamentos" class="stat-card-link">
+          <div class="stat-card h-100">
+            <div class="card-body">
+              <div class="card-title">Total de Registros</div>
+              <div class="card-value"><%= totalDesarquivamentos %></div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-xl-3 col-md-6 mb-4">
+        <a href="/desarquivamentos?status=Em+Posse" class="stat-card-link">
+          <div class="stat-card h-100">
+            <div class="card-body">
+              <div class="card-title">Em Posse</div>
+              <div class="card-value"><%= desarquivamentosEmPosse %></div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-xl-3 col-md-6 mb-4">
+        <a href="/desarquivamentos?recent=true" class="stat-card-link">
+          <div class="stat-card h-100">
+            <div class="card-body">
+              <div class="card-title">Solicitações Recentes</div>
+              <div class="card-value"><%= solicitacoesRecentes %></div>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-xl-3 col-md-6 mb-4">
+        <a href="/desarquivamentos?status=Urgente" class="stat-card-link">
+          <div class="stat-card h-100">
+            <div class="card-body">
+              <div class="card-title">Atenção Urgente</div>
+              <div class="card-value"><%= vestigiosUrgentes %></div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Tabelas lado a lado -->
+    <div class="row">
+      <!-- Tabela de registros recentes -->
+      <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h4 class="card-title mb-0">Registros Recentes</h4>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover recent-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Nome Completo</th>
+                    <th>Nº Documento</th>
+                    <th>Status</th>
+                    <th>Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (registrosRecentes && registrosRecentes.length > 0) { %>
+                    <% registrosRecentes.forEach(function(registro) { %>
+                      <tr onclick="window.location='/desarquivamentos/<%= registro.id %>';" style="cursor: pointer;">
+                        <td><%= registro.nomeCompleto %></td>
+                        <td><%= registro.numDocumento %></td>
+                        <td><span class="badge bg-light text-dark"><%= registro.status %></span></td>
+                        <td><%= new Date(registro.createdAt).toLocaleDateString('pt-BR') %></td>
+                      </tr>
+                    <% }); %>
+                  <% } else { %>
+                    <tr>
+                      <td colspan="4" class="text-center">Nenhum registro encontrado</td>
+                    </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção de usuários ativos -->
+      <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h4 class="card-title mb-0">Usuários Ativos</h4>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover recent-table mb-0">
+                <thead>
+                  <tr>
+                    <th>IP</th>
+                    <th>Conexões</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (usersByIp && Object.keys(usersByIp).length > 0) { %>
+                    <% Object.entries(usersByIp).forEach(function([ip, count]) { %>
+                      <tr>
+                        <td><%= (ip === '::1' || ip === '127.0.0.1') ? 'localhost' : ip %></td>
+                        <td><%= count %></td>
+                      </tr>
+                    <% }) %>
+                  <% } else { %>
+                    <tr>
+                      <td colspan="2" class="text-center">Nenhum usuário ativo</td>
+                    </tr>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

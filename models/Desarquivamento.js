@@ -8,10 +8,10 @@ const Desarquivamento = sequelize.define('Desarquivamento', {
     primaryKey: true,
     allowNull: false,
   },
-  // Campo 1: DESARQUIVAMENTO FÍSICO/DIGITAL
-  tipoDesarquivamento: {
+  // Campo 1: SOLICITAÇÃO (Físico/Digital/Não Localizado)
+  solicitacao: {
     type: DataTypes.ENUM('Físico', 'Digital', 'Não Localizado'),
-    allowNull: false,
+    allowNull: true, // Permitir nulo inicialmente
   },
   // Campo 2: STATUS
   status: {
@@ -32,9 +32,9 @@ const Desarquivamento = sequelize.define('Desarquivamento', {
     allowNull: false
   },
   // Campo 4: Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA
-  numDocumento: {
+  numNic: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true,
   },
   // Campo 5: Nº PROCESSO
   numProcesso: {
@@ -77,8 +77,8 @@ const Desarquivamento = sequelize.define('Desarquivamento', {
     allowNull: true
   },
   // Campo 13: SOLICITAÇÃO DE PRAZO DE DESARQUIVAMENTO
-  prazoSolicitado: {
-    type: DataTypes.STRING,
+  solicitacaoProrrogacao: {
+    type: DataTypes.TEXT,
     allowNull: true
   },
   // Campo 14: DATA PRAZO DEVOLUÇÃO
@@ -99,11 +99,26 @@ const Desarquivamento = sequelize.define('Desarquivamento', {
       model: 'Usuarios', // Corrected from Users
       key: 'id'
     }
+  },
+  deletedBy: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Usuarios',
+      key: 'id'
+    }
   }
 }, {
   tableName: 'Desarquivamentos',
   timestamps: true,
   paranoid: true, // Habilita soft-delete (campo deletedAt)
+  hooks: {
+    beforeDestroy: async (desarquivamento, options) => {
+      if (options.userId) {
+        await desarquivamento.update({ deletedBy: options.userId }, { transaction: options.transaction });
+      }
+    }
+  }
 });
 
 module.exports = Desarquivamento;

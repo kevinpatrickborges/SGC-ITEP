@@ -1,18 +1,70 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Detalhes do Desarquivamento</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-    <h1>Detalhes do Desarquivamento</h1>
-    <p><strong>ID:</strong> <%= desarquivamento.id %></p>
-    <p><strong>Tipo de Documento:</strong> <%= desarquivamento.tipo_documento %></p>
-    <p><strong>Nome:</strong> <%= desarquivamento.nome %></p>
-    <p><strong>Número do Documento:</strong> <%= desarquivamento.numero_documento %></p>
-    <p><strong>Observação:</strong> <%= desarquivamento.observacao %></p>
-    <p><strong>Número do Processo Eletrônico:</strong> <%= desarquivamento.num_processo_eletronico %></p>
-    <p><strong>Data do Desarquivamento:</strong> <%= new Date(desarquivamento.data_desarquivamento).toLocaleDateString('pt-BR') %></p>
-    <a href="/nugecid/desarquivamento/<%= desarquivamento.id %>/termo" class="btn">Gerar Termo de Desarquivamento</a>
-</body>
-</html>
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Detalhes do Desarquivamento</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Editar Registro</h6>
+        </div>
+        <div class="card-body">
+            <form action="/nugecid/desarquivamento/<%= desarquivamento.id %>?_method=PUT" method="POST">
+                <div class="row">
+                    <!-- Coluna 1 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="nomeCompleto">Nome Completo</label>
+                            <input type="text" id="nomeCompleto" name="nomeCompleto" class="form-control" value="<%= desarquivamento.nomeCompleto %>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="numDocumento">Número do Documento</label>
+                            <input type="text" id="numDocumento" name="numDocumento" class="form-control" value="<%= desarquivamento.numDocumento %>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="numProcesso">Nº do Processo</label>
+                            <input type="text" id="numProcesso" name="numProcesso" class="form-control" value="<%= desarquivamento.numProcesso %>">
+                        </div>
+                        <div class="form-group">
+                            <label for="tipoDocumento">Tipo de Documento</label>
+                            <input type="text" id="tipoDocumento" name="tipoDocumento" class="form-control" value="<%= desarquivamento.tipoDocumento %>">
+                        </div>
+                        <div class="form-group">
+                            <label for="setorDemandante">Setor Demandante</label>
+                            <input type="text" id="setorDemandante" name="setorDemandante" class="form-control" value="<%= desarquivamento.setorDemandante %>" required>
+                        </div>
+                    </div>
+                    <!-- Coluna 2 -->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="tipoDesarquivamento">Tipo de Desarquivamento</label>
+                            <select id="tipoDesarquivamento" name="tipoDesarquivamento" class="form-control">
+                                <option value="Físico" <%= desarquivamento.tipoDesarquivamento === 'Físico' ? 'selected' : '' %>>Físico</option>
+                                <option value="Digital" <%= desarquivamento.tipoDesarquivamento === 'Digital' ? 'selected' : '' %>>Digital</option>
+                                <option value="Não Localizado" <%= desarquivamento.tipoDesarquivamento === 'Não Localizado' ? 'selected' : '' %>>Não Localizado</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status" name="status" class="form-control">
+                                <% const statusOptions = ['Finalizado', 'Desarquivado', 'Não coletado', 'Solicitado', 'Rearquivamento solicitado', 'Retirado pelo setor', 'Não localizado']; %>
+                                <% statusOptions.forEach(option => { %>
+                                    <option value="<%= option %>" <%= desarquivamento.status === option ? 'selected' : '' %>><%= option %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataSolicitacao">Data de Solicitação</label>
+                            <input type="date" id="dataSolicitacao" name="dataSolicitacao" class="form-control" value="<%= desarquivamento.dataSolicitacao ? new Date(desarquivamento.dataSolicitacao).toISOString().split('T')[0] : '' %>">
+                        </div>
+                        <div class="form-group">
+                            <label for="finalidade">Finalidade</label>
+                            <textarea id="finalidade" name="finalidade" class="form-control" rows="3"><%= desarquivamento.finalidade %></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    <a href="/nugecid/desarquivamento" class="btn btn-secondary">Voltar para a Lista</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

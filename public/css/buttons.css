@@ -1,0 +1,63 @@
+/* ========================================
+   Estilos de Botões Globais
+   ======================================== */
+
+/* Botão Primário (Ação Principal) */
+.btn-primary {
+  background-color: var(--primary-500);
+  border-color: var(--primary-500);
+  color: #fff;
+  font-weight: 500;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-600);
+  border-color: var(--primary-600);
+  color: #fff;
+}
+
+/* Botão de Sucesso (Importar, etc.) */
+.btn-success {
+  background-color: var(--success-500);
+  border-color: var(--success-500);
+  color: #fff;
+  font-weight: 500;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-success:hover {
+  background-color: var(--success-600);
+  border-color: var(--success-600);
+  color: #fff;
+}
+
+/* Botão de Perigo (Apagar) */
+.btn-danger {
+  background-color: var(--danger-500);
+  border-color: var(--danger-500);
+  color: #fff;
+  font-weight: 500;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-danger:hover {
+  background-color: var(--danger-600);
+  border-color: var(--danger-600);
+  color: #fff;
+}
+
+/* Botão Secundário (Lixeira, Filtros) */
+.btn-secondary {
+  background-color: var(--neutral-200);
+  border-color: var(--neutral-300);
+  color: var(--neutral-800);
+  font-weight: 500;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--neutral-300);
+  border-color: var(--neutral-400);
+  color: var(--neutral-900);
+}
