@@ -1,8 +1,10 @@
 /* ========================================
-   Sidebar Styles (SEI RN Inspired)
+   Sidebar Styles - Paleta Institucional SGC-ITEP
    ======================================== */
+@import url('./colors-institutional.css');
+
 .sei-sidebar {
-  background: #1C3B37; /* Dark Green/Teal from SEI */
+  background: var(--primary-900); /* Azul petróleo profundo */
   width: 230px;
   min-width: 230px;
   height: 100vh;
@@ -10,23 +12,30 @@
   flex-direction: column;
   z-index: 1000;
   padding: 0.8rem 0;
+  border-right: 1px solid var(--primary-800);
 }
 
 .sei-menu-search {
   width: 90%;
   padding: 0.5rem 0.7rem;
-  border-radius: 2px;
-  border: 1px solid #4a6e68;
+  border-radius: 4px;
+  border: 1px solid var(--primary-700);
   margin-bottom: 1rem;
-  background: #FFF;
-  color: #333;
+  background: var(--neutral-light-50);
+  color: var(--text-primary);
   margin-left: auto;
   margin-right: auto;
   font-size: 0.9rem;
 }
 
 .sei-menu-search::placeholder {
-  color: #888;
+  color: var(--text-muted);
+}
+
+.sei-menu-search:focus {
+  outline: none;
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.15);
 }
 
 .sei-menu {

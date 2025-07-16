@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Importar paleta de cores institucional */
+@import url('./colors-institutional.css');
+
+/* Customizações específicas para componentes React */
+.react-components {
+  /* Garantir que os componentes React usem as cores corretas */
+  color: var(--text-primary);
+}
+
+/* Estilos para DataTable */
+.data-table {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200;
+}
+
+.data-table th {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50;
+}
+
+.data-table td {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+}
+
+.data-table tr:hover {
+  @apply bg-gray-50;
+}
+
+/* Estilos para AnalyticsCard */
+.analytics-card {
+  @apply bg-white rounded-xl border-2 p-6 transition-all duration-200 hover:shadow-lg hover:scale-[1.02];
+}
+
+.analytics-card.primary {
+  @apply border-primary-200 hover:border-primary-300;
+}
+
+.analytics-card.success {
+  @apply border-success-200 hover:border-success-300;
+}
+
+.analytics-card.warning {
+  @apply border-warning-200 hover:border-warning-300;
+}
+
+/* Estilos para Sidebar */
+.sidebar {
+  @apply bg-slate-700 text-white transition-all duration-300 ease-in-out min-h-screen flex flex-col;
+}
+
+.sidebar-collapsed {
+  @apply w-16;
+}
+
+.sidebar-expanded {
+  @apply w-64;
+}
+
+/* Estilos para MiniAreaChart */
+.mini-area-chart {
+  @apply relative;
+}
+
+.mini-area-chart svg {
+  @apply overflow-visible;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .analytics-grid {
+    @apply grid-cols-1;
+  }
+  
+  .data-table {
+    @apply text-sm;
+  }
+  
+  .sidebar-expanded {
+    @apply w-full fixed z-50;
+  }
+}
