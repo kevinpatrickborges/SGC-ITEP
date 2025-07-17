@@ -93,12 +93,23 @@
                             <li class="list-group-item"><b>Última atualização:</b> <%= new Date(desarquivamento.updatedAt).toLocaleString('pt-BR') %></li>
                         </ul>
                     </div>
-                     <div class="card mt-3">
+                    <div class="card mt-3">
                         <div class="card-header">
                             QR Code
                         </div>
                         <div class="card-body text-center">
                             <div id="qrcode"></div>
+                        </div>
+                    </div>
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            Ações
+                        </div>
+                        <div class="card-body">
+                            <a href="/nugecid/desarquivamento/<%= desarquivamento.id %>/termo" class="btn btn-primary w-100">
+                                <i class="fas fa-file-word me-2"></i>
+                                Gerar Termo de Desarquivamento
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -44,5 +44,9 @@ router.post('/lixeira/excluir-todos', ensureAuthenticated, canEditNugecid, contr
 // Rota para mover todos os registros para a lixeira
 router.post('/desarquivamento/mover-todos-para-lixeira', ensureAuthenticated, canEditNugecid, controller.moverTodosParaLixeira);
 
+// Rotas para geração de termo com múltiplos registros
+router.get('/termo/selecionar', ensureAuthenticated, canViewNugecid, controller.getSelecaoTermo);
+router.post('/termo/gerar', ensureAuthenticated, canViewNugecid, controller.gerarTermoEmMassa);
+
 
 module.exports = router;

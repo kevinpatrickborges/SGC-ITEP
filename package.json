@@ -41,7 +41,9 @@
     "qrcode": "^1.5.4",
     "sequelize": "^6.32.1",
     "sqlite3": "^5.1.7",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "docxtemplater": "^3.47.2",
+    "pizzip": "3.1.4"
   },
   "devDependencies": {
     "chai": "^5.2.0",

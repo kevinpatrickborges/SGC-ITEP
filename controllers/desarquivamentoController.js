@@ -6,6 +6,10 @@ const { body, validationResult } = require('express-validator');
 const xlsx = require('xlsx');
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
+const PizZip = require('pizzip');
+const Docxtemplater = require('docxtemplater');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * @desc Exibe a lista de desarquivamentos com filtros
@@ -837,5 +841,78 @@ exports.moverTodosParaLixeira = async (req, res) => {
     console.error('Erro ao mover todos os registros para a lixeira:', error);
     req.flash('error_msg', 'Ocorreu um erro ao limpar os registros.');
     res.redirect('/nugecid/desarquivamento');
+  }
+};
+
+/**
+ * @desc Exibe a página para selecionar registros para o termo.
+ * @route GET /nugecid/termo/selecionar
+ */
+exports.getSelecaoTermo = async (req, res) => {
+  try {
+    const desarquivamentos = await Desarquivamento.findAll({
+      order: [['dataSolicitacao', 'DESC']]
+    });
+    res.render('nugecid/selecionar-termo', {
+      title: 'Gerar Termo de Desarquivamento',
+      desarquivamentos,
+      csrfToken: req.csrfToken()
+    });
+  } catch (error) {
+    console.error('Erro ao buscar registros para seleção de termo:', error);
+    req.flash('error_msg', 'Não foi possível carregar os registros.');
+    res.redirect('/nugecid/desarquivamento');
+  }
+};
+
+/**
+ * @desc Gera o termo de desarquivamento com múltiplos registros.
+ * @route POST /nugecid/termo/gerar
+ */
+exports.gerarTermoEmMassa = async (req, res) => {
+  try {
+    const { registroIds, observacao, numero_do_processo, data_do_desarquivamento } = req.body;
+
+    if (!registroIds || registroIds.length === 0) {
+      req.flash('error_msg', 'Nenhum registro selecionado.');
+      return res.redirect('/nugecid/termo/selecionar');
+    }
+
+    const ids = Array.isArray(registroIds) ? registroIds : [registroIds];
+    const registros = await Desarquivamento.findAll({ where: { id: ids } });
+
+    const templatePath = path.resolve(__dirname, '..', 'templates', 'termo_desarquivamento_modelo.docx');
+    const content = fs.readFileSync(templatePath);
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+      delimiters: { start: '{', end: '}' }
+    });
+
+    const dadosParaTemplate = {
+      numero_do_processo: numero_do_processo || '',
+      data_do_desarquivamento: data_do_desarquivamento ? new Date(data_do_desarquivamento).toLocaleDateString('pt-BR') : '',
+      registros: registros.map((r, index) => ({
+        'Nº': index + 1,
+        Tipo_de_documento: r.tipoDocumento || '',
+        nome_completo: r.nomeCompleto || '',
+        Numero_do_documeto: r.numDocumento || '',
+        observacao: observacao || ''
+      }))
+    };
+
+    doc.render(dadosParaTemplate);
+
+    const buf = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+
+    res.setHeader('Content-Disposition', `attachment; filename=Termo_Desarquivamento_Múltiplo.docx`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.send(buf);
+
+  } catch (error) {
+    console.error('Erro ao gerar o termo em massa:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao gerar o documento.');
+    res.redirect('/nugecid/termo/selecionar');
   }
 };
