@@ -6,23 +6,7 @@ const { Op } = require('sequelize');
 const path = require('path');
 const { body, validationResult } = require('express-validator');
 
-// Middleware de validação para novas movimentações
-exports.validateNewMovimentacao = [
-  body('tipoMovimentacao', 'O tipo de movimentação é obrigatório').isIn(['entrada', 'saida_temporaria', 'saida_definitiva']).escape(),
-  body('agenteNome', 'O nome do agente é obrigatório').trim().notEmpty().escape(),
-  body('agenteMatricula', 'A matrícula do agente é obrigatória').trim().notEmpty().escape(),
-  body('destino', 'O destino é obrigatório para saídas').optional().trim().escape(),
-  body('justificativa', 'A justificativa é obrigatória').trim().notEmpty().escape()
-];
 
-// Middleware de validação para edição de movimentações
-exports.validateUpdateMovimentacao = [
-  body('tipoMovimentacao', 'O tipo de movimentação é obrigatório').optional().isIn(['entrada', 'saida_temporaria', 'saida_definitiva']).escape(),
-  body('agenteNome', 'O nome do agente é obrigatório').optional().trim().notEmpty().escape(),
-  body('agenteMatricula', 'A matrícula do agente é obrigatória').optional().trim().notEmpty().escape(),
-  body('destino', 'O destino é obrigatório para saídas').optional().trim().escape(),
-  body('justificativa', 'A justificativa é obrigatória').optional().trim().notEmpty().escape()
-];
 
 // Listar movimentações de um vestígio
 exports.listarMovimentacoesVestigio = async (req, res) => {

@@ -153,7 +153,7 @@ async function startServer() {
     });
 
     // --- INICIAR SERVIDOR ---
-    const PORT = process.env.PORT || 3000;
+    const PORT = process.env.PORT || 3001;
     app.listen(PORT, () => {
       console.log(`Server is running at http://localhost:${PORT}`);
       cleanupJob.start();

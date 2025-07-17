@@ -17,7 +17,7 @@
                 </div>
             <% } %>
 
-            <form action="<%= typeof desarquivamento !== 'undefined' && desarquivamento.id ? '/desarquivamentos/' + desarquivamento.id + '/editar' : '/desarquivamentos/novo' %>" method="POST">
+            <form action="<%= typeof desarquivamento !== 'undefined' && desarquivamento.id ? '/nugecid/editar/' + desarquivamento.id : '/nugecid/novo' %>" method="POST">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
                 <div class="row">
@@ -34,9 +34,12 @@
                                 <label for="status">Status</label>
                                 <select id="status" name="status" class="form-control">
                                     <option value="Solicitado" <%= desarquivamento && desarquivamento.status === 'Solicitado' ? 'selected' : '' %>>Solicitado</option>
-                                    <option value="Em posse" <%= desarquivamento && desarquivamento.status === 'Em posse' ? 'selected' : '' %>>Em posse</option>
-                                    <option value="Devolvido" <%= desarquivamento && desarquivamento.status === 'Devolvido' ? 'selected' : '' %>>Devolvido</option>
-                                    <option value="Extraviado" <%= desarquivamento && desarquivamento.status === 'Extraviado' ? 'selected' : '' %>>Extraviado</option>
+                                    <option value="Finalizado" <%= desarquivamento && desarquivamento.status === 'Finalizado' ? 'selected' : '' %>>Finalizado</option>
+                                    <option value="Desarquivado" <%= desarquivamento && desarquivamento.status === 'Desarquivado' ? 'selected' : '' %>>Desarquivado</option>
+                                    <option value="Não coletado" <%= desarquivamento && desarquivamento.status === 'Não coletado' ? 'selected' : '' %>>Não coletado</option>
+                                    <option value="Rearquivamento solicitado" <%= desarquivamento && desarquivamento.status === 'Rearquivamento solicitado' ? 'selected' : '' %>>Rearquivamento Solicitado</option>
+                                    <option value="Retirado pelo setor" <%= desarquivamento && desarquivamento.status === 'Retirado pelo setor' ? 'selected' : '' %>>Retirado pelo setor</option>
+                                    <option value="Não localizado" <%= desarquivamento && desarquivamento.status === 'Não localizado' ? 'selected' : '' %>>Não localizado</option>
                                 </select>
                             </div>
                         </div>
@@ -102,7 +105,7 @@
                 <hr>
 
                 <div class="d-flex justify-content-end">
-                    <a href="/desarquivamentos" class="btn btn-secondary me-2">Cancelar</a>
+                    <a href="/nugecid/desarquivamento" class="btn btn-secondary me-2">Cancelar</a>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-1"></i>
                         Salvar
@@ -112,5 +115,3 @@
         </div>
     </div>
 </div>
-
-

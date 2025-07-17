@@ -1,0 +1,65 @@
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Importar Planilha de Desarquivamentos</h1>
+
+    <% if (preview && preview.length > 0) { %>
+        <!-- TELA DE CONFIRMAÇÃO -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Pré-visualização dos Dados</h6>
+            </div>
+            <div class="card-body">
+                <p>Confira os dados abaixo. Se estiverem corretos, clique em "Confirmar Importação" para salvar no banco de dados.</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <% Object.keys(preview[0]).forEach(key => { %>
+                                    <th><%= key %></th>
+                                <% }); %>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% preview.forEach(row => { %>
+                                <tr>
+                                    <% Object.values(row).forEach(value => { %>
+                                        <td><%= value instanceof Date ? value.toLocaleDateString('pt-BR') : value %></td>
+                                    <% }); %>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                <form action="/nugecid/desarquivamento/importar/confirmar" method="POST">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn-success btn-icon-split">
+                        <span class="icon text-white-50"><i class="fas fa-check"></i></span>
+                        <span class="text">Confirmar Importação</span>
+                    </button>
+                    <a href="/nugecid/desarquivamento/importar" class="btn btn-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    <% } else { %>
+        <!-- TELA DE UPLOAD -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Enviar Arquivo</h6>
+            </div>
+            <div class="card-body">
+                <p>Selecione um arquivo XLSX para importar. A planilha deve conter cabeçalhos que correspondam aos campos do sistema (ex: 'Nome Completo', 'Nº do Documento', 'Status', etc.).</p>
+                <form action="/nugecid/desarquivamento/importar/preview" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="mb-3">
+                        <label for="planilha" class="form-label">Arquivo XLSX</label>
+                        <input class="form-control" type="file" id="planilha" name="planilha" accept=".xlsx" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-icon-split">
+                        <span class="icon text-white-50"><i class="fas fa-file-upload"></i></span>
+                        <span class="text">Enviar para Pré-visualização</span>
+                    </button>
+                    <a href="/nugecid/desarquivamento" class="btn btn-secondary">Voltar</a>
+                </form>
+            </div>
+        </div>
+    <% } %>
+</div>

@@ -1,30 +1,100 @@
 <div class="container-fluid">
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
-    <a href="/desarquivamentos/novo" class="btn btn-primary btn-icon-split">
+    <a href="/nugecid/novo" class="btn btn-primary btn-sm btn-icon-split">
       <span class="icon text-white-50">
         <i class="fas fa-plus"></i>
       </span>
-      <span class="text">Novo Desarquivamento</span>
+      <span class="text">Novo</span>
     </a>
-    <a href="/desarquivamentos/importar" class="btn btn-info btn-icon-split">
+    <a href="/nugecid/desarquivamento/importar" class="btn btn-info btn-icon-split">
       <span class="icon text-white-50">
         <i class="fas fa-file-import"></i>
       </span>
       <span class="text">Importar Planilha</span>
     </a>
-    <a href="/desarquivamentos/exportar/xlsx" class="btn btn-success btn-icon-split">
+    <a href="/nugecid/desarquivamento/exportar/xlsx" class="btn btn-success btn-icon-split">
       <span class="icon text-white-50">
         <i class="fas fa-file-excel"></i>
       </span>
       <span class="text">Exportar XLSX</span>
     </a>
-    <a href="/desarquivamentos/exportar/pdf" class="btn btn-danger btn-icon-split">
+    <a href="/nugecid/desarquivamento/exportar/pdf" class="btn btn-danger btn-icon-split">
       <span class="icon text-white-50">
         <i class="fas fa-file-pdf"></i>
       </span>
       <span class="text">Exportar PDF</span>
     </a>
+    <a href="/nugecid/lixeira" class="btn btn-secondary btn-sm ms-2" title="Lixeira">
+      <i class="fas fa-trash-alt"></i>
+    </a>
+    <button type="button" class="btn btn-warning btn-sm btn-icon-split ms-2" data-bs-toggle="modal" data-bs-target="#moveAllToTrashModal">
+        <span class="icon text-white-50">
+          <i class="fas fa-trash"></i>
+        </span>
+        <span class="text">Limpar Registros</span>
+      </button>
+  </div>
+
+  <!-- Seção de Filtros -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+      <a href="#collapseCardFiltros" class="btn btn-sm btn-primary" data-bs-toggle="collapse" role="button" aria-expanded="true" aria-controls="collapseCardFiltros">
+        <i class="fas fa-chevron-down"></i>
+      </a>
+    </div>
+    <div class="collapse show" id="collapseCardFiltros">
+      <div class="card-body">
+        <form action="/nugecid/desarquivamento" method="GET">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label for="filtroNome" class="form-label">Nome Completo</label>
+            <input type="text" class="form-control form-control-sm" id="filtroNome" name="nome" value="<%= typeof filtros !== 'undefined' ? filtros.nome : '' %>">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label for="filtroNumDocumento" class="form-label">Nº do Documento</label>
+            <input type="text" class="form-control form-control-sm" id="filtroNumDocumento" name="numDocumento" value="<%= typeof filtros !== 'undefined' ? filtros.numDocumento : '' %>">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label for="filtroNumProcesso" class="form-label">Nº do Processo</label>
+            <input type="text" class="form-control form-control-sm" id="filtroNumProcesso" name="numProcesso" value="<%= typeof filtros !== 'undefined' ? filtros.numProcesso : '' %>">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            <label for="filtroTipoDocumento" class="form-label">Tipo de Documento</label>
+            <input type="text" class="form-control form-control-sm" id="filtroTipoDocumento" name="tipoDocumento" value="<%= typeof filtros !== 'undefined' ? filtros.tipoDocumento : '' %>">
+          </div>
+          <div class="col-md-3 mb-3">
+            <label for="filtroStatus" class="form-label">Status</label>
+            <select id="filtroStatus" name="status" class="form-select form-select-sm">
+              <option value="">Todos</option>
+              <option value="Solicitado" <%= typeof filtros !== 'undefined' && filtros.status === 'Solicitado' ? 'selected' : '' %>>Solicitado</option>
+              <option value="Finalizado" <%= typeof filtros !== 'undefined' && filtros.status === 'Finalizado' ? 'selected' : '' %>>Finalizado</option>
+              <option value="Desarquivado" <%= typeof filtros !== 'undefined' && filtros.status === 'Desarquivado' ? 'selected' : '' %>>Desarquivado</option>
+              <option value="Não coletado" <%= typeof filtros !== 'undefined' && filtros.status === 'Não coletado' ? 'selected' : '' %>>Não coletado</option>
+              <option value="Rearquivamento solicitado" <%= typeof filtros !== 'undefined' && filtros.status === 'Rearquivamento solicitado' ? 'selected' : '' %>>Rearquivamento Solicitado</option>
+              <option value="Retirado pelo setor" <%= typeof filtros !== 'undefined' && filtros.status === 'Retirado pelo setor' ? 'selected' : '' %>>Retirado pelo setor</option>
+              <option value="Não localizado" <%= typeof filtros !== 'undefined' && filtros.status === 'Não localizado' ? 'selected' : '' %>>Não localizado</option>
+            </select>
+          </div>
+          <div class="col-md-3 mb-3">
+            <label for="filtroDataInicio" class="form-label">Data de Solicitação (Início)</label>
+            <input type="date" class="form-control form-control-sm" id="filtroDataInicio" name="dataInicio" value="<%= typeof filtros !== 'undefined' ? filtros.dataInicio : '' %>">
+          </div>
+          <div class="col-md-3 mb-3">
+            <label for="filtroDataFim" class="form-label">Data de Solicitação (Fim)</label>
+            <input type="date" class="form-control form-control-sm" id="filtroDataFim" name="dataFim" value="<%= typeof filtros !== 'undefined' ? filtros.dataFim : '' %>">
+          </div>
+        </div>
+        <div class="d-flex justify-content-end">
+          <a href="/nugecid/desarquivamento" class="btn btn-secondary btn-sm me-2">Limpar Filtros</a>
+          <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+        </div>
+      </form>
+      </div>
+    </div>
   </div>
 
   <div class="card shadow mb-4">
@@ -33,66 +103,52 @@
     </div>
     <div class="card-body">
       <div class="table-responsive">
-        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+        <table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
           <thead>
             <tr>
-              <th>Nº</th>
-              <th>Desarq. Físico/Digital</th>
-              <th>Status</th>
               <th>Nome Completo</th>
-              <th>Nº Documento</th>
-              <th>Nº Processo</th>
+              <th>Nº do Documento</th>
+              <th>Nº do Processo</th>
               <th>Tipo de Documento</th>
               <th>Data de Solicitação</th>
-              <th>Data Desarquivamento</th>
-              <th>Data Devolução</th>
-              <th>Setor Demandante</th>
-              <th>Servidor Responsável</th>
-              <th>Finalidade</th>
-              <th>Prazo Solicitado</th>
+              <th>Status</th>
               <th>Ações</th>
             </tr>
           </thead>
           <tbody>
             <% if (desarquivamentos && desarquivamentos.length > 0) { %>
               <% desarquivamentos.forEach(item => { %>
-                <tr>
-                  <td><%= item.id %></td>
-                  <td><%= item.tipoDesarquivamento %></td>
-                  <td>
-                    <form class="status-form" data-id="<%= item.id %>">
-                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                      <select name="status" class="form-control form-control-sm status-select" style="width: 120px;">
-                        <option value="Solicitado" <%= item.status === 'Solicitado' ? 'selected' : '' %>>Solicitado</option>
-                        <option value="Em posse" <%= item.status === 'Em posse' ? 'selected' : '' %>>Em posse</option>
-                        <option value="Devolvido" <%= item.status === 'Devolvido' ? 'selected' : '' %>>Devolvido</option>
-                        <option value="Extraviado" <%= item.status === 'Extraviado' ? 'selected' : '' %>>Extraviado</option>
-                      </select>
-                    </form>
-                  </td>
+                <tr class="registro-linha" data-id="<%= item.id %>" style="cursor: pointer;">
                   <td><%= item.nomeCompleto %></td>
                   <td><%= item.numDocumento %></td>
                   <td><%= item.numProcesso || '-' %></td>
                   <td><%= item.tipoDocumento || '-' %></td>
                   <td><%= new Date(item.dataSolicitacao).toLocaleDateString('pt-BR') %></td>
-                  <td><%= item.dataDesarquivamento ? new Date(item.dataDesarquivamento).toLocaleDateString('pt-BR') : '-' %></td>
-                  <td><%= item.dataDevolucao ? new Date(item.dataDevolucao).toLocaleDateString('pt-BR') : '-' %></td>
-                  <td><%= item.setorDemandante %></td>
-                  <td><%= item.servidorResponsavel || '-' %></td>
-                  <td><%= item.finalidade %></td>
-                  <td><%= item.prazoSolicitado || '-' %></td>
                   <td>
-                    <a href="/desarquivamentos/<%= item.id %>/editar" class="btn btn-sm btn-warning" title="Editar"><i class="fas fa-pencil-alt"></i></a>
-                    <form action="/desarquivamentos/<%= item.id %>/excluir" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este registro?');">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <button type="submit" class="btn btn-sm btn-danger" title="Excluir"><i class="fas fa-trash"></i></button>
+                    <form class="status-form" data-id="<%= item.id %>">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <select name="status" class="form-control form-control-sm status-select" style="width: 150px;">
+                        <option value="Solicitado" <%= item.status === 'Solicitado' ? 'selected' : '' %>>Solicitado</option>
+                        <option value="Finalizado" <%= item.status === 'Finalizado' ? 'selected' : '' %>>Finalizado</option>
+                        <option value="Desarquivado" <%= item.status === 'Desarquivado' ? 'selected' : '' %>>Desarquivado</option>
+                        <option value="Não coletado" <%= item.status === 'Não coletado' ? 'selected' : '' %>>Não coletado</option>
+                        <option value="Rearquivamento solicitado" <%= item.status === 'Rearquivamento solicitado' ? 'selected' : '' %>>Rearquivamento Solicitado</option>
+                        <option value="Retirado pelo setor" <%= item.status === 'Retirado pelo setor' ? 'selected' : '' %>>Retirado pelo setor</option>
+                        <option value="Não localizado" <%= item.status === 'Não localizado' ? 'selected' : '' %>>Não localizado</option>
+                      </select>
                     </form>
+                  </td>
+                  <td>
+                    <a href="/nugecid/editar/<%= item.id %>" class="btn btn-light btn-sm" title="Editar"><i class="fas fa-pencil-alt text-primary"></i></a>
+                    <button type="button" class="btn btn-light btn-sm delete-btn" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-delete-url="/nugecid/deletar/<%= item.id %>" title="Excluir">
+                        <i class="fas fa-trash text-danger"></i>
+                    </button>
                   </td>
                 </tr>
               <% }) %>
             <% } else { %>
               <tr>
-                <td colspan="6" class="text-center">Nenhum registro encontrado.</td>
+                <td colspan="7" class="text-center">Nenhum registro encontrado.</td>
               </tr>
             <% } %>
           </tbody>
@@ -101,3 +157,64 @@
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Configura o modal de exclusão
+  const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+  confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const deleteUrl = button.getAttribute('data-delete-url');
+    const form = document.getElementById('confirmDeleteForm');
+    form.action = deleteUrl;
+  });
+
+  // Redireciona para a página de detalhes ao clicar na linha
+  const linhas = document.querySelectorAll('.registro-linha');
+  linhas.forEach(linha => {
+    linha.addEventListener('click', function(event) {
+      // Impede que o clique em um formulário, link ou botão dentro da linha propague
+      if (event.target.closest('form, a, button')) {
+        return;
+      }
+      const id = this.dataset.id;
+      window.location.href = `/nugecid/desarquivamento/${id}`;
+    });
+  });
+
+  const statusSelects = document.querySelectorAll('.status-select');
+  
+  statusSelects.forEach(select => {
+    select.addEventListener('change', function(event) {
+      const form = this.closest('form');
+      const id = form.dataset.id;
+      const status = this.value;
+      const csrfToken = form.querySelector('input[name="_csrf"]').value;
+
+      fetch(`/nugecid/status/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken // O cabeçalho correto é 'x-csrf-token'
+        },
+        body: JSON.stringify({ status: status })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Opcional: exibir uma notificação de sucesso
+          console.log('Status atualizado com sucesso!');
+        } else {
+          // Opcional: exibir uma notificação de erro
+          console.error('Erro ao atualizar status:', data.message);
+          // Reverter a seleção em caso de erro
+          // (implementação mais complexa, omitida por simplicidade)
+        }
+      })
+      .catch(error => {
+        console.error('Erro de rede:', error);
+      });
+    });
+  });
+});
+</script>

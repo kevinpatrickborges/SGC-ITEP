@@ -4,21 +4,7 @@ const Usuario = require('../models/Usuario');
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 
-// Middleware de validação para novos usuários
-exports.validateNewUser = [
-  body('nome', 'O nome é obrigatório').trim().notEmpty().escape(),
-  body('email', 'Por favor, insira um email válido').isEmail().normalizeEmail(),
-  body('senha', 'A senha deve ter no mínimo 6 caracteres').isLength({ min: 6 }),
-  body('perfil', 'O perfil é obrigatório').trim().notEmpty()
-];
 
-// Middleware de validação para edição de usuários
-exports.validateUpdateUser = [
-  body('nome', 'O nome é obrigatório').trim().notEmpty().escape(),
-  body('email', 'Por favor, insira um email válido').isEmail().normalizeEmail(),
-  body('senha', 'A senha deve ter no mínimo 6 caracteres').optional({ checkFalsy: true }).isLength({ min: 6 }),
-  body('perfil', 'O perfil é obrigatório').trim().notEmpty()
-];
 const { registrarAuditoria } = require('../middleware/auditoria');
 
 // Listar usuários

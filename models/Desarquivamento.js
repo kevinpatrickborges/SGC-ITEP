@@ -11,7 +11,7 @@ const Desarquivamento = sequelize.define('Desarquivamento', {
   // Campo 1: SOLICITAÇÃO (Físico/Digital/Não Localizado)
   solicitacao: {
     type: DataTypes.ENUM('Físico', 'Digital', 'Não Localizado'),
-    allowNull: true, // Permitir nulo inicialmente
+    allowNull: true,
   },
   // Campo 2: STATUS
   status: {
@@ -30,6 +30,12 @@ const Desarquivamento = sequelize.define('Desarquivamento', {
   nomeCompleto: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  // Adicionando de volta o numDocumento e mantendo numNic
+  numDocumento: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
   },
   // Campo 4: Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA
   numNic: {
@@ -64,7 +70,7 @@ const Desarquivamento = sequelize.define('Desarquivamento', {
   // Campo 10: SETOR DEMANDANTE
   setorDemandante: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true // Alterado para permitir valores nulos, conforme a planilha
   },
   // Campo 11: SERVIDOR DO ITEP RESPONSÁVEL (MATRÍCULA)
   servidorResponsavel: {

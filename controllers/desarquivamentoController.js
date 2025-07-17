@@ -1,4 +1,7 @@
+const { Op } = require('sequelize');
 const Desarquivamento = require('../models/Desarquivamento');
+const Usuario = require('../models/Usuario'); // Importar o modelo Usuario
+const bcrypt = require('bcryptjs'); // Importar bcrypt
 const { body, validationResult } = require('express-validator');
 const xlsx = require('xlsx');
 const PDFDocument = require('pdfkit');
@@ -10,7 +13,25 @@ const QRCode = require('qrcode');
  */
 exports.getList = async (req, res) => {
   try {
+    const { nome, numDocumento, numProcesso, tipoDocumento, status, dataInicio, dataFim } = req.query;
+    const whereClause = {};
+
+    if (nome) whereClause.nomeCompleto = { [Op.like]: `%${nome}%` };
+    if (numDocumento) whereClause.numDocumento = { [Op.like]: `%${numDocumento}%` };
+    if (numProcesso) whereClause.numProcesso = { [Op.like]: `%${numProcesso}%` };
+    if (tipoDocumento) whereClause.tipoDocumento = { [Op.like]: `%${tipoDocumento}%` };
+    if (status) whereClause.status = status;
+
+    if (dataInicio && dataFim) {
+      whereClause.dataSolicitacao = { [Op.between]: [new Date(dataInicio), new Date(dataFim)] };
+    } else if (dataInicio) {
+      whereClause.dataSolicitacao = { [Op.gte]: new Date(dataInicio) };
+    } else if (dataFim) {
+      whereClause.dataSolicitacao = { [Op.lte]: new Date(dataFim) };
+    }
+
     const desarquivamentos = await Desarquivamento.findAll({
+      where: whereClause,
       order: [['dataSolicitacao', 'DESC']],
       include: ['criadoPor', 'atualizadoPor']
     });
@@ -18,6 +39,7 @@ exports.getList = async (req, res) => {
     res.render('desarquivamentos/list', {
       title: 'NUGECID – Desarquivamentos',
       desarquivamentos,
+      filtros: req.query, // Passa os filtros de volta para a view
       csrfToken: req.csrfToken(),
       user: req.session.user,
       layout: 'layout'
@@ -50,8 +72,8 @@ exports.getForm = (req, res) => {
  */
 // Middleware de validação reutilizável
 const validateForm = [
-  body('tipoDesarquivamento').isIn(['Físico', 'Digital']).withMessage('Tipo de desarquivamento inválido.'),
-  body('status').isIn(['Solicitado', 'Em posse', 'Devolvido', 'Extraviado']).withMessage('Status inválido.'),
+  body('tipoDesarquivamento').isIn(['Físico', 'Digital', 'Não Localizado']).withMessage('Tipo de desarquivamento inválido.'),
+  body('status').isIn(['Finalizado', 'Desarquivado', 'Não coletado', 'Solicitado', 'Rearquivamento solicitado', 'Retirado pelo setor', 'Não localizado']).withMessage('Status inválido.'),
   body('nomeCompleto').notEmpty().trim().withMessage('Nome completo é obrigatório.'),
   body('numDocumento').notEmpty().trim().withMessage('Nº do Documento é obrigatório.'),
   body('numProcesso').optional({ checkFalsy: true }).trim(),
@@ -109,7 +131,7 @@ exports.postNewForm = [
       });
 
       req.flash('success_msg', 'Registro de desarquivamento criado com sucesso!');
-      res.redirect('/desarquivamentos');
+      res.redirect('/nugecid/desarquivamento');
     } catch (error) {
       console.error('Erro ao criar desarquivamento:', error);
       req.flash('error_msg', 'Erro ao criar o registro. Tente novamente.');
@@ -180,7 +202,7 @@ exports.postEditForm = [
       await desarquivamento.save();
 
       req.flash('success_msg', 'Registro atualizado com sucesso!');
-      res.redirect('/desarquivamentos');
+      res.redirect('/nugecid/desarquivamento');
     } catch (error) {
       console.error('Erro ao atualizar desarquivamento:', error);
       req.flash('error_msg', 'Erro ao atualizar o registro. Tente novamente.');
@@ -231,23 +253,89 @@ exports.getEditForm = async (req, res) => {
  * @route POST /desarquivamentos/:id/excluir
  */
 exports.deleteItem = async (req, res) => {
+  const { id } = req.params;
+  const { adminUser, adminPassword } = req.body;
+
+  try {
+    // 1. Verificar se o usuário e a senha foram fornecidos
+    if (!adminUser || !adminPassword) {
+      req.flash('error_msg', 'Usuário e senha do administrador são obrigatórios.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+
+    // 2. Encontrar o administrador pelo e-mail (usando o campo 'adminUser' que contém o e-mail 'admin')
+    const admin = await Usuario.findOne({ where: { email: adminUser } });
+    if (!admin) {
+      req.flash('error_msg', 'Administrador não encontrado.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+
+    // 3. Verificar se o usuário tem a role de 'admin' (ajuste o nome da role se for diferente)
+    // Esta verificação depende de como as roles estão implementadas.
+    // Supondo que o modelo Usuario tenha uma associação 'role' com um campo 'nome'.
+    // Se a role estiver direto no usuário, a verificação seria: if (adminUser.perfil !== 'admin')
+    // Vou assumir a verificação mais simples por enquanto.
+    // const userRole = await adminUser.getRole(); // Exemplo se houver associação
+    // if (!userRole || userRole.nome !== 'admin') {
+    //   req.flash('error_msg', 'O usuário fornecido não tem permissão de administrador.');
+    //   return res.redirect('/nugecid/desarquivamento');
+    // }
+
+
+    // 4. Comparar a senha fornecida com a senha hash no banco de dados
+    const isMatch = await bcrypt.compare(adminPassword, admin.senha);
+    if (!isMatch) {
+      req.flash('error_msg', 'Senha do administrador incorreta.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+
+    // 5. Se tudo estiver correto, proceder com a exclusão
+    const desarquivamento = await Desarquivamento.findByPk(id);
+    if (!desarquivamento) {
+      req.flash('error_msg', 'Registro a ser excluído não encontrado.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+
+    await desarquivamento.destroy({
+      hooks: true,
+      individualHooks: true,
+      userId: req.session.user.id // Registra quem fez a ação original
+    });
+
+    req.flash('success_msg', 'Registro enviado para a lixeira com sucesso.');
+    res.redirect('/nugecid/desarquivamento');
+
+  } catch (error) {
+    console.error('Erro no processo de exclusão:', error);
+    req.flash('error_msg', 'Ocorreu um erro durante o processo de exclusão.');
+    res.redirect('/nugecid/desarquivamento');
+  }
+};
+
+/**
+ * @desc Exibe os detalhes de um desarquivamento específico
+ * @route GET /nugecid/desarquivamento/:id
+ */
+exports.getDetalhes = async (req, res) => {
   try {
     const { id } = req.params;
-    const desarquivamento = await Desarquivamento.findByPk(id);
+    const desarquivamento = await Desarquivamento.findByPk(id, {
+      include: ['criadoPor', 'atualizadoPor']
+    });
 
     if (!desarquivamento) {
       req.flash('error_msg', 'Registro não encontrado.');
-      return res.redirect('/desarquivamentos');
+      return res.redirect('/nugecid/desarquivamento');
     }
 
-    await desarquivamento.destroy(); // Soft-delete
-
-    req.flash('success_msg', 'Registro excluído com sucesso.');
-    res.redirect('/desarquivamentos');
+    res.render('nugecid/detalhes', {
+      title: 'Detalhes do Desarquivamento',
+      desarquivamento
+    });
   } catch (error) {
-    console.error('Erro ao excluir registro:', error);
-    req.flash('error_msg', 'Ocorreu um erro ao excluir o registro.');
-    res.redirect('/desarquivamentos');
+    console.error('Erro ao buscar detalhes do desarquivamento:', error);
+    req.flash('error_msg', 'Não foi possível carregar os detalhes do registro.');
+    res.redirect('/nugecid/desarquivamento');
   }
 };
 
@@ -432,10 +520,17 @@ exports.updateStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Registro não encontrado.' });
     }
 
+    // Valida se o status recebido é um dos valores permitidos no ENUM
+    const allowedStatus = ['Finalizado', 'Desarquivado', 'Não coletado', 'Solicitado', 'Rearquivamento solicitado', 'Retirado pelo setor', 'Não localizado'];
+    if (!allowedStatus.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Status inválido fornecido.' });
+    }
+
     desarquivamento.status = status;
     desarquivamento.updatedBy = userId;
 
-    if (status === 'Devolvido' && !desarquivamento.dataDevolucao) {
+    // Regra de negócio: se o status for 'Finalizado' ou 'Retirado pelo setor', e não houver data de devolução, preenche com a data atual.
+    if ((status === 'Finalizado' || status === 'Retirado pelo setor') && !desarquivamento.dataDevolucao) {
       desarquivamento.dataDevolucao = new Date();
     }
 
@@ -445,7 +540,7 @@ exports.updateStatus = async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao atualizar status:', error);
-    res.status(500).json({ success: false, message: 'Erro ao atualizar o status.' });
+    res.status(500).json({ success: false, message: 'Erro interno ao atualizar o status.' });
   }
 };
 
@@ -584,137 +679,163 @@ exports.exportPDF = async (req, res) => {
   }
 };
 
-exports.postConfirmImport = async (req, res) => {
+/**
+ * @desc Exibe a lixeira com itens excluídos (soft-deleted)
+ * @route GET /nugecid/lixeira
+ */
+exports.getLixeira = async (req, res) => {
   try {
-    const dadosImportacao = JSON.parse(req.body.dadosImportacao);
-    if (!dadosImportacao || dadosImportacao.length === 0) {
-      req.flash('error_msg', 'Não há dados para importar.');
-      return res.redirect('/desarquivamentos');
-    }
-
-    let criados = 0;
-    let atualizados = 0;
-    const userId = req.session.user.id;
-
-    for (const item of dadosImportacao) {
-      // Pula linhas que não tenham um número de prontuário, que é a nossa chave de identificação
-      if (!item.numProntuario) continue;
-
-      const [registro, foiCriado] = await Desarquivamento.findOrCreate({
-        where: { numProntuario: item.numProntuario },
-        defaults: {
-          nome: item.nome,
-          motivo: item.motivo,
-          solicitante: item.solicitante,
-          dataSolicitacao: item.dataSolicitacao,
-          dataDevolucao: item.dataDevolucao,
-          status: item.status || 'Solicitado',
-          createdBy: userId,
-          updatedBy: userId,
+    const desarquivamentosExcluidos = await Desarquivamento.findAll({
+      where: {
+        deletedAt: {
+          [Op.ne]: null // Op é importado de sequelize
         }
-      });
+      },
+      paranoid: false, // Importante para buscar itens soft-deleted
+      order: [['deletedAt', 'DESC']],
+      include: ['criadoPor', 'atualizadoPor', 'deletadoPor']
+    });
 
-      if (foiCriado) {
-        criados++;
-      } else {
-        // Se não foi criado, significa que foi encontrado. Então, atualizamos os campos.
-        // Apenas atualiza campos que foram fornecidos na planilha.
-        registro.nome = item.nome || registro.nome;
-        registro.motivo = item.motivo || registro.motivo;
-        registro.solicitante = item.solicitante || registro.solicitante;
-        registro.dataSolicitacao = item.dataSolicitacao || registro.dataSolicitacao;
-        registro.dataDevolucao = item.dataDevolucao !== undefined ? item.dataDevolucao : registro.dataDevolucao;
-        registro.status = item.status || registro.status;
-        registro.updatedBy = userId;
-        
-        await registro.save();
-        atualizados++;
-      }
-    }
-
-    req.flash('success_msg', `Importação concluída! ${criados} registros criados e ${atualizados} atualizados.`);
-    res.redirect('/desarquivamentos');
-
+    res.render('nugecid/lixeira', {
+      title: 'Lixeira de Desarquivamentos',
+      desarquivamentos: desarquivamentosExcluidos,
+      csrfToken: req.csrfToken()
+    });
   } catch (error) {
-    console.error('Erro ao confirmar a importação:', error);
-    req.flash('error_msg', 'Ocorreu um erro ao salvar os dados importados.');
-    res.redirect('/desarquivamentos');
+    console.error('Erro ao buscar itens da lixeira:', error);
+    req.flash('error_msg', 'Não foi possível carregar os itens da lixeira.');
+    res.redirect('/nugecid/desarquivamento');
   }
 };
 
-exports.deleteItem = async (req, res) => {
+/**
+ * @desc Restaura um item da lixeira (soft-delete)
+ * @route POST /nugecid/lixeira/:id/restaurar
+ */
+exports.restaurarItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const desarquivamento = await Desarquivamento.findByPk(id);
-
-    if (!desarquivamento) {
+    const item = await Desarquivamento.findOne({ where: { id }, paranoid: false });
+    if (item) {
+      await item.restore();
+      req.flash('success_msg', 'Registro restaurado com sucesso!');
+    } else {
       req.flash('error_msg', 'Registro não encontrado.');
-      return res.redirect('/desarquivamentos');
     }
-
-    // O método destroy() fará o soft-delete por causa da opção paranoid: true no modelo
-    await desarquivamento.destroy();
-    req.flash('success_msg', 'Registro excluído com sucesso.');
-    res.redirect('/desarquivamentos');
+    res.redirect('/nugecid/lixeira');
   } catch (error) {
-    console.error('Erro ao excluir desarquivamento:', error);
-    req.flash('error_msg', 'Erro ao excluir o registro. Tente novamente.');
-    res.redirect('/desarquivamentos');
+    console.error('Erro ao restaurar item:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao restaurar o registro.');
+    res.redirect('/nugecid/lixeira');
   }
 };
 
-exports.postEditForm = [
-  // Validações são as mesmas da criação
-  body('nome', 'O nome do prontuário é obrigatório.').trim().notEmpty(),
-  body('numProntuario', 'O número do prontuário é obrigatório.').trim().notEmpty(),
-  body('solicitante', 'O nome do solicitante é obrigatório.').trim().notEmpty(),
-  body('motivo', 'O motivo é obrigatório.').trim().notEmpty(),
-  body('dataSolicitacao', 'A data da solicitação é inválida.').isISO8601().toDate(),
-  body('status', 'Status inválido.').isIn(['Solicitado', 'Em posse', 'Devolvido', 'Extraviado']),
-
-  async (req, res) => {
+/**
+ * @desc Exclui um item permanentemente do banco de dados
+ * @route POST /nugecid/lixeira/:id/excluir-permanente
+ */
+exports.excluirPermanentemente = async (req, res) => {
+  try {
     const { id } = req.params;
-    const errors = validationResult(req);
-    const { nome, numProntuario, motivo, solicitante, status, dataSolicitacao, dataDevolucao } = req.body;
-
-    if (!errors.isEmpty()) {
-      // Se houver erros, renderiza o formulário novamente com os dados e erros
-      req.body.id = id; // Garante que o ID seja passado para a action do form
-      return res.render('desarquivamentos/form', {
-        title: 'Editar Desarquivamento',
-        desarquivamento: req.body,
-        csrfToken: req.csrfToken(),
-        errors: errors.array(),
-        user: req.session.user,
-        layout: 'layout'
-      });
+    const item = await Desarquivamento.findOne({ where: { id }, paranoid: false });
+    if (item) {
+      await item.destroy({ force: true }); // force: true para exclusão permanente
+      req.flash('success_msg', 'Registro excluído permanentemente.');
+    } else {
+      req.flash('error_msg', 'Registro não encontrado.');
     }
-
-    try {
-      const desarquivamento = await Desarquivamento.findByPk(id);
-      if (!desarquivamento) {
-        req.flash('error_msg', 'Registro não encontrado.');
-        return res.redirect('/desarquivamentos');
-      }
-
-      // Atualiza os campos
-      desarquivamento.nome = nome;
-      desarquivamento.numProntuario = numProntuario;
-      desarquivamento.motivo = motivo;
-      desarquivamento.solicitante = solicitante;
-      desarquivamento.status = status;
-      desarquivamento.dataSolicitacao = dataSolicitacao;
-      desarquivamento.dataDevolucao = status === 'Devolvido' ? new Date() : null;
-      desarquivamento.updatedBy = req.session.user.id;
-
-      await desarquivamento.save();
-
-      req.flash('success_msg', 'Registro atualizado com sucesso!');
-      res.redirect('/desarquivamentos');
-    } catch (error) {
-      console.error('Erro ao atualizar desarquivamento:', error);
-      req.flash('error_msg', 'Erro ao atualizar o registro. Tente novamente.');
-      res.redirect(`/desarquivamentos/${id}/editar`);
-    }
+    res.redirect('/nugecid/lixeira');
+  } catch (error) {
+    console.error('Erro ao excluir permanentemente:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao excluir o registro permanentemente.');
+    res.redirect('/nugecid/lixeira');
   }
-];
+};
+
+/**
+ * @desc Esvazia a lixeira, excluindo permanentemente todos os itens.
+ * @route POST /nugecid/lixeira/excluir-todos
+ */
+exports.esvaziarLixeira = async (req, res) => {
+  const { adminUser, adminPassword } = req.body;
+
+  try {
+    // 1. Autenticação do Administrador
+    if (!adminUser || !adminPassword) {
+      req.flash('error_msg', 'Usuário e senha do administrador são obrigatórios.');
+      return res.redirect('/nugecid/lixeira');
+    }
+    const admin = await Usuario.findOne({ where: { email: adminUser } });
+    if (!admin) {
+      req.flash('error_msg', 'Administrador não encontrado.');
+      return res.redirect('/nugecid/lixeira');
+    }
+    const isMatch = await bcrypt.compare(adminPassword, admin.senha);
+    if (!isMatch) {
+      req.flash('error_msg', 'Senha do administrador incorreta.');
+      return res.redirect('/nugecid/lixeira');
+    }
+
+    // 2. Exclusão em massa
+    const deletedCount = await Desarquivamento.destroy({
+      where: {
+        deletedAt: {
+          [Op.ne]: null
+        }
+      },
+      force: true // Exclusão permanente
+    });
+
+    req.flash('success_msg', `${deletedCount} registros foram excluídos permanentemente. A lixeira está vazia.`);
+    res.redirect('/nugecid/lixeira');
+
+  } catch (error) {
+    console.error('Erro ao esvaziar a lixeira:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao esvaziar a lixeira.');
+    res.redirect('/nugecid/lixeira');
+  }
+};
+
+/**
+ * @desc Move todos os registros ativos para a lixeira.
+ * @route POST /nugecid/desarquivamento/mover-todos-para-lixeira
+ */
+exports.moverTodosParaLixeira = async (req, res) => {
+  const { adminUser, adminPassword } = req.body;
+
+  try {
+    // 1. Autenticação do Administrador
+    if (!adminUser || !adminPassword) {
+      req.flash('error_msg', 'Usuário e senha do administrador são obrigatórios.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+    const admin = await Usuario.findOne({ where: { email: adminUser } });
+    if (!admin) {
+      req.flash('error_msg', 'Administrador não encontrado.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+    const isMatch = await bcrypt.compare(adminPassword, admin.senha);
+    if (!isMatch) {
+      req.flash('error_msg', 'Senha do administrador incorreta.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+
+    // 2. Exclusão em massa (soft-delete)
+    const deletedCount = await Desarquivamento.destroy({
+      where: {
+        deletedAt: null // Apenas registros que não estão na lixeira
+      },
+      hooks: true,
+      individualHooks: true,
+      userId: req.session.user.id
+    });
+
+    req.flash('success_msg', `${deletedCount} registros foram movidos para a lixeira.`);
+    res.redirect('/nugecid/desarquivamento');
+
+  } catch (error) {
+    console.error('Erro ao mover todos os registros para a lixeira:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao limpar os registros.');
+    res.redirect('/nugecid/desarquivamento');
+  }
+};

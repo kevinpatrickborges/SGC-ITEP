@@ -11,8 +11,7 @@ O **SGC‑ITEP** é um **Sistema de Gestão Documental** modular destinado ao In
 Ele substitui planilhas soltas e pastas físicas por um fluxo digital auditável que abrange:
 
 1. **Desarquivamento de Prontuários** (módulo **NUGECID**) – registrar, acompanhar, imprimir recibos.
-2. **Gestão de Custódia de Vestígios** (módulo **Custódia**) – já existente.
-3. Futuras extensões (Balística, Toxicologia, DNA…).
+2. Futuras extensões (Balística, Toxicologia, DNA…).
 
 Cada setor é um **plug‑in independente** (pasta `modules/<setor>`), mas compartilha login, auditoria, uploads e API.
 
@@ -96,7 +95,7 @@ Cada setor é um **plug‑in independente** (pasta `modules/<setor>`), mas compa
 ## 7. Contato / Manutenção
 
 *Responsável técnico inicial:* Kevin P. Borges  
-*E‑mail institucional:*
+*E‑mail institucional: kevin.borges.700@ufrn.edu.br
 
 Todo novo módulo deve seguir este guia e ser colocado dentro de `modules/` com:
 `model.js`, `routes.js`, `controller.js`, `views/*` e `README_module.md` explicativo.

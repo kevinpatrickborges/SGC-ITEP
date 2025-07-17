@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const vestigiosController = require('../../controllers/vestigiosController');
+const vestigiosController = require('../../controllers/custodia_vestigios/vestigiosController');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');

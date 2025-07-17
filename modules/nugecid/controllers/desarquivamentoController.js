@@ -6,6 +6,7 @@ const path = require('path');
 const { lerXLSX, mapearColunas } = require('../../../services/planilhaService');
 const { sequelize } = require('../../../config/database');
 const { spawn } = require('child_process');
+const logger = require('../../../utils/importLogger');
 
 exports.getAll = async (req, res) => {
     try {
@@ -169,6 +170,62 @@ exports.gerarTermo = async (req, res) => {
     }
 };
 
+exports.gerarTermoMassa = async (req, res) => {
+    const { selecionados } = req.body;
+
+    if (!selecionados || selecionados.length === 0) {
+        req.flash('error_msg', 'Nenhum registro foi selecionado.');
+        return res.redirect('/nugecid/desarquivamento');
+    }
+
+    try {
+        const desarquivamentos = await Desarquivamento.findAll({
+            where: {
+                id: selecionados
+            }
+        });
+
+        if (desarquivamentos.length === 0) {
+            req.flash('error_msg', 'Nenhum registro válido encontrado para os IDs selecionados.');
+            return res.redirect('/nugecid/desarquivamento');
+        }
+
+        const doc = new PDFDocument({ margin: 50, autoFirstPage: false });
+        let buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+            let pdfData = Buffer.concat(buffers);
+            res.writeHead(200, {
+                'Content-Length': Buffer.byteLength(pdfData),
+                'Content-Type': 'application/pdf',
+                'Content-disposition': `attachment;filename=termos_desarquivamento.pdf`,
+            }).end(pdfData);
+        });
+
+        desarquivamentos.forEach(desarquivamento => {
+            doc.addPage();
+            doc.fontSize(12).text('TERMO DE DESARQUIVAMENTO', { align: 'center' });
+            doc.moveDown(2);
+            doc.fontSize(10).text(`Nº do Documento: ${desarquivamento.numDocumento || 'N/A'}`);
+            doc.text(`Nome Completo: ${desarquivamento.nomeCompleto || 'N/A'}`);
+            doc.text(`Tipo de Documento: ${desarquivamento.tipoDocumento || 'N/A'}`);
+            doc.text(`Setor Demandante: ${desarquivamento.setorDemandante || 'N/A'}`);
+            doc.text(`Data da Solicitação: ${desarquivamento.dataSolicitacao ? new Date(desarquivamento.dataSolicitacao).toLocaleDateString('pt-BR') : 'N/A'}`);
+            doc.moveDown();
+            doc.text(`Finalidade: ${desarquivamento.finalidade || 'N/A'}`);
+            doc.moveDown(3);
+            doc.text('_________________________________________');
+            doc.text('Assinatura do Responsável');
+        });
+
+        doc.end();
+
+    } catch (error) {
+        req.flash('error_msg', `Erro ao gerar termos: ${error.message}`);
+        res.redirect('/nugecid/desarquivamento');
+    }
+};
+
 exports.apagarTodos = async (req, res) => {
     try {
         await Desarquivamento.destroy({ where: {}, truncate: true });
@@ -297,7 +354,11 @@ exports.formImportacao = (req, res) => {
 
 // 2. Processa o upload e mostra a pré-visualização
 exports.previewImportacao = async (req, res) => {
+    logger.iniciarLog();
+    logger.log('Iniciando pré-visualização da importação.');
+
     if (!req.file) {
+        logger.logErro('Nenhum arquivo foi enviado.');
         req.flash('error_msg', 'Nenhum arquivo foi enviado.');
         return res.redirect('/nugecid/desarquivamento/importar');
     }
@@ -308,20 +369,23 @@ exports.previewImportacao = async (req, res) => {
     }
     const tempPath = path.join(uploadsDir, `temp_${Date.now()}.xlsx`);
     fs.writeFileSync(tempPath, req.file.buffer);
+    logger.log(`Arquivo temporário criado em: ${tempPath}`);
 
     const tryCommands = ['python', 'python3'];
     let commandIndex = 0;
 
     const executePython = () => {
         if (commandIndex >= tryCommands.length) {
+            logger.logErro('Nenhum executável Python (python/python3) foi encontrado.');
             try {
                 if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-            } catch (e) { console.error("Erro ao limpar arquivo temp:", e); }
+            } catch (e) { logger.logErro('Falha ao limpar arquivo temporário após erro de Python.', e); }
             req.flash('error_msg', 'Não foi possível encontrar um executável Python válido para pré-visualização.');
             return res.redirect('/nugecid/desarquivamento/importar');
         }
 
         const command = tryCommands[commandIndex];
+        logger.log(`Tentando executar o script Python com o comando: ${command}`);
         const scriptPath = path.resolve(__dirname, '../../../python_services/read_spreadsheet.py');
         const pythonProcess = spawn(command, [scriptPath, tempPath]);
 
@@ -333,6 +397,7 @@ exports.previewImportacao = async (req, res) => {
         pythonProcess.stderr.on('data', (data) => { errorData += data.toString(); });
 
         pythonProcess.on('error', (err) => {
+            logger.logErro(`Erro ao iniciar o processo Python com '${command}'.`, err);
             if (err.code === 'ENOENT') {
                 commandIndex++;
                 executePython();
@@ -347,25 +412,34 @@ exports.previewImportacao = async (req, res) => {
         });
 
         pythonProcess.on('close', (code) => {
+            logger.log(`Script Python finalizado com código: ${code}.`);
             if (!responded) {
                 responded = true;
                 if (code !== 0) {
+                    logger.logErro(`Script Python (${command}) finalizou com erro.`, errorData);
                     try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch(e) {}
                     req.flash('error_msg', `Falha ao processar a planilha para pré-visualização. Detalhes: ${errorData}`);
                     return res.redirect('/nugecid/desarquivamento/importar');
                 }
 
                 try {
+                    logger.log('Dados brutos recebidos do Python:\n' + pythonData);
                     const registros = JSON.parse(pythonData);
-                    if (registros.error) throw new Error(registros.error);
+                    if (registros.error) {
+                        logger.logErro('Script Python retornou um erro de aplicação.', registros.error);
+                        throw new Error(registros.error);
+                    }
+                    logger.log(`Dados parseados com sucesso. ${registros.length} registros encontrados.`);
 
                     if (registros.length === 0) {
+                        logger.log('Nenhum registro encontrado na planilha.');
                         try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch(e) {}
                         req.flash('error_msg', 'A planilha está vazia ou em um formato inválido.');
                         return res.redirect('/nugecid/desarquivamento/importar');
                     }
 
                     req.session.arquivoTemp = tempPath;
+                    logger.log('Renderizando página de pré-visualização.');
                     res.render('desarquivamento/importar', {
                         preview: registros,
                         arquivoTemp: tempPath,
@@ -373,6 +447,7 @@ exports.previewImportacao = async (req, res) => {
                         erros: null
                     });
                 } catch (error) {
+                    logger.logErro('Erro ao fazer parse do JSON ou renderizar a view.', error);
                     try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch(e) {}
                     req.flash('error_msg', `Erro ao processar os dados da planilha: ${error.message}`);
                     res.redirect('/nugecid/desarquivamento/importar');
@@ -386,9 +461,11 @@ exports.previewImportacao = async (req, res) => {
 
 // 3. Confirma e executa a importação usando o serviço Python com fallback
 exports.confirmarImportacao = async (req, res) => {
+    logger.log('Iniciando confirmação da importação.');
     const { arquivoTemp } = req.body;
 
     if (!arquivoTemp || !fs.existsSync(arquivoTemp)) {
+        logger.logErro('Arquivo temporário não encontrado na confirmação.', { arquivoTemp });
         req.flash('error_msg', 'Arquivo de importação não encontrado ou a sessão expirou.');
         return res.redirect('/nugecid/desarquivamento/importar');
     }
@@ -455,16 +532,19 @@ exports.confirmarImportacao = async (req, res) => {
                 }
 
                 const t = await sequelize.transaction();
+                logger.log('Transação com o banco de dados iniciada.');
                 try {
                 const registrosDaPlanilha = JSON.parse(pythonData);
+                logger.log(`Dados da planilha parseados para a confirmação. ${registrosDaPlanilha.length} registros.`);
                 if (registrosDaPlanilha.error) throw new Error(registrosDaPlanilha.error);
 
                 const mapeamento = {
                     'Nº': 'numDocumento',
-                    'FÍSICO/DIGITAL': 'tipoDesarquivamento',
+                    'FÍSICO/DIGITAL': 'solicitacao',
                     'STATUS': 'status',
                     'NOME COMPLETO': 'nomeCompleto',
-                    'Nº DO NIC/LAUDO/AUTO/ INFORMAÇÃO TÉCNICA': 'numProcesso',
+                    'Nº DO NIC/LAUDO/AUTO/ INFORMAÇÃO TÉCNICA': 'numNic',
+                    'Nº DO PROCESSO': 'numProcesso',
                     'TIPO DE DOCUMENTO': 'tipoDocumento',
                     'DATA DE SOLICITAÇÃO': 'dataSolicitacao',
                     'DATA DE DESARQUIVAMENTO - SAG': 'dataDesarquivamento',
@@ -472,20 +552,23 @@ exports.confirmarImportacao = async (req, res) => {
                     'SETOR DEMANTANTE': 'setorDemandante',
                     'SERVIDOR DO ITEP RESPONSÁVEL (MATRÍCULA)': 'servidorResponsavel',
                     'FINALIDADE DO DESARQUIVAMENTO': 'finalidade',
-                    'SOLICITAÇÃO DE PRORROGAÇÃO DE PRAZO DE DESARQUIVAMENTO': 'prazoSolicitado'
+                    'SOLICITAÇÃO DE PRORROGAÇÃO DE PRAZO DE DESARQUIVAMENTO': 'solicitacaoProrrogacao'
                 };
                 const registrosMapeados = mapearColunas(registrosDaPlanilha, mapeamento);
+                logger.log('Mapeamento de colunas concluído.');
 
                 if (!registrosMapeados || registrosMapeados.length === 0) {
+                    logger.logErro('Nenhum registro válido após o mapeamento.');
                     await t.rollback();
                     req.flash('error_msg', 'Nenhum registro válido foi encontrado na planilha. Verifique o conteúdo e o formato.');
                     return res.redirect('/nugecid/desarquivamento/importar');
                 }
 
                 // Validação dos campos obrigatórios
-                const obrigatorios = ['tipoDesarquivamento', 'nomeCompleto', 'numDocumento', 'dataSolicitacao', 'setorDemandante'];
+                const obrigatorios = ['solicitacao', 'nomeCompleto', 'numDocumento', 'dataSolicitacao', 'setorDemandante'];
                 const registrosInvalidos = registrosMapeados.filter(reg => obrigatorios.some(campo => !reg[campo]));
                 if (registrosInvalidos.length > 0) {
+                    logger.logErro('Validação falhou. Registros inválidos encontrados.', registrosInvalidos);
                     await t.rollback();
                     let msg = `Registros inválidos encontrados (${registrosInvalidos.length}):\n`;
                     registrosInvalidos.forEach((reg, idx) => {
@@ -499,25 +582,31 @@ exports.confirmarImportacao = async (req, res) => {
                     return res.redirect('/nugecid/desarquivamento/importar');
                 }
 
+                logger.log('Iniciando loop para salvar registros no banco de dados.');
                 for (const registro of registrosMapeados) {
                     if (registro.numDocumento) {
                         await Desarquivamento.destroy({ where: { numDocumento: registro.numDocumento }, transaction: t, force: true });
                     }
                     await Desarquivamento.create(registro, { transaction: t });
                 }
+                logger.log('Loop de salvamento concluído.');
 
                 await t.commit();
+                logger.log('Transação commitada com sucesso.');
                 req.flash('success_msg', `${registrosMapeados.length} registros importados com sucesso!`);
                 res.redirect('/nugecid/desarquivamento');
                 } catch (error) {
+                    logger.logErro('Erro durante a transação com o banco de dados.', error);
                     await t.rollback();
-                    console.error("ERRO DETALHADO DE IMPORTAÇÃO:", error);
                     req.flash('error_msg', `Erro durante a importação no banco de dados: ${error.message}`);
                     res.redirect('/nugecid/desarquivamento/importar');
                 } finally {
                     try {
-                        if (fs.existsSync(arquivoTemp)) fs.unlinkSync(arquivoTemp);
-                    } catch (e) { console.error("Erro ao limpar arquivo temp:", e); }
+                        if (fs.existsSync(arquivoTemp)) {
+                            fs.unlinkSync(arquivoTemp);
+                            logger.log('Arquivo temporário limpo com sucesso.');
+                        }
+                    } catch (e) { logger.logErro('Falha ao limpar arquivo temporário na confirmação.', e); }
                 }
             }
         });

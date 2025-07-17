@@ -1,6 +1,6 @@
 'use strict';
 
-const { Publicacao } = require('../models');
+const { Publicacao, Desarquivamento } = require('../models');
 const { sequelize } = require('../config/database');
 const { Op } = require('sequelize');
 
@@ -13,15 +13,25 @@ async function getPublicacoesPorTipo() {
     });
   }
 
+async function getDesarquivamentosPorStatus() {
+    return Desarquivamento.findAll({
+        attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'total']],
+        group: ['status'],
+        raw: true
+    });
+}
+
 // Compila todos os dados para o dashboard de estatísticas.
 exports.getDashboardStats = async () => {
   try {
-    const [publicacoesPorTipo] = await Promise.all([
-      getPublicacoesPorTipo()
+    const [publicacoesPorTipo, desarquivamentosPorStatus] = await Promise.all([
+      getPublicacoesPorTipo(),
+      getDesarquivamentosPorStatus()
     ]);
 
     return {
-      publicacoesPorTipo
+      publicacoesPorTipo,
+      desarquivamentosPorStatus
     };
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error);

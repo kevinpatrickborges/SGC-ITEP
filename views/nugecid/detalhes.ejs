@@ -1,0 +1,125 @@
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
+        <div>
+            <a href="/nugecid/desarquivamento" class="btn btn-secondary btn-sm btn-icon-split">
+                <span class="icon text-white-50"><i class="fas fa-arrow-left"></i></span>
+                <span class="text">Voltar</span>
+            </a>
+            <a href="/nugecid/editar/<%= desarquivamento.id %>" class="btn btn-warning btn-sm btn-icon-split">
+                <span class="icon text-white-50"><i class="fas fa-pencil-alt"></i></span>
+                <span class="text">Editar</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Informações do Registro</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th style="width: 30%;">Nome Completo</th>
+                                <td><%= desarquivamento.nomeCompleto %></td>
+                            </tr>
+                            <tr>
+                                <th>Nº do Documento</th>
+                                <td><%= desarquivamento.numDocumento %></td>
+                            </tr>
+                            <tr>
+                                <th>Nº do Processo</th>
+                                <td><%= desarquivamento.numProcesso || 'Não informado' %></td>
+                            </tr>
+                            <tr>
+                                <th>Tipo de Documento</th>
+                                <td><%= desarquivamento.tipoDocumento || 'Não informado' %></td>
+                            </tr>
+                             <tr>
+                                <th>Tipo de Desarquivamento</th>
+                                <td><span class="badge bg-info text-dark"><%= desarquivamento.solicitacao || 'Não informado' %></span></td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td><span class="badge bg-primary"><%= desarquivamento.status %></span></td>
+                            </tr>
+                            <tr>
+                                <th>Data da Solicitação</th>
+                                <td><%= new Date(desarquivamento.dataSolicitacao).toLocaleDateString('pt-BR') %></td>
+                            </tr>
+                            <tr>
+                                <th>Data do Desarquivamento</th>
+                                <td><%= desarquivamento.dataDesarquivamento ? new Date(desarquivamento.dataDesarquivamento).toLocaleDateString('pt-BR') : 'Não informado' %></td>
+                            </tr>
+                            <tr>
+                                <th>Data da Devolução</th>
+                                <td><%= desarquivamento.dataDevolucao ? new Date(desarquivamento.dataDevolucao).toLocaleDateString('pt-BR') : 'Não informado' %></td>
+                            </tr>
+                             <tr>
+                                <th>Data Prazo Devolução</th>
+                                <td><%= desarquivamento.dataPrazoDevolucao ? new Date(desarquivamento.dataPrazoDevolucao).toLocaleDateString('pt-BR') : 'Não informado' %></td>
+                            </tr>
+                            <tr>
+                                <th>Setor Demandante</th>
+                                <td><%= desarquivamento.setorDemandante || 'Não informado' %></td>
+                            </tr>
+                            <tr>
+                                <th>Servidor Responsável</th>
+                                <td><%= desarquivamento.servidorResponsavel || 'Não informado' %></td>
+                            </tr>
+                            <tr>
+                                <th>Finalidade</th>
+                                <td><p><%= desarquivamento.finalidade || 'Não informado' %></p></td>
+                            </tr>
+                             <tr>
+                                <th>Prorrogação de Prazo</th>
+                                <td><p><%= desarquivamento.solicitacaoProrrogacao || 'Não informado' %></p></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            Metadados
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><b>Criado por:</b> <%= desarquivamento.criadoPor ? desarquivamento.criadoPor.nome : 'Sistema' %></li>
+                            <li class="list-group-item"><b>Criado em:</b> <%= new Date(desarquivamento.createdAt).toLocaleString('pt-BR') %></li>
+                            <li class="list-group-item"><b>Atualizado por:</b> <%= desarquivamento.atualizadoPor ? desarquivamento.atualizadoPor.nome : 'Ninguém' %></li>
+                            <li class="list-group-item"><b>Última atualização:</b> <%= new Date(desarquivamento.updatedAt).toLocaleString('pt-BR') %></li>
+                        </ul>
+                    </div>
+                     <div class="card mt-3">
+                        <div class="card-header">
+                            QR Code
+                        </div>
+                        <div class="card-body text-center">
+                            <div id="qrcode"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const qrCodeContainer = document.getElementById('qrcode');
+        if (qrCodeContainer) {
+            new QRCode(qrCodeContainer, {
+                text: window.location.href,
+                width: 128,
+                height: 128,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+    });
+</script>

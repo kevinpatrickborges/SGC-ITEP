@@ -34,6 +34,7 @@ module.exports = (db) => {
   if (Desarquivamento && Usuario) {
     Desarquivamento.belongsTo(Usuario, { foreignKey: 'createdBy', as: 'criadoPor' });
     Desarquivamento.belongsTo(Usuario, { foreignKey: 'updatedBy', as: 'atualizadoPor' });
+    Desarquivamento.belongsTo(Usuario, { foreignKey: 'deletedBy', as: 'deletadoPor' }); // Associação adicionada
     Usuario.hasMany(Desarquivamento, { foreignKey: 'createdBy', as: 'desarquivamentosCriados' });
     Usuario.hasMany(Desarquivamento, { foreignKey: 'updatedBy', as: 'desarquivamentosAtualizados' });
   }

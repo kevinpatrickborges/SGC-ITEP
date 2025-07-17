@@ -46,10 +46,22 @@
       </div>
     </div>
 
-    <!-- Tabelas lado a lado -->
+    <!-- Gráficos e Tabelas -->
     <div class="row">
+      <!-- Gráfico de Desarquivamentos por Status -->
+      <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h4 class="card-title mb-0">Desarquivamentos por Status</h4>
+          </div>
+          <div class="card-body d-flex justify-content-center align-items-center">
+            <canvas id="statusChart" style="max-width: 400px; max-height: 400px;"></canvas>
+          </div>
+        </div>
+      </div>
+
       <!-- Tabela de registros recentes -->
-      <div class="col-lg-8 mb-4">
+      <div class="col-lg-6 mb-4">
         <div class="card h-100">
           <div class="card-header">
             <h4 class="card-title mb-0">Registros Recentes</h4>
@@ -88,7 +100,7 @@
       </div>
 
       <!-- Seção de usuários ativos -->
-      <div class="col-lg-4 mb-4">
+      <div class="col-lg-12 mb-4">
         <div class="card h-100">
           <div class="card-header">
             <h4 class="card-title mb-0">Usuários Ativos</h4>
@@ -123,3 +135,53 @@
       </div>
     </div>
   </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const response = await fetch('/api/v1/dashboard/stats');
+    if (!response.ok) {
+      throw new Error(`Erro na requisição: ${response.statusText}`);
+    }
+    const data = await response.json();
+    
+    const statusData = data.desarquivamentosPorStatus;
+    const labels = statusData.map(item => item.status);
+    const values = statusData.map(item => item.total);
+
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'pie', // Gráfico de pizza
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Desarquivamentos',
+          data: values,
+          backgroundColor: [
+            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69'
+          ],
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          title: {
+            display: true,
+            text: 'Distribuição de Status dos Desarquivamentos'
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao carregar dados para o gráfico:', error);
+    const chartArea = document.getElementById('statusChart').parentElement;
+    chartArea.innerHTML = '<p class="text-center text-danger">Não foi possível carregar o gráfico.</p>';
+  }
+});
+</script>

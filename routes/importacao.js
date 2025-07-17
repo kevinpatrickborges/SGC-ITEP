@@ -22,13 +22,14 @@ const upload = multer({ storage });
 const roleRequired = require('../middlewares/roleRequired');
 
 // Tela de importação
-router.get('/importacao', auth, roleRequired(['admin','tecnico']), importacaoController.formImportacao);
+router.get('/importacao', auth, roleRequired(['admin','tecnico']), importacaoController.formImportacaoDesarquivamento);
 // Upload e preview
-router.post('/importacao', auth, roleRequired(['admin','tecnico']), upload.single('arquivo'), importacaoController.previewImportacao);
+router.post('/importacao', auth, roleRequired(['admin','tecnico']), upload.single('arquivo'), importacaoController.previewImportacaoDesarquivamento);
 // Confirmação da importação
-router.post('/importacao/confirmar', auth, roleRequired(['admin','tecnico']), importacaoController.confirmarImportacao);
+router.post('/importacao/confirmar', auth, roleRequired(['admin','tecnico']), importacaoController.confirmarImportacaoDesarquivamento);
 
-// API (mantida para integrações externas)
+/*
+// API (mantida para integrações externas) - Comentado pois a função 'apiImportarPlanilha' não foi encontrada no controller.
 router.post(
   '/api/v1/importacao',
   auth,
@@ -40,5 +41,6 @@ router.post(
   ],
   importacaoController.apiImportarPlanilha
 );
+*/
 
 module.exports = router;

@@ -128,11 +128,17 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover table-striped" id="dataTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>Nome Completo</th>
-                            <th>Número do Documento</th>
+                <form id="termoMassaForm" action="/nugecid/desarquivamento/gerar-termo-massa" method="POST" target="_blank">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn-info btn-sm mb-3" id="btnGerarTermoMassa" style="display: none;">
+                        <i class="fas fa-file-pdf"></i> Gerar Termo para Selecionados
+                    </button>
+                    <table class="table table-bordered table-hover table-striped" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selecionarTodos"></th>
+                                <th>Nome Completo</th>
+                                <th>Número do Documento</th>
                             <th>Setor Demandante</th>
                             <th>Data da Solicitação</th>
                             <th>Status</th>
@@ -158,6 +164,7 @@
                                 }
                             %>
                                 <tr>
+                                    <td><input type="checkbox" name="selecionados" value="<%= desarquivamento.id %>" class="checkbox-item"></td>
                                     <td>
                                         <a href="/nugecid/desarquivamento/<%= desarquivamento.id %>" class="link-discreto">
                                             <%= desarquivamento.nomeCompleto || 'N/A' %>
@@ -258,4 +265,31 @@ function confirmDeleteAll() {
         document.getElementById('deleteAllForm').submit();
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const selecionarTodos = document.getElementById('selecionarTodos');
+    const checkboxes = document.querySelectorAll('.checkbox-item');
+    const btnGerarTermoMassa = document.getElementById('btnGerarTermoMassa');
+
+    function toggleBotaoGerar() {
+        const algumSelecionado = Array.from(checkboxes).some(cb => cb.checked);
+        btnGerarTermoMassa.style.display = algumSelecionado ? 'inline-block' : 'none';
+    }
+
+    selecionarTodos.addEventListener('change', function() {
+        checkboxes.forEach(cb => {
+            cb.checked = selecionarTodos.checked;
+        });
+        toggleBotaoGerar();
+    });
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            if (!this.checked) {
+                selecionarTodos.checked = false;
+            }
+            toggleBotaoGerar();
+        });
+    });
+});
 </script>

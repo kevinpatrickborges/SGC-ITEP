@@ -1,130 +1,262 @@
-const fs = require('fs');
-const path = require('path');
-const Vestigio = require('../models/Vestigio');
-const Usuario = require('../models/Usuario'); // Adicionado para apiImportarPlanilha
-const { lerXLSX } = require('../services/planilhaService');
+const { Desarquivamento, sequelize } = require('../models');
+const xlsx = require('xlsx');
+const logger = require('../utils/importLogger');
 
-// Renderiza tela de importação
-exports.formImportacao = (req, res) => {
-  res.render('importacao/importacao', { preview: null, mensagem: null, erros: null });
+// --- Funções de Helper ---
+
+/**
+ * Normaliza os cabeçalhos da planilha para corresponderem às chaves do modelo.
+ * @param {string} header - O cabeçalho original da coluna.
+ * @returns {string|null} - A chave do modelo correspondente ou null.
+ */
+const normalizeHeader = (header) => {
+    const normalized = (header || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
+
+    const keyMap = {
+        // Mapeamento exato da planilha fornecida
+        'DESARQUIVAMENTO FÍSICO/DIGITAL': 'solicitacao',
+        'STATUS': 'status',
+        'NOME COMPLETO': 'nomeCompleto',
+        'Nº DO NIC/LAUDO/AUTO/ INFORMAÇÃO TÉCNICA': 'numDocumento',
+        'Nº PROCESSO': 'numProcesso',
+        'TIPO DE DOCUMENTO': 'tipoDocumento',
+        'DATA DE SOLICITAÇÃO': 'dataSolicitacao',
+        'DATA DO DESARQUIVAMENTO - SAG': 'dataDesarquivamento',
+        'DATA DA DEVOLUÇÃO PELO SETOR': 'dataDevolucao',
+        'SETOR DEMANDANTE': 'setorDemandante',
+        'SERVIDOR DO ITEP RESPONSÁVEL (MATRÍCULA)': 'servidorResponsavel',
+        'FINALIDADE DO DESARQUIVAMENTO': 'finalidade',
+        'SOLICITAÇÃO DE PRORROGAÇÃO DE PRAZO DE DESARQUIVAMENTO': 'solicitacaoProrrogacao'
+    };
+
+    return keyMap[normalized] || null;
 };
 
-// Processa upload e mostra preview
-exports.previewImportacao = async (req, res) => {
-  if (!req.file) {
-    return res.render('importacao/importacao', { preview: null, mensagem: null, erros: ['Arquivo não enviado.'] });
-  }
-  const ext = path.extname(req.file.originalname).toLowerCase();
-  let preview = [];
-  try {
-    if (ext === '.csv') {
-      const fileContent = fs.readFileSync(req.file.path, 'utf8');
-      const lines = fileContent.split('\n');
-      const headers = lines[0].split(',');
-      preview = lines.slice(1, 6).filter(Boolean).map(line => {
-        const values = line.split(',');
-        let obj = {};
-        headers.forEach((h, i) => obj[h.trim()] = values[i] ? values[i].trim() : '');
-        return obj;
-      });
-    } else if (ext === '.xlsx') {
-      const jsonData = await lerXLSX(req.file.buffer);
-      preview = jsonData.slice(0, 5);
-    } else {
-      throw new Error('Formato de arquivo não suportado.');
+/**
+ * Converte datas do formato Excel (número) para objeto Date do JS.
+ * @param {number} excelDate - O número da data do Excel.
+ * @returns {Date|null} - O objeto Date ou null se a entrada for inválida.
+ */
+const convertExcelDate = (excelDate) => {
+    if (!excelDate) return null;
+
+    // Se já for um objeto Date válido, retorna ele mesmo.
+    if (excelDate instanceof Date && !isNaN(excelDate)) {
+        return excelDate;
     }
-    // Salva arquivo temporário para confirmar depois
-    req.session.arquivoTemp = req.file.path;
-    res.render('importacao/importacao', { preview, arquivoTemp: req.file.filename, mensagem: null, erros: null });
-  } catch (err) {
-    res.render('importacao/importacao', { preview: null, mensagem: null, erros: [err.message] });
-  }
+
+    // Se for um número (formato de data do Excel)
+    if (typeof excelDate === 'number' && excelDate > 0) {
+        // Adiciona o fuso horário para evitar problemas de off-by-one-day
+        const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
+        const offset = date.getTimezoneOffset() * 60000;
+        return new Date(date.getTime() + offset);
+    }
+    
+    // Se for uma string, tenta converter
+    if (typeof excelDate === 'string') {
+        const cleanedDate = excelDate.trim().split(' ')[0]; // Remove a hora, se houver
+        let date;
+
+        if (cleanedDate.includes('/')) {
+            // Assume o formato DD/MM/YYYY
+            const parts = cleanedDate.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10);
+                const year = parseInt(parts[2], 10);
+                if (day && month && year && year > 1000) {
+                    date = new Date(Date.UTC(year, month - 1, day));
+                }
+            }
+        } else if (cleanedDate.includes('-')) {
+            // Assume o formato YYYY-MM-DD
+            const parts = cleanedDate.split('-');
+            if (parts.length === 3) {
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10);
+                const day = parseInt(parts[2], 10);
+                 if (day && month && year && year > 1000) {
+                    date = new Date(Date.UTC(year, month - 1, day));
+                }
+            }
+        }
+        
+        if (date && !isNaN(date.getTime())) {
+            return date;
+        }
+    }
+    
+    // Se não for uma data válida, retorna null
+    return null;
 };
 
-// Confirma importação
-exports.confirmarImportacao = async (req, res) => {
-  const arquivoTemp = req.session.arquivoTemp;
-  if (!arquivoTemp) {
-    return res.render('importacao/importacao', { preview: null, mensagem: null, erros: ['Arquivo temporário não encontrado.'] });
-  }
-  try {
-    const ext = path.extname(arquivoTemp).toLowerCase();
-    let registros = [];
-    if (ext === '.csv') {
-      const fileContent = fs.readFileSync(arquivoTemp, 'utf8');
-      const lines = fileContent.split('\n');
-      const headers = lines[0].split(',');
-      registros = lines.slice(1).filter(Boolean).map(line => {
-        const values = line.split(',');
-        let obj = {};
-        headers.forEach((h, i) => obj[h.trim()] = values[i] ? values[i].trim() : '');
-        return obj;
-      });
-    } else if (ext === '.xlsx') {
-      const fileBuffer = fs.readFileSync(arquivoTemp);
-      registros = await lerXLSX(fileBuffer);
+
+// --- Funções de Importação para Desarquivamentos ---
+
+// 1. Renderiza o formulário de importação inicial
+exports.formImportacaoDesarquivamento = (req, res) => {
+    // Limpa dados da sessão de importação anterior, se houver
+    if (req.session.importData) {
+        req.session.importData = null;
     }
-    await Vestigio.bulkCreate(registros);
-    fs.unlinkSync(arquivoTemp);
-    req.session.arquivoTemp = null;
-    res.render('importacao/importacao', { preview: null, mensagem: 'Importação realizada com sucesso!', erros: null });
-  } catch (err) {
-    res.render('importacao/importacao', { preview: null, mensagem: null, erros: [err.message] });
-  }
+    res.render('nugecid/importar', {
+        preview: null,
+        erros: null,
+        csrfToken: req.csrfToken()
+    });
 };
 
-// API REST para integração externa (opcional)
-exports.apiImportarPlanilha = async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'Arquivo não enviado.' });
-  }
-  const { tipo } = req.body;
-  const filePath = req.file.path;
-  const ext = filePath.split('.').pop().toLowerCase();
-  try {
-    let registros = [];
-    if (ext === 'csv') {
-      const fileContent = fs.readFileSync(filePath, 'utf8');
-      // csvParse is not defined in this scope, assuming it's imported elsewhere or needs to be added
-      // For now, I'll keep the original csv parsing logic as is, as the focus is on XLSX refactoring.
-      // If csvParse is a global or imported from another file, it will work.
-      // If not, this part will need further attention.
-      const lines = fileContent.split('\n');
-      const headers = lines[0].split(',');
-      registros = lines.slice(1).filter(Boolean).map(line => {
-        const values = line.split(',');
-        let obj = {};
-        headers.forEach((h, i) => obj[h.trim()] = values[i] ? values[i].trim() : '');
-        return obj;
-      });
-      await importarRegistros(tipo, registros, res);
-      return;
-    } else if (ext === 'xlsx') {
-      registros = await lerXLSX(req.file.buffer);
-      await importarRegistros(tipo, registros, res);
-      return;
-    } else {
-      return res.status(400).json({ error: 'Formato de arquivo não suportado.' });
+// 2. Processa o upload, lê a planilha e mostra a pré-visualização
+exports.previewImportacaoDesarquivamento = (req, res) => {
+    logger.iniciarLog();
+    logger.log('Iniciando pré-visualização da importação.');
+
+    if (!req.file) {
+        logger.logErro('Nenhum arquivo foi enviado.');
+        req.flash('error_msg', 'Nenhum arquivo foi enviado.');
+        return res.redirect('/nugecid/desarquivamento/importar');
     }
-  } catch (err) {
-    return res.status(500).json({ error: 'Erro ao importar planilha.' });
-  } finally {
-    fs.unlinkSync(filePath);
-  }
+
+    try {
+        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Converte para JSON, lendo todas as células como texto puro para evitar formatação automática
+        const data = xlsx.utils.sheet_to_json(worksheet, { header: 1, raw: true, defval: null });
+
+        if (data.length < 2) {
+            req.flash('error_msg', 'A planilha está vazia ou não contém cabeçalhos.');
+            return res.redirect('/nugecid/desarquivamento/importar');
+        }
+
+        const headers = data[0].map(normalizeHeader);
+        const registros = data.slice(1).map(row => {
+            const registro = {};
+            headers.forEach((key, index) => {
+                if (key) {
+                    let value = row[index];
+                    // Limpa e valida os dados
+                    if (typeof value === 'string') value = value.trim();
+                    if (value === undefined || value === null || value === '') return;
+
+                    if (key.toLowerCase().includes('data')) {
+                        registro[key] = convertExcelDate(value);
+                    } else {
+                        registro[key] = value;
+                    }
+                }
+            });
+            return registro;
+        }).filter(reg => reg.numDocumento); // Filtra registros que não têm um numDocumento
+
+        if (registros.length === 0) {
+            req.flash('error_msg', 'Nenhum registro válido com "Nº do Documento" foi encontrado na planilha.');
+            return res.redirect('/nugecid/desarquivamento/importar');
+        }
+        
+        // Armazena os dados processados na sessão para a confirmação
+        req.session.importData = registros;
+        logger.log(`Pré-visualização gerada com ${registros.length} registros válidos.`);
+
+        res.render('nugecid/importar', {
+            preview: registros,
+            erros: null,
+            csrfToken: req.csrfToken()
+        });
+
+    } catch (error) {
+        logger.logErro('Erro detalhado ao processar a planilha para pré-visualização.', {
+            message: error.message,
+            stack: error.stack
+        });
+        req.flash('error_msg', `Ocorreu um erro grave ao processar o arquivo. Detalhes: ${error.message}`);
+        res.redirect('/nugecid/desarquivamento/importar');
+    }
 };
 
-async function importarRegistros(tipo, registros, res) {
-  try {
-    if (tipo === 'vestigios') {
-      await Vestigio.bulkCreate(registros);
-      return res.json({ success: true, count: registros.length });
+// 3. Confirma e executa a importação
+exports.confirmarImportacaoDesarquivamento = async (req, res) => {
+    logger.log('Iniciando confirmação da importação.');
+    const registros = req.session.importData;
+
+    if (!registros || registros.length === 0) {
+        logger.logErro('Nenhum dado de importação encontrado na sessão.');
+        req.flash('error_msg', 'Sua sessão expirou ou não há dados para importar. Por favor, envie a planilha novamente.');
+        return res.redirect('/nugecid/desarquivamento/importar');
     }
-    if (tipo === 'usuarios') {
-      await Usuario.bulkCreate(registros);
-      return res.json({ success: true, count: registros.length });
+
+    // **CORREÇÃO CRÍTICA FINAL**: Re-hidrata os objetos Date que foram convertidos para string na sessão,
+    // usando a mesma função robusta da etapa de pré-visualização para garantir consistência.
+    registros.forEach(item => {
+        for (const key in item) {
+            if (key.toLowerCase().includes('data')) {
+                item[key] = convertExcelDate(item[key]);
+            }
+        }
+    });
+
+    const t = await sequelize.transaction();
+    logger.log('Transação com o banco de dados iniciada.');
+    let createdCount = 0;
+    let updatedCount = 0;
+
+    try {
+        const userId = req.session.user.id;
+
+        for (const [index, item] of registros.entries()) {
+            if (!item.numDocumento) continue; // Pula se não houver o identificador principal
+
+            // Validações CRÍTICAS
+            if (!item.dataSolicitacao || !(item.dataSolicitacao instanceof Date)) {
+                throw new Error(`A 'DATA DE SOLICITAÇÃO' na linha ${index + 2} da planilha está vazia ou em um formato inválido.`);
+            }
+            if (!item.status || typeof item.status !== 'string') {
+                 throw new Error(`O 'STATUS' na linha ${index + 2} da planilha está vazio ou inválido.`);
+            }
+
+            const [record, created] = await Desarquivamento.findOrCreate({
+                where: { numDocumento: item.numDocumento },
+                defaults: { ...item, createdBy: userId, updatedBy: userId },
+                transaction: t
+            });
+
+            if (created) {
+                createdCount++;
+            } else {
+                // Se não foi criado, atualiza o registro existente
+                await record.update({ ...item, updatedBy: userId }, { transaction: t });
+                updatedCount++;
+            }
+        }
+
+        await t.commit();
+        logger.log(`Transação commitada. ${createdCount} criados, ${updatedCount} atualizados.`);
+        
+        // Limpa os dados da sessão
+        req.session.importData = null;
+
+        req.flash('success_msg', `${createdCount} registros criados e ${updatedCount} atualizados com sucesso!`);
+        return res.redirect('/nugecid/desarquivamento');
+
+    } catch (error) {
+        await t.rollback();
+        
+        let detailedMessage = error.message;
+        // Sequelize validation errors têm um array 'errors' com detalhes.
+        if (error.name === 'SequelizeValidationError' && error.errors && error.errors.length > 0) {
+            detailedMessage = error.errors.map(e => `Campo '${e.path}' com valor '${e.value}' falhou na validação: ${e.message}`).join('; ');
+        }
+
+        logger.logErro('Erro detalhado durante a transação com o banco de dados.', {
+            message: detailedMessage,
+            originalError: error
+        });
+        
+        req.session.importData = null;
+
+        req.flash('error_msg', `Erro de Validação ao Salvar: ${detailedMessage}`);
+        return res.redirect('/nugecid/desarquivamento/importar');
     }
-    return res.status(400).json({ error: 'Tipo de importação inválido.' });
-  } catch (err) {
-    return res.status(500).json({ error: 'Erro ao importar registros.' });
-  }
-}
+};

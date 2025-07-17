@@ -11,6 +11,7 @@ router.post('/', ensureAuthenticated, desarquivamentoController.create);
 router.get('/lixeira', ensureAuthenticated, desarquivamentoController.getLixeira);
 router.post('/lixeira/esvaziar', ensureAuthenticated, desarquivamentoController.esvaziarLixeira);
 router.post('/delete-all', ensureAuthenticated, desarquivamentoController.apagarTodos);
+router.post('/gerar-termo-massa', ensureAuthenticated, desarquivamentoController.gerarTermoMassa);
 
 // Rotas com parâmetros (mais genéricas) depois
 router.get('/:id', ensureAuthenticated, desarquivamentoController.getById);
