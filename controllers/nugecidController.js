@@ -10,6 +10,8 @@ const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const fs = require('fs');
 const path = require('path');
+const mammoth = require('mammoth');
+const HTMLtoDOCX = require('html-to-docx');
 
 /**
  * @desc Exibe a lista de desarquivamentos com filtros
@@ -40,7 +42,7 @@ exports.getList = async (req, res) => {
       include: ['criadoPor', 'atualizadoPor']
     });
 
-    res.render('desarquivamentos/list', {
+    res.render('nugecid/list', {
       title: 'NUGECID – Desarquivamentos',
       desarquivamentos,
       filtros: req.query, // Passa os filtros de volta para a view
@@ -60,7 +62,7 @@ exports.getList = async (req, res) => {
  * @route GET /desarquivamentos/novo
  */
 exports.getForm = (req, res) => {
-  res.render('desarquivamentos/form', {
+  res.render('nugecid/form', {
     title: 'Novo Desarquivamento',
     desarquivamento: {},
     csrfToken: req.csrfToken(),
@@ -96,7 +98,7 @@ exports.postNewForm = [
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.render('desarquivamentos/form', {
+      return res.render('nugecid/form', {
         title: 'Novo Desarquivamento',
         desarquivamento: req.body,
         errors: errors.array(),
@@ -140,7 +142,7 @@ exports.postNewForm = [
       console.error('Erro ao criar desarquivamento:', error);
       req.flash('error_msg', 'Erro ao criar o registro. Tente novamente.');
       // Renderiza o formulário novamente em caso de erro no DB
-      res.render('desarquivamentos/form', {
+      res.render('nugecid/form', {
         title: 'Novo Desarquivamento',
         desarquivamento: req.body, // Passa o corpo da requisição de volta
         csrfToken: req.csrfToken(),
@@ -164,7 +166,7 @@ exports.postEditForm = [
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-      return res.render('desarquivamentos/form', {
+      return res.render('nugecid/form', {
         title: 'Editar Desarquivamento',
         desarquivamento: { id, ...req.body },
         errors: errors.array(),
@@ -176,10 +178,10 @@ exports.postEditForm = [
 
     try {
       const desarquivamento = await Desarquivamento.findByPk(id);
-      if (!desarquivamento) {
-        req.flash('error_msg', 'Registro não encontrado.');
-        return res.redirect('/desarquivamentos');
-      }
+    if (!desarquivamento) {
+      req.flash('error_msg', 'Registro não encontrado.');
+      return res.redirect('/nugecid');
+    }
 
       const fixDate = (input) => {
         if (!input) return input;
@@ -210,7 +212,7 @@ exports.postEditForm = [
     } catch (error) {
       console.error('Erro ao atualizar desarquivamento:', error);
       req.flash('error_msg', 'Erro ao atualizar o registro. Tente novamente.');
-      res.render('desarquivamentos/form', {
+      res.render('nugecid/form', {
         title: 'Editar Desarquivamento',
         desarquivamento: { id, ...req.body },
         errors: [{ msg: 'Ocorreu um erro no servidor.' }],
@@ -227,12 +229,12 @@ exports.getEditForm = async (req, res) => {
         const { id } = req.params;
         const desarquivamento = await Desarquivamento.findByPk(id);
         
-        if (!desarquivamento) {
-            req.flash('error_msg', 'Registro não encontrado.');
-            return res.redirect('/desarquivamentos');
-        }
+    if (!desarquivamento) {
+      req.flash('error_msg', 'Registro não encontrado.');
+      return res.redirect('/nugecid');
+    }
 
-        res.render('desarquivamentos/form', {
+        res.render('nugecid/form', {
             title: 'Editar Desarquivamento',
             desarquivamento,
             csrfToken: req.csrfToken(),
@@ -241,10 +243,10 @@ exports.getEditForm = async (req, res) => {
             layout: 'layout'
         });
     } catch (error) {
-        console.error('Erro ao carregar o formulário de edição:', error);
-        req.flash('error_msg', 'Não foi possível carregar o formulário de edição.');
-        res.redirect('/desarquivamentos');
-    }
+    console.error('Erro ao carregar o formulário de edição:', error);
+    req.flash('error_msg', 'Não foi possível carregar o formulário de edição.');
+    res.redirect('/nugecid');
+  }
 };
 
 /**
@@ -296,8 +298,8 @@ exports.deleteItem = async (req, res) => {
     // 5. Se tudo estiver correto, proceder com a exclusão
     const desarquivamento = await Desarquivamento.findByPk(id);
     if (!desarquivamento) {
-      req.flash('error_msg', 'Registro a ser excluído não encontrado.');
-      return res.redirect('/nugecid/desarquivamento');
+      req.flash('error_msg', 'Registro não encontrado.');
+      return res.redirect('/nugecid');
     }
 
     await desarquivamento.destroy({
@@ -348,7 +350,7 @@ exports.getDetalhes = async (req, res) => {
  * @route GET /desarquivamentos/importar
  */
 exports.getImportForm = (req, res) => {
-  res.render('desarquivamentos/import', {
+  res.render('nugecid/import', {
     title: 'Importar Planilha',
     csrfToken: req.csrfToken(),
     user: req.session.user,
@@ -418,7 +420,7 @@ const normalizeDataKeys = (data) => {
 exports.postImport = (req, res) => {
   if (!req.file) {
     req.flash('error_msg', 'Nenhum arquivo foi enviado.');
-    return res.redirect('/desarquivamentos/importar');
+    return res.redirect('/nugecid/importar');
   }
 
   try {
@@ -431,13 +433,13 @@ exports.postImport = (req, res) => {
 
     if (!dados || dados.length === 0) {
       req.flash('error_msg', 'A planilha está vazia ou não foi possível ler os dados.');
-      return res.redirect('/desarquivamentos/importar');
+      return res.redirect('/nugecid/importar');
     }
 
     // Armazena os dados na sessão para a confirmação
     req.session.importData = dados;
 
-    res.render('desarquivamentos/import-preview', {
+    res.render('nugecid/import-preview', {
       title: 'Pré-visualização da Importação',
       dados,
       csrfToken: req.csrfToken(),
@@ -448,7 +450,7 @@ exports.postImport = (req, res) => {
   } catch (error) {
     console.error('Erro ao processar a planilha:', error);
     req.flash('error_msg', 'Ocorreu um erro ao ler o arquivo. Verifique o formato.');
-    res.redirect('/desarquivamentos/importar');
+    res.redirect('/nugecid/importar');
   }
 };
 
@@ -592,7 +594,7 @@ exports.exportXLSX = async (req, res) => {
   } catch (error) {
     console.error('Erro ao exportar para XLSX:', error);
     req.flash('error_msg', 'Falha ao exportar dados para XLSX.');
-    res.redirect('/desarquivamentos');
+    res.redirect('/nugecid');
   }
 };
 
@@ -679,7 +681,7 @@ exports.exportPDF = async (req, res) => {
   } catch (error) {
     console.error('Erro ao exportar para PDF:', error);
     req.flash('error_msg', 'Falha ao exportar dados para PDF.');
-    res.redirect('/desarquivamentos');
+    res.redirect('/nugecid');
   }
 };
 
@@ -869,7 +871,79 @@ exports.getSelecaoTermo = async (req, res) => {
  * @desc Gera o termo de desarquivamento com múltiplos registros.
  * @route POST /nugecid/termo/gerar
  */
+exports.prepararTermo = async (req, res) => {
+  try {
+    const { registroIds, observacao, numero_do_processo, data_do_desarquivamento } = req.body;
+
+    if (!registroIds || registroIds.length === 0) {
+      req.flash('error_msg', 'Nenhum registro selecionado.');
+      return res.redirect('/nugecid/termo/selecionar');
+    }
+
+    const ids = Array.isArray(registroIds) ? registroIds : [registroIds];
+    const registros = await Desarquivamento.findAll({ where: { id: ids } });
+
+    res.render('nugecid/preparar-termo', {
+      title: 'Preparar e Editar Termo',
+      registros,
+      observacao: observacao || '',
+      numero_do_processo: numero_do_processo || '',
+      data_do_desarquivamento: data_do_desarquivamento || new Date().toISOString().split('T')[0],
+      csrfToken: req.csrfToken()
+    });
+
+  } catch (error) {
+    console.error('Erro ao preparar o termo:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao preparar o documento.');
+    res.redirect('/nugecid/termo/selecionar');
+  }
+};
+
 exports.gerarTermoEmMassa = async (req, res) => {
+  try {
+    const { registros, observacao, numero_do_processo, data_do_desarquivamento } = req.body;
+
+    const templatePath = path.resolve(__dirname, '..', 'templates', 'termo_desarquivamento_modelo.docx');
+    const content = fs.readFileSync(templatePath);
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+      delimiters: { start: '{', end: '}' }
+    });
+
+    const dadosParaTemplate = {
+      numero_do_processo: numero_do_processo || '',
+      data_do_desarquivamento: data_do_desarquivamento ? new Date(data_do_desarquivamento + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '',
+      registros: registros.map((r, index) => ({
+        'Nº': index + 1,
+        Tipo_de_documento: r.tipoDocumento || '',
+        nome_completo: r.nomeCompleto || '',
+        Numero_do_documeto: r.numDocumento || '',
+        observacao: observacao || ''
+      }))
+    };
+
+    doc.render(dadosParaTemplate);
+
+    const buf = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+
+    res.setHeader('Content-Disposition', `attachment; filename=Termo_Desarquivamento_Final.docx`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.send(buf);
+
+  } catch (error) {
+    console.error('Erro ao gerar o termo em massa:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao gerar o documento.');
+    res.redirect('/nugecid/termo/selecionar');
+  }
+};
+
+/**
+ * @desc Gera uma visualização HTML do termo de desarquivamento.
+ * @route POST /nugecid/termo/visualizar
+ */
+exports.visualizarTermo = async (req, res) => {
   try {
     const { registroIds, observacao, numero_do_processo, data_do_desarquivamento } = req.body;
 
@@ -892,7 +966,7 @@ exports.gerarTermoEmMassa = async (req, res) => {
 
     const dadosParaTemplate = {
       numero_do_processo: numero_do_processo || '',
-      data_do_desarquivamento: data_do_desarquivamento ? new Date(data_do_desarquivamento).toLocaleDateString('pt-BR') : '',
+      data_do_desarquivamento: data_do_desarquivamento ? new Date(data_do_desarquivamento + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '',
       registros: registros.map((r, index) => ({
         'Nº': index + 1,
         Tipo_de_documento: r.tipoDocumento || '',
@@ -904,15 +978,45 @@ exports.gerarTermoEmMassa = async (req, res) => {
 
     doc.render(dadosParaTemplate);
 
-    const buf = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+    const buf = doc.getZip().generate({ type: 'nodebuffer' });
 
-    res.setHeader('Content-Disposition', `attachment; filename=Termo_Desarquivamento_Múltiplo.docx`);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.send(buf);
+    // Converte o DOCX gerado para HTML
+    const { value: html } = await mammoth.convertToHtml({ buffer: buf });
+
+    res.render('nugecid/visualizar-termo', {
+      title: 'Visualizar Termo de Desarquivamento',
+      htmlContent: html,
+      formData: req.body, // Passa os dados para o download
+      csrfToken: req.csrfToken()
+    });
 
   } catch (error) {
-    console.error('Erro ao gerar o termo em massa:', error);
-    req.flash('error_msg', 'Ocorreu um erro ao gerar o documento.');
+    console.error('Erro ao visualizar o termo:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao visualizar o documento.');
+    res.redirect('/nugecid/termo/selecionar');
+  }
+};
+
+exports.gerarTermoEditado = async (req, res) => {
+  try {
+    const { editedContent } = req.body;
+    if (!editedContent) {
+      req.flash('error_msg', 'Conteúdo editado não fornecido.');
+      return res.redirect('/nugecid/termo/selecionar');
+    }
+
+    const buffer = await HTMLtoDOCX(editedContent, null, {
+      table: { row: { cantSplit: true } },
+      footer: true,
+      pageNumber: true,
+    });
+
+    res.setHeader('Content-Disposition', `attachment; filename=Termo_Desarquivamento_Editado.docx`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.send(buffer);
+  } catch (error) {
+    console.error('Erro ao gerar DOCX editado:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao gerar o documento editado.');
     res.redirect('/nugecid/termo/selecionar');
   }
 };

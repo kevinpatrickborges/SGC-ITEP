@@ -101,12 +101,8 @@ async function startServer() {
     // Rotas que não devem ser protegidas (ex: APIs sem estado) devem ser declaradas ANTES desta linha.
     app.use(csrfProtection);
 
-    // Rotas do Módulo NUGECID
-    app.use('/nugecid', require('./modules/nugecid/nugecid.routes'));
-
-    // Rotas legadas (a serem desativadas ou migradas)
-    app.use('/arquivo-morto', require('./routes/arquivoMorto.routes.js'));
-    // app.use('/desarquivamentos', require('./routes/desarquivamentos.routes.js')); // Desativada e substituída pela rota do módulo
+    // Rotas do Módulo NUGECID (agora consolidadas)
+    app.use('/nugecid', require('./routes/nugecid.routes.js'));
     app.use('/api/export', require('./routes/api/export'));
     app.use('/api/v1/auth', require('./routes/api/auth'));
     app.use('/api/v1/custodia-vestigios', require('./routes/custodia_vestigios/api'));

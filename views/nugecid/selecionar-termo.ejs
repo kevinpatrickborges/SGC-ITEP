@@ -9,7 +9,7 @@
     </a>
   </div>
 
-  <form action="/nugecid/termo/gerar" method="POST">
+  <form action="/nugecid/termo/visualizar" method="POST">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
     <!-- Campos Gerais do Termo -->
@@ -25,7 +25,14 @@
           </div>
           <div class="col-md-6 mb-3">
             <label for="data_do_desarquivamento" class="form-label">Data do Desarquivamento</label>
-            <input type="date" class="form-control" id="data_do_desarquivamento" name="data_do_desarquivamento" value="<%= new Date().toISOString().split('T')[0] %>">
+            <%
+              const hoje = new Date();
+              const dia = String(hoje.getDate()).padStart(2, '0');
+              const mes = String(hoje.getMonth() + 1).padStart(2, '0'); // Mês é base 0
+              const ano = hoje.getFullYear();
+              const dataFormatada = `${ano}-${mes}-${dia}`;
+            %>
+            <input type="date" class="form-control" id="data_do_desarquivamento" name="data_do_desarquivamento" value="<%= dataFormatada %>">
           </div>
         </div>
         <div class="mb-3">
@@ -73,9 +80,9 @@
     </div>
 
     <div class="d-flex justify-content-end mb-4">
-      <button type="submit" class="btn btn-success btn-lg">
-        <i class="fas fa-file-word me-2"></i>
-        Gerar Documento
+      <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fas fa-eye me-2"></i>
+        Visualizar Termo
       </button>
     </div>
   </form>

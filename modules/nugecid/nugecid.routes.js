@@ -47,6 +47,7 @@ router.post('/desarquivamento/mover-todos-para-lixeira', ensureAuthenticated, ca
 // Rotas para geração de termo com múltiplos registros
 router.get('/termo/selecionar', ensureAuthenticated, canViewNugecid, controller.getSelecaoTermo);
 router.post('/termo/gerar', ensureAuthenticated, canViewNugecid, controller.gerarTermoEmMassa);
+router.post('/termo/visualizar', ensureAuthenticated, canViewNugecid, controller.visualizarTermo);
 
 
 module.exports = router;

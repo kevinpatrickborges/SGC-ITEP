@@ -106,10 +106,14 @@
                             Ações
                         </div>
                         <div class="card-body">
-                            <a href="/nugecid/desarquivamento/<%= desarquivamento.id %>/termo" class="btn btn-primary w-100">
-                                <i class="fas fa-file-word me-2"></i>
-                                Gerar Termo de Desarquivamento
-                            </a>
+                            <form action="/nugecid/termo/visualizar" method="POST">
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                <input type="hidden" name="registroIds" value="<%= desarquivamento.id %>">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-file-word me-2"></i>
+                                    Visualizar Termo de Desarquivamento
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
