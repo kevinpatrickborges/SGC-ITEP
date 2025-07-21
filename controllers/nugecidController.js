@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const mammoth = require('mammoth');
 const HTMLtoDOCX = require('html-to-docx');
+const Auditoria = require('../models/Auditoria');
 
 /**
  * @desc Exibe a lista de desarquivamentos com filtros
@@ -45,7 +46,7 @@ exports.getList = async (req, res) => {
     res.render('nugecid/list', {
       title: 'NUGECID – Desarquivamentos',
       desarquivamentos,
-      filtros: req.query, // Passa os filtros de volta para a view
+      filtros: req.query,
       csrfToken: req.csrfToken(),
       user: req.session.user,
       layout: 'layout'
@@ -126,7 +127,7 @@ exports.postNewForm = [
         return new Date(y, m - 1, d, 12, 0, 0);
       };
 
-      await Desarquivamento.create({
+      const newDes = await Desarquivamento.create({
         ...req.body,
         dataSolicitacao: fixDate(req.body.dataSolicitacao),
         dataDesarquivamento: fixDate(req.body.dataDesarquivamento),
@@ -134,6 +135,14 @@ exports.postNewForm = [
         dataPrazoDevolucao: fixDate(req.body.dataPrazoDevolucao),
         createdBy: req.session.user.id,
         updatedBy: req.session.user.id
+      });
+
+      await Auditoria.create({
+        userId: req.session.user.id,
+        action: 'create',
+        entity: 'Desarquivamento',
+        entityId: newDes.id,
+        details: JSON.stringify(newDes.toJSON())
       });
 
       req.flash('success_msg', 'Registro de desarquivamento criado com sucesso!');
@@ -207,6 +216,14 @@ exports.postEditForm = [
 
       await desarquivamento.save();
 
+      await Auditoria.create({
+        userId: req.session.user.id,
+        action: 'update',
+        entity: 'Desarquivamento',
+        entityId: desarquivamento.id,
+        details: JSON.stringify(desarquivamento.toJSON())
+      });
+
       req.flash('success_msg', 'Registro atualizado com sucesso!');
       res.redirect('/nugecid/desarquivamento');
     } catch (error) {
@@ -225,24 +242,24 @@ exports.postEditForm = [
 ];
 
 exports.getEditForm = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const desarquivamento = await Desarquivamento.findByPk(id);
-        
+  try {
+    const { id } = req.params;
+    const desarquivamento = await Desarquivamento.findByPk(id);
+    
     if (!desarquivamento) {
       req.flash('error_msg', 'Registro não encontrado.');
       return res.redirect('/nugecid');
     }
 
-        res.render('nugecid/form', {
-            title: 'Editar Desarquivamento',
-            desarquivamento,
-            csrfToken: req.csrfToken(),
-            errors: [],
-            user: req.session.user,
-            layout: 'layout'
-        });
-    } catch (error) {
+    res.render('nugecid/form', {
+      title: 'Editar Desarquivamento',
+      desarquivamento,
+      csrfToken: req.csrfToken(),
+      errors: [],
+      user: req.session.user,
+      layout: 'layout'
+    });
+  } catch (error) {
     console.error('Erro ao carregar o formulário de edição:', error);
     req.flash('error_msg', 'Não foi possível carregar o formulário de edição.');
     res.redirect('/nugecid');
@@ -291,6 +308,13 @@ exports.deleteItem = async (req, res) => {
     // 4. Comparar a senha fornecida com a senha hash no banco de dados
     const isMatch = await bcrypt.compare(adminPassword, admin.senha);
     if (!isMatch) {
+      await Auditoria.create({
+        userId: req.session.user.id,
+        action: 'delete_attempt_failed',
+        entity: 'Desarquivamento',
+        entityId: id,
+        details: 'Senha incorreta'
+      });
       req.flash('error_msg', 'Senha do administrador incorreta.');
       return res.redirect('/nugecid/desarquivamento');
     }
@@ -298,6 +322,13 @@ exports.deleteItem = async (req, res) => {
     // 5. Se tudo estiver correto, proceder com a exclusão
     const desarquivamento = await Desarquivamento.findByPk(id);
     if (!desarquivamento) {
+      await Auditoria.create({
+        userId: req.session.user.id,
+        action: 'delete_attempt_failed',
+        entity: 'Desarquivamento',
+        entityId: id,
+        details: 'Registro não encontrado'
+      });
       req.flash('error_msg', 'Registro não encontrado.');
       return res.redirect('/nugecid');
     }
@@ -306,6 +337,14 @@ exports.deleteItem = async (req, res) => {
       hooks: true,
       individualHooks: true,
       userId: req.session.user.id // Registra quem fez a ação original
+    });
+
+    await Auditoria.create({
+      userId: req.session.user.id,
+      action: 'delete_success',
+      entity: 'Desarquivamento',
+      entityId: id,
+      details: JSON.stringify(desarquivamento.toJSON())
     });
 
     req.flash('success_msg', 'Registro enviado para a lixeira com sucesso.');
@@ -336,7 +375,10 @@ exports.getDetalhes = async (req, res) => {
 
     res.render('nugecid/detalhes', {
       title: 'Detalhes do Desarquivamento',
-      desarquivamento
+      desarquivamento,
+      csrfToken: req.csrfToken(),
+      user: req.session.user,
+      layout: 'layout'
     });
   } catch (error) {
     console.error('Erro ao buscar detalhes do desarquivamento:', error);
