@@ -241,10 +241,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (collapseElement && icon) {
         collapseElement.addEventListener('show.bs.collapse', function () {
-            icon.classList.remove('fa-chevron-down').addClass('fa-chevron-up');
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
         });
         collapseElement.addEventListener('hide.bs.collapse', function () {
-            icon.classList.remove('fa-chevron-up').addClass('fa-chevron-down');
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
         });
     }
 

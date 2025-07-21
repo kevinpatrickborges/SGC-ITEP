@@ -30,7 +30,7 @@ app.use(cookieParser(process.env.COOKIE_SECRET || 'seu-segredo-super-secreto-par
 app.use(session({
   secret: process.env.SESSION_SECRET || 'itep2025',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: { maxAge: 15 * 60 * 1000 } // 15 minutos
 }));
 
@@ -96,6 +96,9 @@ async function startServer() {
 
     // Rotas de importação (sem CSRF global, pois é tratado na própria rota)
     app.use('/nugecid/desarquivamento/importar', require('./modules/nugecid/routes/desarquivamento.import.routes'));
+
+    // Rotas que precisam de CSRF mas com tratamento especial
+    app.use('/viewer', require('./routes/viewer.js'));
 
     // Aplica a proteção CSRF a todas as rotas que vêm a seguir.
     // Rotas que não devem ser protegidas (ex: APIs sem estado) devem ser declaradas ANTES desta linha.

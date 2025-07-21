@@ -7,7 +7,7 @@
     <tr>
       <th>Nome</th>
       <th>Matrícula</th>
-      <th>Email</th>
+      <th>Usuário</th>
       <th>Perfil</th>
       <th>Criado em</th>
       <th></th>
@@ -22,7 +22,7 @@
         <td><%= u.nome %></td>
         <td><%= u.matricula %></td>
         <td><%= u.email %></td>
-        <td><span class="badge bg-info"><%= u.perfil %></span></td>
+        <td><span class="badge bg-info"><%= u.role ? u.role.nome : 'Sem perfil' %></span></td>
         <td><%= u.createdAt ? u.createdAt.toLocaleString('pt-BR') : '' %></td>
         <td class="text-center">
           <a href="/usuarios/<%= u.id %>" class="btn btn-sm btn-outline-info"><%= __('Detalhes') %></a>

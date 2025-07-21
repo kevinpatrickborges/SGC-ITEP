@@ -26,8 +26,9 @@
                             <div class="form-group col-md-6">
                                 <label for="tipoDesarquivamento">Desarquivamento Físico/Digital</label>
                                 <select id="tipoDesarquivamento" name="tipoDesarquivamento" class="form-control" required>
-                                    <option value="Físico" <%= desarquivamento && desarquivamento.tipoDesarquivamento === 'Físico' ? 'selected' : '' %>>Físico</option>
-                                    <option value="Digital" <%= desarquivamento && desarquivamento.tipoDesarquivamento === 'Digital' ? 'selected' : '' %>>Digital</option>
+                                    <option value="Físico" <%= desarquivamento && (desarquivamento.tipoDesarquivamento === 'Físico' || desarquivamento.solicitacao === 'Físico') ? 'selected' : '' %>>Físico</option>
+                                    <option value="Digital" <%= desarquivamento && (desarquivamento.tipoDesarquivamento === 'Digital' || desarquivamento.solicitacao === 'Digital') ? 'selected' : '' %>>Digital</option>
+                                    <option value="Não Localizado" <%= desarquivamento && (desarquivamento.tipoDesarquivamento === 'Não Localizado' || desarquivamento.solicitacao === 'Não Localizado') ? 'selected' : '' %>>Não Localizado</option>
                                 </select>
                             </div>
                             <div class="form-group col-md-6">
@@ -81,8 +82,8 @@
 
                         <div class="form-row">
                             <div class="form-group col-md-6">
-                                <label for="setorDemandante">Setor Demandante</label>
-                                <input type="text" class="form-control" id="setorDemandante" name="setorDemandante" value="<%= desarquivamento ? desarquivamento.setorDemandante : '' %>" required>
+                                <label for="setorDemandante">Setor Demandante (Opcional)</label>
+                                <input type="text" class="form-control" id="setorDemandante" name="setorDemandante" value="<%= desarquivamento ? desarquivamento.setorDemandante : '' %>">
                             </div>
                             <div class="form-group col-md-6">
                                 <label for="servidorResponsavel">Servidor Responsável (Matrícula) (Opcional)</label>
@@ -91,13 +92,18 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="finalidade">Finalidade do Desarquivamento</label>
-                            <textarea class="form-control" id="finalidade" name="finalidade" rows="3" required><%= desarquivamento ? desarquivamento.finalidade : '' %></textarea>
+                            <label for="finalidade">Finalidade do Desarquivamento (Opcional)</label>
+                            <textarea class="form-control" id="finalidade" name="finalidade" rows="3"><%= desarquivamento ? desarquivamento.finalidade : '' %></textarea>
                         </div>
 
                         <div class="form-group">
-                            <label for="prazoSolicitado">Solicitação de Prazo (Opcional)</label>
-                            <input type="text" class="form-control" id="prazoSolicitado" name="prazoSolicitado" value="<%= desarquivamento ? desarquivamento.prazoSolicitado : '' %>">
+                            <label for="solicitacaoProrrogacao">Solicitação de Prorrogação (Opcional)</label>
+                            <textarea class="form-control" id="solicitacaoProrrogacao" name="solicitacaoProrrogacao" rows="2"><%= desarquivamento ? desarquivamento.solicitacaoProrrogacao : '' %></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dataPrazoDevolucao">Data Prazo Devolução (Opcional)</label>
+                            <input type="date" class="form-control" id="dataPrazoDevolucao" name="dataPrazoDevolucao" value="<%= desarquivamento && desarquivamento.dataPrazoDevolucao ? new Date(desarquivamento.dataPrazoDevolucao).toISOString().split('T')[0] : '' %>">
                         </div>
                     </div>
                 </div>

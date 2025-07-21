@@ -146,7 +146,7 @@
                   </td>
                   <td>
                     <a href="/nugecid/editar/<%= item.id %>" class="btn btn-light btn-sm" title="Editar"><i class="fas fa-pencil-alt text-primary"></i></a>
-                    <button type="button" class="btn btn-light btn-sm delete-btn" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-delete-url="/nugecid/deletar/<%= item.id %>" title="Excluir">
+                    <button type="button" class="btn btn-light btn-sm delete-btn" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-delete-url="/nugecid/<%= item.id %>/excluir" title="Excluir">
                         <i class="fas fa-trash text-danger"></i>
                     </button>
                   </td>
@@ -168,12 +168,16 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Configura o modal de exclusão
   const confirmDeleteModal = document.getElementById('confirmDeleteModal');
-  confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const deleteUrl = button.getAttribute('data-delete-url');
-    const form = document.getElementById('confirmDeleteForm');
-    form.action = deleteUrl;
-  });
+  if (confirmDeleteModal) {
+    confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const deleteUrl = button.getAttribute('data-delete-url');
+      const form = document.getElementById('confirmDeleteForm');
+      if (form) {
+        form.action = deleteUrl;
+      }
+    });
+  }
 
   // Redireciona para a página de detalhes ao clicar na linha
   const linhas = document.querySelectorAll('.registro-linha');

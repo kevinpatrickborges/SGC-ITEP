@@ -7,8 +7,8 @@ const { ensureAuthenticated, checkRole } = require('../middlewares/auth');
 const multer = require('multer');
 
 // Middlewares de permissão
-const canEditNugecid = checkRole(['admin', 'NUGECID_EDITOR']);
-const canViewNugecid = checkRole(['admin', 'NUGECID_EDITOR', 'auditor']);
+const canEditNugecid = checkRole(['admin', 'NUGECID_EDITOR', 'tecnico', 'auditor']);
+const canViewNugecid = checkRole(['admin', 'NUGECID_EDITOR', 'auditor', 'tecnico']);
 const isAdmin = checkRole(['admin']); // Apenas para ações mais restritas
 
 // Configuração do Multer para upload de arquivos em memória

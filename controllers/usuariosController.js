@@ -9,12 +9,22 @@ const { registrarAuditoria } = require('../middleware/auditoria');
 
 // Listar usuários
 exports.listarUsuarios = async (req, res) => {
-  const usuarios = await Usuario.findAll({ order: [['createdAt', 'DESC']] });
-  res.render('usuarios/lista', {
-    title: res.__('Usuários'),
-    usuarios,
-    csrfToken: res.locals.csrfToken || (typeof req.csrfToken === 'function' ? req.csrfToken() : '')
-  });
+  try {
+    const Role = require('../models/Role');
+    const usuarios = await Usuario.findAll({ 
+      include: [{ model: Role, as: 'role' }],
+      order: [['createdAt', 'DESC']] 
+    });
+    res.render('usuarios/lista', {
+      title: res.__('Usuários'),
+      usuarios,
+      csrfToken: res.locals.csrfToken || (typeof req.csrfToken === 'function' ? req.csrfToken() : '')
+    });
+  } catch (error) {
+    console.error('Erro ao listar usuários:', error);
+    req.flash('error_msg', 'Erro ao carregar lista de usuários.');
+    res.redirect('/dashboard');
+  }
 };
 
 // Formulário de novo usuário

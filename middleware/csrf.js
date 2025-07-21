@@ -33,6 +33,10 @@ const {
     if (req.path === '/nugecid/desarquivamento/importar' && req.method === 'POST') {
       return true;
     }
+    // Pular também para a rota do viewer upload, pois será aplicada manualmente
+    if (req.path === '/viewer/upload' && req.method === 'POST') {
+      return true;
+    }
     return false;
   }
 });

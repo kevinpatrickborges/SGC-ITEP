@@ -79,7 +79,7 @@ exports.getForm = (req, res) => {
  */
 // Middleware de validação reutilizável
 const validateForm = [
-  body('tipoDesarquivamento').isIn(['Físico', 'Digital', 'Não Localizado']).withMessage('Tipo de desarquivamento inválido.'),
+  body('tipoDesarquivamento').optional().isIn(['Físico', 'Digital', 'Não Localizado']).withMessage('Tipo de desarquivamento inválido.'),
   body('status').isIn(['Finalizado', 'Desarquivado', 'Não coletado', 'Solicitado', 'Rearquivamento solicitado', 'Retirado pelo setor', 'Não localizado']).withMessage('Status inválido.'),
   body('nomeCompleto').notEmpty().trim().withMessage('Nome completo é obrigatório.'),
   body('numDocumento').notEmpty().trim().withMessage('Nº do Documento é obrigatório.'),
@@ -88,9 +88,9 @@ const validateForm = [
   body('dataSolicitacao').isISO8601().withMessage('Data de solicitação inválida.'),
   body('dataDesarquivamento').optional({ checkFalsy: true }).isISO8601(),
   body('dataDevolucao').optional({ checkFalsy: true }).isISO8601(),
-  body('setorDemandante').notEmpty().trim().withMessage('Setor demandante é obrigatório.'),
+  body('setorDemandante').optional({ checkFalsy: true }).trim(),
   body('servidorResponsavel').optional({ checkFalsy: true }).trim(),
-  body('finalidade').notEmpty().trim().withMessage('Finalidade é obrigatória.'),
+  body('finalidade').optional({ checkFalsy: true }).trim(),
   body('prazoSolicitado').optional({ checkFalsy: true }).trim(),
 ];
 
@@ -129,6 +129,7 @@ exports.postNewForm = [
 
       const newDes = await Desarquivamento.create({
         ...req.body,
+        solicitacao: req.body.tipoDesarquivamento, // Mapeia tipoDesarquivamento para solicitacao
         dataSolicitacao: fixDate(req.body.dataSolicitacao),
         dataDesarquivamento: fixDate(req.body.dataDesarquivamento),
         dataDevolucao: fixDate(req.body.dataDevolucao),
@@ -138,15 +139,15 @@ exports.postNewForm = [
       });
 
       await Auditoria.create({
-        userId: req.session.user.id,
-        action: 'create',
-        entity: 'Desarquivamento',
-        entityId: newDes.id,
-        details: JSON.stringify(newDes.toJSON())
+        usuarioId: req.session.user.id,
+        acao: 'create',
+        entidade: 'Desarquivamento',
+        entidadeId: newDes.id,
+        detalhes: newDes.toJSON()
       });
 
       req.flash('success_msg', 'Registro de desarquivamento criado com sucesso!');
-      res.redirect('/nugecid/desarquivamento');
+      res.redirect('/nugecid');
     } catch (error) {
       console.error('Erro ao criar desarquivamento:', error);
       req.flash('error_msg', 'Erro ao criar o registro. Tente novamente.');
@@ -207,6 +208,7 @@ exports.postEditForm = [
       // Atualiza o registro
       Object.assign(desarquivamento, {
         ...req.body,
+        solicitacao: req.body.tipoDesarquivamento, // Mapeia tipoDesarquivamento para solicitacao
         dataSolicitacao: fixDate(req.body.dataSolicitacao),
         dataDesarquivamento: fixDate(req.body.dataDesarquivamento),
         dataDevolucao: fixDate(req.body.dataDevolucao),
@@ -217,15 +219,15 @@ exports.postEditForm = [
       await desarquivamento.save();
 
       await Auditoria.create({
-        userId: req.session.user.id,
-        action: 'update',
-        entity: 'Desarquivamento',
-        entityId: desarquivamento.id,
-        details: JSON.stringify(desarquivamento.toJSON())
+        usuarioId: req.session.user.id,
+        acao: 'update',
+        entidade: 'Desarquivamento',
+        entidadeId: desarquivamento.id,
+        detalhes: desarquivamento.toJSON()
       });
 
       req.flash('success_msg', 'Registro atualizado com sucesso!');
-      res.redirect('/nugecid/desarquivamento');
+      res.redirect('/nugecid');
     } catch (error) {
       console.error('Erro ao atualizar desarquivamento:', error);
       req.flash('error_msg', 'Erro ao atualizar o registro. Tente novamente.');
@@ -283,14 +285,14 @@ exports.deleteItem = async (req, res) => {
     // 1. Verificar se o usuário e a senha foram fornecidos
     if (!adminUser || !adminPassword) {
       req.flash('error_msg', 'Usuário e senha do administrador são obrigatórios.');
-      return res.redirect('/nugecid/desarquivamento');
+      return res.redirect('/nugecid');
     }
 
     // 2. Encontrar o administrador pelo e-mail (usando o campo 'adminUser' que contém o e-mail 'admin')
     const admin = await Usuario.findOne({ where: { email: adminUser } });
     if (!admin) {
       req.flash('error_msg', 'Administrador não encontrado.');
-      return res.redirect('/nugecid/desarquivamento');
+      return res.redirect('/nugecid');
     }
 
     // 3. Verificar se o usuário tem a role de 'admin' (ajuste o nome da role se for diferente)
@@ -309,25 +311,25 @@ exports.deleteItem = async (req, res) => {
     const isMatch = await bcrypt.compare(adminPassword, admin.senha);
     if (!isMatch) {
       await Auditoria.create({
-        userId: req.session.user.id,
-        action: 'delete_attempt_failed',
-        entity: 'Desarquivamento',
-        entityId: id,
-        details: 'Senha incorreta'
+        usuarioId: req.session.user.id,
+        acao: 'delete_attempt_failed',
+        entidade: 'Desarquivamento',
+        entidadeId: id,
+        detalhes: { erro: 'Senha incorreta' }
       });
       req.flash('error_msg', 'Senha do administrador incorreta.');
-      return res.redirect('/nugecid/desarquivamento');
+      return res.redirect('/nugecid');
     }
 
     // 5. Se tudo estiver correto, proceder com a exclusão
     const desarquivamento = await Desarquivamento.findByPk(id);
     if (!desarquivamento) {
       await Auditoria.create({
-        userId: req.session.user.id,
-        action: 'delete_attempt_failed',
-        entity: 'Desarquivamento',
-        entityId: id,
-        details: 'Registro não encontrado'
+        usuarioId: req.session.user.id,
+        acao: 'delete_attempt_failed',
+        entidade: 'Desarquivamento',
+        entidadeId: id,
+        detalhes: { erro: 'Registro não encontrado' }
       });
       req.flash('error_msg', 'Registro não encontrado.');
       return res.redirect('/nugecid');
@@ -340,20 +342,20 @@ exports.deleteItem = async (req, res) => {
     });
 
     await Auditoria.create({
-      userId: req.session.user.id,
-      action: 'delete_success',
-      entity: 'Desarquivamento',
-      entityId: id,
-      details: JSON.stringify(desarquivamento.toJSON())
+      usuarioId: req.session.user.id,
+      acao: 'delete_success',
+      entidade: 'Desarquivamento',
+      entidadeId: id,
+      detalhes: desarquivamento.toJSON()
     });
 
     req.flash('success_msg', 'Registro enviado para a lixeira com sucesso.');
-    res.redirect('/nugecid/desarquivamento');
+    res.redirect('/nugecid');
 
   } catch (error) {
     console.error('Erro no processo de exclusão:', error);
     req.flash('error_msg', 'Ocorreu um erro durante o processo de exclusão.');
-    res.redirect('/nugecid/desarquivamento');
+    res.redirect('/nugecid');
   }
 };
 
@@ -383,7 +385,7 @@ exports.getDetalhes = async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar detalhes do desarquivamento:', error);
     req.flash('error_msg', 'Não foi possível carregar os detalhes do registro.');
-    res.redirect('/nugecid/desarquivamento');
+    res.redirect('/nugecid');
   }
 };
 
@@ -855,17 +857,17 @@ exports.moverTodosParaLixeira = async (req, res) => {
     // 1. Autenticação do Administrador
     if (!adminUser || !adminPassword) {
       req.flash('error_msg', 'Usuário e senha do administrador são obrigatórios.');
-      return res.redirect('/nugecid/desarquivamento');
+      return res.redirect('/nugecid');
     }
     const admin = await Usuario.findOne({ where: { email: adminUser } });
     if (!admin) {
-      req.flash('error_msg', 'Administrador não encontrado.');
-      return res.redirect('/nugecid/desarquivamento');
-    }
+        req.flash('error_msg', 'Administrador não encontrado.');
+        return res.redirect('/nugecid');
+      }
     const isMatch = await bcrypt.compare(adminPassword, admin.senha);
     if (!isMatch) {
       req.flash('error_msg', 'Senha do administrador incorreta.');
-      return res.redirect('/nugecid/desarquivamento');
+      return res.redirect('/nugecid');
     }
 
     // 2. Exclusão em massa (soft-delete)
@@ -879,12 +881,12 @@ exports.moverTodosParaLixeira = async (req, res) => {
     });
 
     req.flash('success_msg', `${deletedCount} registros foram movidos para a lixeira.`);
-    res.redirect('/nugecid/desarquivamento');
+    res.redirect('/nugecid');
 
   } catch (error) {
     console.error('Erro ao mover todos os registros para a lixeira:', error);
     req.flash('error_msg', 'Ocorreu um erro ao limpar os registros.');
-    res.redirect('/nugecid/desarquivamento');
+    res.redirect('/nugecid');
   }
 };
 
@@ -905,7 +907,7 @@ exports.getSelecaoTermo = async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar registros para seleção de termo:', error);
     req.flash('error_msg', 'Não foi possível carregar os registros.');
-    res.redirect('/nugecid/desarquivamento');
+    res.redirect('/nugecid');
   }
 };
 
@@ -945,7 +947,7 @@ exports.gerarTermoEmMassa = async (req, res) => {
   try {
     const { registros, observacao, numero_do_processo, data_do_desarquivamento } = req.body;
 
-    const templatePath = path.resolve(__dirname, '..', 'templates', 'termo_desarquivamento_modelo.docx');
+        const templatePath = path.resolve(__dirname, '..', 'templates', '01- MODELO - TERMO DE DESARQUIVAMENTO.docx');
     const content = fs.readFileSync(templatePath);
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, {
@@ -965,6 +967,17 @@ exports.gerarTermoEmMassa = async (req, res) => {
         observacao: observacao || ''
       }))
     };
+
+    // Log detalhado dos dados que serão enviados para o template
+    console.log('=== DADOS PARA TEMPLATE ===');
+    console.log('Número do processo:', dadosParaTemplate.numero_do_processo);
+    console.log('Data do desarquivamento:', dadosParaTemplate.data_do_desarquivamento);
+    console.log('Registros encontrados:', registros.length);
+    console.log('Dados dos registros:');
+    dadosParaTemplate.registros.forEach((reg, idx) => {
+      console.log(`Registro ${idx + 1}:`, reg);
+    });
+    console.log('=== FIM DOS DADOS ===');
 
     doc.render(dadosParaTemplate);
 
@@ -997,7 +1010,7 @@ exports.visualizarTermo = async (req, res) => {
     const ids = Array.isArray(registroIds) ? registroIds : [registroIds];
     const registros = await Desarquivamento.findAll({ where: { id: ids } });
 
-    const templatePath = path.resolve(__dirname, '..', 'templates', 'termo_desarquivamento_modelo.docx');
+        const templatePath = path.resolve(__dirname, '..', 'templates', '01- MODELO - TERMO DE DESARQUIVAMENTO.docx');
     const content = fs.readFileSync(templatePath);
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, {
@@ -1020,16 +1033,24 @@ exports.visualizarTermo = async (req, res) => {
 
     doc.render(dadosParaTemplate);
 
-    const buf = doc.getZip().generate({ type: 'nodebuffer' });
+    const buf = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
 
-    // Converte o DOCX gerado para HTML
-    const { value: html } = await mammoth.convertToHtml({ buffer: buf });
+    // Converte o buffer para base64 para evitar problemas de serialização na sessão
+    const base64Buffer = buf.toString('base64');
+    req.session.docxBuffer = {
+      data: base64Buffer,
+      type: 'base64'
+    };
 
-    res.render('nugecid/visualizar-termo', {
-      title: 'Visualizar Termo de Desarquivamento',
-      htmlContent: html,
-      formData: req.body, // Passa os dados para o download
-      csrfToken: req.csrfToken()
+    // Salva a sessão antes de redirecionar
+    req.session.save(err => {
+      if (err) {
+        console.error('Erro ao salvar a sessão:', err);
+        req.flash('error_msg', 'Ocorreu um erro de sessão.');
+        return res.redirect('/nugecid/termo/selecionar');
+      }
+      // Redireciona para o visualizador
+      res.redirect('/viewer/termo');
     });
 
   } catch (error) {

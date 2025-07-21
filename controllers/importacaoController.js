@@ -115,7 +115,7 @@ exports.previewImportacaoDesarquivamento = (req, res) => {
     if (!req.file) {
         logger.logErro('Nenhum arquivo foi enviado.');
         req.flash('error_msg', 'Nenhum arquivo foi enviado.');
-        return res.redirect('/nugecid/desarquivamento/importar');
+        return res.redirect('/nugecid/importar');
     }
 
     try {
@@ -128,7 +128,7 @@ exports.previewImportacaoDesarquivamento = (req, res) => {
 
         if (data.length < 2) {
             req.flash('error_msg', 'A planilha está vazia ou não contém cabeçalhos.');
-            return res.redirect('/nugecid/desarquivamento/importar');
+            return res.redirect('/nugecid/importar');
         }
 
         const headers = data[0].map(normalizeHeader);
@@ -153,7 +153,7 @@ exports.previewImportacaoDesarquivamento = (req, res) => {
 
         if (registros.length === 0) {
             req.flash('error_msg', 'Nenhum registro válido com "Nº do Documento" foi encontrado na planilha.');
-            return res.redirect('/nugecid/desarquivamento/importar');
+            return res.redirect('/nugecid/importar');
         }
         
         // Armazena os dados processados na sessão para a confirmação
@@ -172,7 +172,7 @@ exports.previewImportacaoDesarquivamento = (req, res) => {
             stack: error.stack
         });
         req.flash('error_msg', `Ocorreu um erro grave ao processar o arquivo. Detalhes: ${error.message}`);
-        res.redirect('/nugecid/desarquivamento/importar');
+        res.redirect('/nugecid/importar');
     }
 };
 
@@ -184,7 +184,7 @@ exports.confirmarImportacaoDesarquivamento = async (req, res) => {
     if (!registros || registros.length === 0) {
         logger.logErro('Nenhum dado de importação encontrado na sessão.');
         req.flash('error_msg', 'Sua sessão expirou ou não há dados para importar. Por favor, envie a planilha novamente.');
-        return res.redirect('/nugecid/desarquivamento/importar');
+        return res.redirect('/nugecid/importar');
     }
 
     // **CORREÇÃO CRÍTICA FINAL**: Re-hidrata os objetos Date que foram convertidos para string na sessão,
@@ -238,7 +238,7 @@ exports.confirmarImportacaoDesarquivamento = async (req, res) => {
         req.session.importData = null;
 
         req.flash('success_msg', `${createdCount} registros criados e ${updatedCount} atualizados com sucesso!`);
-        return res.redirect('/nugecid/desarquivamento');
+        return res.redirect('/nugecid');
 
     } catch (error) {
         await t.rollback();
@@ -257,6 +257,6 @@ exports.confirmarImportacaoDesarquivamento = async (req, res) => {
         req.session.importData = null;
 
         req.flash('error_msg', `Erro de Validação ao Salvar: ${detailedMessage}`);
-        return res.redirect('/nugecid/desarquivamento/importar');
+        return res.redirect('/nugecid/importar');
     }
 };
