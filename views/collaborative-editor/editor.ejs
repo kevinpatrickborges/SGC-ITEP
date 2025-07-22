@@ -1,0 +1,354 @@
+<!-- Incluir CSS do Quill e do Editor Colaborativo -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<link href="/css/collaborative-editor.css" rel="stylesheet">
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0">
+                            <i class="fas fa-edit"></i>
+                            Editor Colaborativo - Documento: <%= documentId %>
+                        </h4>
+                        <small class="text-muted">Usuário: <%= user.nome %></small>
+                    </div>
+                    <div>
+                        <% if (typeof query !== 'undefined' && query.tipo === 'termo_desarquivamento') { %>
+                            <button class="btn btn-primary btn-sm" onclick="exportarPDF()" id="exportPdfBtn">
+                                <i class="fas fa-file-pdf"></i>
+                                Exportar PDF
+                            </button>
+                            <button class="btn btn-info btn-sm" onclick="exportarDOCX()" id="exportDocxBtn">
+                                <i class="fas fa-file-word"></i>
+                                Exportar DOCX
+                            </button>
+                        <% } %>
+                        <button class="btn btn-success btn-sm" onclick="saveDocument()" id="saveBtn">
+                            <i class="fas fa-save"></i>
+                            Salvar
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="goBack()">
+                            <i class="fas fa-arrow-left"></i>
+                            Voltar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Container do Editor Colaborativo -->
+                    <div id="collaborative-editor"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast para notificações -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="saveToast" class="toast" role="alert">
+        <div class="toast-header">
+            <i class="fas fa-save text-success me-2"></i>
+            <strong class="me-auto">Editor Colaborativo</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="saveToastBody">
+            Documento salvo com sucesso!
+        </div>
+    </div>
+</div>
+
+<!-- Incluir Scripts -->
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script src="/js/collaborative-editor.js"></script>
+
+<script>
+let collaborativeEditor;
+let saveTimeout;
+
+// Inicializar o editor quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurações do editor
+    const editorOptions = {
+        containerId: 'collaborative-editor',
+        documentId: '<%= documentId %>',
+        userName: '<%= user.nome %>',
+        serverUrl: window.location.origin
+    };
+    
+    // Criar instância do editor colaborativo
+    collaborativeEditor = new CollaborativeEditor(editorOptions);
+    
+    // Configurar auto-save
+    setupAutoSave();
+    
+     if (typeof query !== 'undefined' && query.tipo === 'termo_desarquivamento') { 
+    // Carregar conteúdo do termo de desarquivamento
+    setTimeout(() => {
+        carregarConteudoTermo();
+    }, 1000); // Aguardar o editor estar totalmente carregado
+    <% } %>
+    
+    console.log('Editor colaborativo inicializado para documento:', '<%= documentId %>');
+});
+
+// Configurar auto-save
+function setupAutoSave() {
+    if (!collaborativeEditor) return;
+    
+    // Auto-save a cada 30 segundos se houver mudanças
+    setInterval(() => {
+        if (collaborativeEditor.quill && collaborativeEditor.isConnected) {
+            const content = collaborativeEditor.getContent();
+            if (content && content.ops && content.ops.length > 0) {
+                autoSave();
+            }
+        }
+    }, 30000);
+}
+
+// Salvar documento manualmente
+function saveDocument() {
+    if (!collaborativeEditor || !collaborativeEditor.socket) {
+        showToast('Erro: Editor não conectado', 'error');
+        return;
+    }
+    
+    const content = collaborativeEditor.getContent();
+    
+    collaborativeEditor.socket.emit('save-document', {
+        documentId: '<%= documentId %>',
+        content: content
+    });
+    
+    // Feedback visual
+    const saveBtn = document.getElementById('saveBtn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    saveBtn.disabled = true;
+    
+    // Escutar resposta do servidor
+    collaborativeEditor.socket.once('document-saved', (response) => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+        
+        if (response.success) {
+            showToast('Documento salvo com sucesso!', 'success');
+        } else {
+            showToast('Erro ao salvar documento: ' + (response.error || 'Erro desconhecido'), 'error');
+        }
+    });
+}
+
+// Auto-save silencioso
+function autoSave() {
+    if (!collaborativeEditor || !collaborativeEditor.socket) return;
+    
+    const content = collaborativeEditor.getContent();
+    
+    collaborativeEditor.socket.emit('save-document', {
+        documentId: '<%= documentId %>',
+        content: content
+    });
+}
+
+// Mostrar toast de notificação
+function showToast(message, type = 'success') {
+    const toastElement = document.getElementById('saveToast');
+    const toastBody = document.getElementById('saveToastBody');
+    const toastHeader = toastElement.querySelector('.toast-header i');
+    
+    // Atualizar conteúdo
+    toastBody.textContent = message;
+    
+    // Atualizar ícone baseado no tipo
+    toastHeader.className = type === 'success' 
+        ? 'fas fa-check-circle text-success me-2'
+        : 'fas fa-exclamation-triangle text-danger me-2';
+    
+    // Mostrar toast
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+}
+
+// Voltar para a página principal
+function goBack() {
+    if (confirm('Tem certeza que deseja sair? Certifique-se de que salvou suas alterações.')) {
+        window.location.href = '/collaborative-editor';
+    }
+}
+
+// Salvar antes de sair da página
+window.addEventListener('beforeunload', function(e) {
+    if (collaborativeEditor && collaborativeEditor.quill) {
+        const content = collaborativeEditor.getContent();
+        if (content && content.ops && content.ops.length > 0) {
+            // Tentar salvar rapidamente
+            autoSave();
+            
+            // Mostrar aviso
+            e.preventDefault();
+            e.returnValue = 'Você tem alterações não salvas. Tem certeza que deseja sair?';
+            return e.returnValue;
+        }
+    }
+});
+
+// Atalhos de teclado
+document.addEventListener('keydown', function(e) {
+    // Ctrl+S para salvar
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveDocument();
+    }
+    
+    // Ctrl+Shift+S para auto-save
+    if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        autoSave();
+        showToast('Auto-save executado', 'success');
+    }
+});
+
+if (typeof query !== 'undefined' && query.tipo === 'termo_desarquivamento') { 
+// Função para carregar o conteúdo do termo de desarquivamento
+function carregarConteudoTermo() {
+    fetch('/nugecid/termo/conteudo-html')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && collaborativeEditor && collaborativeEditor.quill) {
+                // Converter HTML para Delta (formato do Quill)
+                const delta = collaborativeEditor.quill.clipboard.convert(data.content);
+                collaborativeEditor.quill.setContents(delta);
+                showToast('Termo de desarquivamento carregado com sucesso!', 'success');
+            } else {
+                showToast('Erro ao carregar o termo: ' + (data.message || 'Erro desconhecido'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao carregar conteúdo do termo:', error);
+            showToast('Erro ao carregar o termo de desarquivamento', 'error');
+        });
+}
+
+// Função para exportar como PDF
+function exportarPDF() {
+    if (!collaborativeEditor || !collaborativeEditor.quill) {
+        showToast('Editor não está pronto', 'error');
+        return;
+    }
+
+    const content = collaborativeEditor.quill.root.innerHTML;
+    
+    // Criar formulário para enviar o conteúdo
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/nugecid/termo/exportar-pdf';
+    form.style.display = 'none';
+    
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'content';
+    input.value = content;
+    
+    form.appendChild(input);
+    document.body.appendChild(form);
+    
+    // Feedback visual
+    const btn = document.getElementById('exportPdfBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+    btn.disabled = true;
+    
+    form.submit();
+    
+    // Restaurar botão após um tempo
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }, 2000);
+}
+
+// Função para exportar como DOCX
+function exportarDOCX() {
+    if (!collaborativeEditor || !collaborativeEditor.quill) {
+        showToast('Editor não está pronto', 'error');
+        return;
+    }
+
+    const content = collaborativeEditor.quill.root.innerHTML;
+    
+    // Criar formulário para enviar o conteúdo
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/nugecid/termo/exportar-docx';
+    form.style.display = 'none';
+    
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'content';
+    input.value = content;
+    
+    form.appendChild(input);
+    document.body.appendChild(form);
+    
+    // Feedback visual
+    const btn = document.getElementById('exportDocxBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+    btn.disabled = true;
+    
+    form.submit();
+    
+    // Restaurar botão após um tempo
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }, 2000);
+}
+
+</script>
+
+<style>
+/* Estilos adicionais específicos para esta página */
+.card-body {
+    padding: 0 !important;
+}
+
+.collaborative-editor-wrapper {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.quill-editor {
+    min-height: 500px;
+}
+
+.quill-editor .ql-editor {
+    min-height: 500px;
+    padding: 20px;
+}
+
+/* Responsividade para dispositivos móveis */
+@media (max-width: 768px) {
+    .card-header h4 {
+        font-size: 1rem;
+    }
+    
+    .card-header .btn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .quill-editor {
+        min-height: 400px;
+    }
+    
+    .quill-editor .ql-editor {
+        min-height: 400px;
+        padding: 15px;
+    }
+}
+}

@@ -995,7 +995,7 @@ exports.gerarTermoEmMassa = async (req, res) => {
 };
 
 /**
- * @desc Gera uma visualização HTML do termo de desarquivamento.
+ * @desc Visualiza o termo de desarquivamento - abre visualizador online.
  * @route POST /nugecid/termo/visualizar
  */
 exports.visualizarTermo = async (req, res) => {
@@ -1004,59 +1004,324 @@ exports.visualizarTermo = async (req, res) => {
 
     if (!registroIds || registroIds.length === 0) {
       req.flash('error_msg', 'Nenhum registro selecionado.');
-      return res.redirect('/nugecid/termo/selecionar');
+      return res.redirect('/nugecid/desarquivamento');
     }
 
     const ids = Array.isArray(registroIds) ? registroIds : [registroIds];
     const registros = await Desarquivamento.findAll({ where: { id: ids } });
 
-        const templatePath = path.resolve(__dirname, '..', 'templates', '01- MODELO - TERMO DE DESARQUIVAMENTO.docx');
-    const content = fs.readFileSync(templatePath);
-    const zip = new PizZip(content);
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
-      delimiters: { start: '{', end: '}' }
-    });
+    if (registros.length === 0) {
+      req.flash('error_msg', 'Registros não encontrados.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
 
-    const dadosParaTemplate = {
-      numero_do_processo: numero_do_processo || '',
-      data_do_desarquivamento: data_do_desarquivamento ? new Date(data_do_desarquivamento + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '',
-      registros: registros.map((r, index) => ({
-        'Nº': index + 1,
-        Tipo_de_documento: r.tipoDocumento || '',
-        nome_completo: r.nomeCompleto || '',
-        Numero_do_documeto: r.numDocumento || '',
-        observacao: observacao || ''
-      }))
+    // Preparar dados para o template
+    const hoje = new Date();
+    const dataFormatada = data_do_desarquivamento ? 
+      new Date(data_do_desarquivamento + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 
+      hoje.toLocaleDateString('pt-BR');
+
+    // Gerar HTML do termo para visualização seguindo o template oficial
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.4; font-size: 12px;">
+        <!-- Cabeçalho -->
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h1 style="margin: 0; font-size: 16px; font-weight: bold;">INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA</h1>
+          <h2 style="margin: 5px 0; font-size: 14px; font-weight: bold;">DO RIO GRANDE DO NORTE</h2>
+          <h3 style="margin: 10px 0; font-size: 14px; font-weight: bold; text-decoration: underline;">TERMO DE DESARQUIVAMENTO</h3>
+        </div>
+        
+        <!-- Orientações -->
+        <div style="margin-bottom: 20px; font-size: 11px; text-align: justify;">
+          <p style="margin: 5px 0;">Ao servidor responsável pelo desarquivamento compete ter ciência que esta solicitação de desarquivamento de documento deve estar vinculada a uma demanda do Instituto Técnico-Científico de Perícia do Rio Grande do Norte, ou jurisdição de órgão público através de autoridade competente.</p>
+          <p style="margin: 5px 0;">Estar ciente quanto as orientações e normativas descritas na portaria nº 188/2023-GDG/ITEP no DOE nº 15433 de 25/05/2023, que dispõe sobre o acesso e o fluxo de desarquivamento de documentos no âmbito do Setor de Arquivo Geral do Instituto Técnico-Científico do Rio Grande do Norte.</p>
+        </div>
+        
+        <!-- Dados do Processo -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 50%;">Nº. DE PROCESSO ELETRÔNICO</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 50%;">DATA DO DESARQUIVAMENTO</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">${numero_do_processo || ''}</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">${dataFormatada}</td>
+          </tr>
+        </table>
+        
+        <!-- Tabela de Documentos -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 8%;">Nº</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 25%;">TIPO DE DOCUMENTO<br><span style="font-size: 10px; font-weight: normal;">Ex. Prontuário, Laudo, Parecer, Relatório.</span></th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 35%;">NOME</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 15%;">NÚMERO</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 17%;">OBSERVAÇÃO</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${registros.map((r, index) => `
+              <tr>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;">${index + 1}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;">${r.tipoDocumento || 'Prontuário'}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;">${r.nomeCompleto || ''}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;">${r.numDocumento || ''}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;">${observacao || ''}</td>
+              </tr>
+            `).join('')}
+            <!-- Linhas vazias para preenchimento manual -->
+            ${Array.from({length: Math.max(0, 5 - registros.length)}, (_, i) => `
+              <tr>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;"></td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;"></td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;"></td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;"></td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;"></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <!-- Seção de Assinaturas -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 50%;">SETOR DE ARQUIVO GERAL<br>Responsável pela ENTREGA</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 50%;">SETOR SOLICITANTE<br>Responsável pelo RECEBIMENTO</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #000; padding: 20px; height: 60px; vertical-align: bottom;">
+              <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px; text-align: center;">
+                <strong>Assinatura</strong><br>
+                <span style="font-size: 10px;">Por extenso</span>
+              </div>
+            </td>
+            <td style="border: 1px solid #000; padding: 20px; height: 60px; vertical-align: bottom;">
+              <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px; text-align: center;">
+                <strong>Assinatura</strong><br>
+                <span style="font-size: 10px;">Por extenso</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">MATRÍCULA:</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">MATRÍCULA:</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">DATA DA RETIRADA</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">SETOR: ITEP-IC-NPI-SPD</td>
+          </tr>
+        </table>
+        
+        <!-- Rodapé -->
+        <div style="margin-top: 20px; font-size: 10px; text-align: center;">
+          <p style="margin: 5px 0;">*Observar as orientações da portaria nº 188/2023-GDG/ITEP no DOE nº 15433 de 25/05/2023, que dispõe quanto aos prazos e instruções normativas.</p>
+        </div>
+      </div>
+    `;
+
+    // Salvar dados na sessão para uso posterior
+    req.session.termoData = {
+      registros,
+      observacao: observacao || 'Desarquivamento solicitado conforme necessidade do setor.',
+      numero_do_processo: numero_do_processo || 'A ser preenchido',
+      data_do_desarquivamento: dataFormatada,
+      htmlContent
     };
 
-    doc.render(dadosParaTemplate);
-
-    const buf = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
-
-    // Converte o buffer para base64 para evitar problemas de serialização na sessão
-    const base64Buffer = buf.toString('base64');
-    req.session.docxBuffer = {
-      data: base64Buffer,
-      type: 'base64'
-    };
-
-    // Salva a sessão antes de redirecionar
-    req.session.save(err => {
-      if (err) {
-        console.error('Erro ao salvar a sessão:', err);
-        req.flash('error_msg', 'Ocorreu um erro de sessão.');
-        return res.redirect('/nugecid/termo/selecionar');
-      }
-      // Redireciona para o visualizador
-      res.redirect('/viewer/termo');
+    // Renderizar página de visualização
+    res.render('nugecid/visualizar-termo', {
+      title: 'Visualizar Termo de Desarquivamento',
+      htmlContent,
+      csrfToken: req.csrfToken(),
+      user: req.session.user,
+      layout: 'layout'
     });
 
   } catch (error) {
     console.error('Erro ao visualizar o termo:', error);
     req.flash('error_msg', 'Ocorreu um erro ao visualizar o documento.');
-    res.redirect('/nugecid/termo/selecionar');
+    res.redirect('/nugecid/desarquivamento');
+  }
+};
+
+/**
+ * @desc Gera o conteúdo HTML do termo para o editor colaborativo.
+ * @route GET /nugecid/termo/conteudo-html
+ */
+exports.obterConteudoTermoHTML = async (req, res) => {
+  try {
+    const termoData = req.session.termoData;
+    
+    if (!termoData) {
+      return res.status(400).json({ success: false, message: 'Dados do termo não encontrados na sessão.' });
+    }
+
+    const { registros, observacao, numero_do_processo, data_do_desarquivamento } = termoData;
+    
+    // Usar dados padrão quando não fornecidos
+    const hoje = new Date();
+    const dataFormatada = data_do_desarquivamento ? 
+      new Date(data_do_desarquivamento + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 
+      hoje.toLocaleDateString('pt-BR');
+    
+    // Gerar HTML do termo seguindo o template oficial
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.4; font-size: 12px;">
+        <!-- Cabeçalho -->
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h1 style="margin: 0; font-size: 16px; font-weight: bold;">INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA</h1>
+          <h2 style="margin: 5px 0; font-size: 14px; font-weight: bold;">DO RIO GRANDE DO NORTE</h2>
+          <h3 style="margin: 10px 0; font-size: 14px; font-weight: bold; text-decoration: underline;">TERMO DE DESARQUIVAMENTO</h3>
+        </div>
+        
+        <!-- Orientações -->
+        <div style="margin-bottom: 20px; font-size: 11px; text-align: justify;">
+          <p style="margin: 5px 0;">Ao servidor responsável pelo desarquivamento compete ter ciência que esta solicitação de desarquivamento de documento deve estar vinculada a uma demanda do Instituto Técnico-Científico de Perícia do Rio Grande do Norte, ou jurisdição de órgão público através de autoridade competente.</p>
+          <p style="margin: 5px 0;">Estar ciente quanto as orientações e normativas descritas na portaria nº 188/2023-GDG/ITEP no DOE nº 15433 de 25/05/2023, que dispõe sobre o acesso e o fluxo de desarquivamento de documentos no âmbito do Setor de Arquivo Geral do Instituto Técnico-Científico do Rio Grande do Norte.</p>
+        </div>
+        
+        <!-- Dados do Processo -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 50%;">Nº. DE PROCESSO ELETRÔNICO</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 50%;">DATA DO DESARQUIVAMENTO</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">${numero_do_processo || ''}</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">${dataFormatada}</td>
+          </tr>
+        </table>
+        
+        <!-- Tabela de Documentos -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 8%;">Nº</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 25%;">TIPO DE DOCUMENTO<br><span style="font-size: 10px; font-weight: normal;">Ex. Prontuário, Laudo, Parecer, Relatório.</span></th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 35%;">NOME</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 15%;">NÚMERO</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 17%;">OBSERVAÇÃO</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${registros.map((r, index) => `
+              <tr>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;">${index + 1}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;">${r.tipoDocumento || 'Prontuário'}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;">${r.nomeCompleto || ''}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;">${r.numDocumento || ''}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;">${observacao || ''}</td>
+              </tr>
+            `).join('')}
+            <!-- Linhas vazias para preenchimento manual -->
+            ${Array.from({length: Math.max(0, 5 - registros.length)}, (_, i) => `
+              <tr>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;"></td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;"></td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;"></td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;"></td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 25px;"></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <!-- Seção de Assinaturas -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 50%;">SETOR DE ARQUIVO GERAL<br>Responsável pela ENTREGA</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 50%;">SETOR SOLICITANTE<br>Responsável pelo RECEBIMENTO</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #000; padding: 20px; height: 60px; vertical-align: bottom;">
+              <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px; text-align: center;">
+                <strong>Assinatura</strong><br>
+                <span style="font-size: 10px;">Por extenso</span>
+              </div>
+            </td>
+            <td style="border: 1px solid #000; padding: 20px; height: 60px; vertical-align: bottom;">
+              <div style="border-top: 1px solid #000; margin-top: 40px; padding-top: 5px; text-align: center;">
+                <strong>Assinatura</strong><br>
+                <span style="font-size: 10px;">Por extenso</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">MATRÍCULA:</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">MATRÍCULA:</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">DATA DA RETIRADA</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; height: 30px;">SETOR: ITEP-IC-NPI-SPD</td>
+          </tr>
+        </table>
+        
+        <!-- Rodapé -->
+        <div style="margin-top: 20px; font-size: 10px; text-align: center;">
+          <p style="margin: 5px 0;">*Observar as orientações da portaria nº 188/2023-GDG/ITEP no DOE nº 15433 de 25/05/2023, que dispõe quanto aos prazos e instruções normativas.</p>
+        </div>
+      </div>
+    `;
+
+    res.json({ success: true, content: htmlContent });
+
+  } catch (error) {
+    console.error('Erro ao gerar conteúdo HTML do termo:', error);
+    res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+  }
+};
+
+/**
+ * @desc Gera e baixa o DOCX do termo usando o template original.
+ * @route POST /nugecid/termo/baixar-docx
+ */
+exports.baixarTermoDOCX = async (req, res) => {
+  try {
+    const termoData = req.session.termoData;
+    
+    if (!termoData) {
+      req.flash('error_msg', 'Dados do termo não encontrados na sessão.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+
+    const { registros, observacao, numero_do_processo, data_do_desarquivamento } = termoData;
+
+    // Carregar o template DOCX
+    const templatePath = path.join(__dirname, '..', 'templates', '01- MODELO - TERMO DE DESARQUIVAMENTO.docx');
+    const content = fs.readFileSync(templatePath, 'binary');
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
+    const dadosTemplate = {
+      numero_do_processo: numero_do_processo,
+      data_do_desarquivamento: data_do_desarquivamento,
+      observacao: observacao,
+      registros: registros.map((r, index) => ({
+        numero: index + 1,
+        tipo_documento: r.tipoDocumento || 'Prontuário de Identificação Civil',
+        nome_completo: r.nomeCompleto || '',
+        numero_documento: r.numDocumento || ''
+      }))
+    };
+
+    // Renderizar o template
+    doc.render(dadosTemplate);
+    const buf = doc.getZip().generate({ type: 'nodebuffer' });
+
+    // Configurar headers para download
+    const nomeArquivo = `Termo_Desarquivamento_${Date.now()}.docx`;
+    res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivo}"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.send(buf);
+
+  } catch (error) {
+    console.error('Erro ao gerar DOCX:', error);
+    req.flash('error_msg', 'Ocorreu um erro ao gerar o documento.');
+    res.redirect('/nugecid/desarquivamento');
   }
 };
 
@@ -1081,5 +1346,75 @@ exports.gerarTermoEditado = async (req, res) => {
     console.error('Erro ao gerar DOCX editado:', error);
     req.flash('error_msg', 'Ocorreu um erro ao gerar o documento editado.');
     res.redirect('/nugecid/termo/selecionar');
+  }
+};
+
+/**
+ * @desc Exporta o termo editado como PDF.
+ * @route POST /nugecid/termo/exportar-pdf
+ */
+exports.exportarTermoPDF = async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content) {
+      return res.status(400).json({ success: false, message: 'Conteúdo não fornecido.' });
+    }
+
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 50 });
+    
+    // Configurar headers para download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=Termo_Desarquivamento.pdf');
+    
+    // Pipe do documento para a resposta
+    doc.pipe(res);
+    
+    // Adicionar conteúdo ao PDF (versão simplificada)
+    // Remover tags HTML básicas para texto simples
+    const textContent = content
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    doc.fontSize(12)
+       .text(textContent, {
+         align: 'justify',
+         lineGap: 5
+       });
+    
+    doc.end();
+
+  } catch (error) {
+    console.error('Erro ao exportar PDF:', error);
+    res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+  }
+};
+
+/**
+ * @desc Exporta o termo editado como DOCX.
+ * @route POST /nugecid/termo/exportar-docx
+ */
+exports.exportarTermoDOCX = async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content) {
+      return res.status(400).json({ success: false, message: 'Conteúdo não fornecido.' });
+    }
+
+    const HTMLtoDOCX = require('html-to-docx');
+    const buffer = await HTMLtoDOCX(content, null, {
+      table: { row: { cantSplit: true } },
+      footer: true,
+      pageNumber: true,
+    });
+
+    res.setHeader('Content-Disposition', 'attachment; filename=Termo_Desarquivamento_Editado.docx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('Erro ao exportar DOCX:', error);
+    res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
   }
 };

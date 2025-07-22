@@ -93,6 +93,7 @@ async function startServer() {
     app.use('/importacao', require('./routes/importacao'));
     app.use('/relatorios', require('./routes/relatorios'));
     app.use('/publicacoes', require('./routes/publicacoes.routes.js'));
+    app.use('/collaborative-editor', require('./routes/collaborative-editor.routes.js'));
 
     // Rotas de importação (sem CSRF global, pois é tratado na própria rota)
     app.use('/nugecid/desarquivamento/importar', require('./modules/nugecid/routes/desarquivamento.import.routes'));
@@ -153,7 +154,15 @@ async function startServer() {
 
     // --- INICIAR SERVIDOR ---
     const PORT = process.env.PORT || 3001;
-    app.listen(PORT, () => {
+    const http = require('http');
+    const server = http.createServer(app);
+    
+    // Inicializar o serviço de editor colaborativo
+    const collaborativeEditorService = require('./services/collaborativeEditorService');
+    collaborativeEditorService.initialize(server);
+    console.log('Serviço de Editor Colaborativo inicializado'); // Restart
+    
+    server.listen(PORT, () => {
       console.log(`Server is running at http://localhost:${PORT}`);
       cleanupJob.start();
       startCleanupTrashJob();

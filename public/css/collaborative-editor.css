@@ -1,0 +1,193 @@
+/* Estilos para o Editor Colaborativo */
+
+.collaborative-editor-wrapper {
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e5e9;
+    font-size: 14px;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-connected {
+    color: #28a745;
+}
+
+.status-disconnected {
+    color: #dc3545;
+}
+
+.status-connecting {
+    color: #ffc107;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-name {
+    font-weight: 500;
+    color: #495057;
+}
+
+.user-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+.quill-editor {
+    min-height: 300px;
+}
+
+.quill-editor .ql-editor {
+    min-height: 300px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.quill-editor .ql-toolbar {
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.users-online {
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-top: 1px solid #e1e5e9;
+}
+
+.users-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.users-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.user-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #495057;
+}
+
+.user-item .user-color {
+    width: 12px;
+    height: 12px;
+}
+
+.user-item .user-name {
+    font-weight: 400;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .editor-header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+    
+    .connection-status,
+    .user-info {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .quill-editor .ql-editor {
+        min-height: 250px;
+    }
+}
+
+/* Animações */
+.status-connecting {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.user-item {
+    transition: all 0.2s ease;
+}
+
+.user-item:hover {
+    background: #f8f9fa;
+    transform: translateY(-1px);
+}
+
+/* Integração com o tema do SGC-ITEP */
+.collaborative-editor-wrapper {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.editor-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.editor-header .connection-status,
+.editor-header .user-info {
+    color: white;
+}
+
+.users-online {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.users-header {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.user-item {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-item:hover {
+    background: white;
+}

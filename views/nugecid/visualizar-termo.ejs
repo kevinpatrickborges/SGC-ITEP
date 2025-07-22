@@ -2,65 +2,77 @@
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
     <div>
-      <button id="save-btn" class="btn btn-primary btn-sm btn-icon-split">
-        <span class="icon text-white-50"><i class="fas fa-save"></i></span>
-        <span class="text">Salvar Alterações</span>
-      </button>
-      <button onclick="printDocument()" class="btn btn-info btn-sm btn-icon-split">
-        <span class="icon text-white-50"><i class="fas fa-print"></i></span>
-        <span class="text">Imprimir</span>
-      </button>
-      <form id="download-form" action="/nugecid/termo/gerar-editado" method="POST" class="d-inline">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" id="edited-content" name="editedContent">
-        <button type="submit" class="btn btn-success btn-sm btn-icon-split">
-          <span class="icon text-white-50"><i class="fas fa-file-word"></i></span>
-          <span class="text">Baixar .docx</span>
-        </button>
-      </form>
-      <a href="/nugecid/termo/selecionar" class="btn btn-secondary btn-sm btn-icon-split">
+      <a href="/nugecid" class="btn btn-secondary btn-sm btn-icon-split me-2">
         <span class="icon text-white-50"><i class="fas fa-arrow-left"></i></span>
         <span class="text">Voltar</span>
       </a>
+      <button onclick="printDocument()" class="btn btn-info btn-sm btn-icon-split me-2">
+        <span class="icon text-white-50"><i class="fas fa-print"></i></span>
+        <span class="text">Imprimir</span>
+      </button>
+      <form action="/nugecid/termo/baixar-docx" method="POST" class="d-inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="btn btn-success btn-sm btn-icon-split">
+          <span class="icon text-white-50"><i class="fas fa-file-word"></i></span>
+          <span class="text">Salvar como DOCX</span>
+        </button>
+      </form>
     </div>
   </div>
 
   <div class="card shadow mb-4">
     <div class="card-body">
-      <div id="editor"><%- htmlContent %></div>
+      <div id="documento-preview" style="background: white; padding: 40px; border: 1px solid #ddd; border-radius: 5px;">
+        <%- htmlContent %>
+      </div>
     </div>
   </div>
 </div>
 
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
-  tinymce.init({
-    selector: '#editor',
-    plugins: 'lists hr anchor wordcount code fullscreen insertdatetime nonbreaking table emoticons template paste',
-    toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image | fullscreen',
-    height: 600,
-    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-  });
-
-  document.getElementById('save-btn').addEventListener('click', function() {
-    const content = tinymce.get('editor').getContent();
-    document.getElementById('edited-content').value = content;
-    // Aqui você pode adicionar lógica para salvar, se necessário
-    alert('Alterações salvas!');
-  });
-
-  document.getElementById('download-form').addEventListener('submit', function(e) {
-    const content = tinymce.get('editor').getContent();
-    document.getElementById('edited-content').value = content;
-  });
-
   function printDocument() {
-    const content = tinymce.get('editor').getContent();
-    const printWindow = window.open('', '', 'height=600,width=800');
-    printWindow.document.write('<html><head><title>Imprimir Termo</title>');
-    printWindow.document.write('</head><body >');
-    printWindow.document.write(content);
-    printWindow.document.write('</body></html>');
+    const content = document.getElementById('documento-preview').innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Termo de Desarquivamento</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px; 
+              line-height: 1.6;
+            }
+            table { 
+              border-collapse: collapse; 
+              width: 100%; 
+              margin: 20px 0;
+            }
+            th, td { 
+              border: 1px solid #ddd; 
+              padding: 8px; 
+              text-align: left; 
+            }
+            th { 
+              background-color: #f2f2f2; 
+            }
+            h2 {
+              text-align: center;
+              margin-bottom: 30px;
+              font-size: 18px;
+              text-transform: uppercase;
+            }
+            @media print {
+              body { margin: 0; }
+              @page { margin: 2cm; }
+            }
+          </style>
+        </head>
+        <body>
+          ${content}
+        </body>
+      </html>
+    `);
     printWindow.document.close();
     printWindow.print();
   }

@@ -44,6 +44,10 @@ router.get('/termo/selecionar', ensureAuthenticated, canViewNugecid, controller.
 router.post('/termo/preparar', ensureAuthenticated, canViewNugecid, controller.prepararTermo);
 router.post('/termo/gerar', ensureAuthenticated, canViewNugecid, controller.gerarTermoEmMassa);
 router.post('/termo/visualizar', ensureAuthenticated, canViewNugecid, controller.visualizarTermo);
+router.get('/termo/conteudo-html', ensureAuthenticated, canViewNugecid, controller.obterConteudoTermoHTML);
+router.post('/termo/baixar-docx', ensureAuthenticated, canViewNugecid, controller.baixarTermoDOCX);
+router.post('/termo/exportar-pdf', ensureAuthenticated, canViewNugecid, controller.exportarTermoPDF);
+router.post('/termo/exportar-docx', ensureAuthenticated, canViewNugecid, controller.exportarTermoDOCX);
 router.post('/termo/gerar-editado', ensureAuthenticated, canViewNugecid, controller.gerarTermoEditado);
 
 module.exports = router;

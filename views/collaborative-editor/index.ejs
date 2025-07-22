@@ -1,0 +1,169 @@
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-edit"></i>
+                        Editor Colaborativo
+                    </h4>
+                    <div>
+                        <button class="btn btn-primary" onclick="createNewDocument()">
+                            <i class="fas fa-plus"></i>
+                            Novo Documento
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5>Documentos Recentes</h5>
+                            <div class="list-group" id="documents-list">
+                                <a href="/collaborative-editor/document/exemplo" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Documento de Exemplo</h6>
+                                        <small>Há 3 dias</small>
+                                    </div>
+                                    <p class="mb-1">Um documento de exemplo para demonstrar o editor colaborativo.</p>
+                                    <small>Última edição por: <%= user.nome %></small>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h5>Estatísticas</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-12 mb-3">
+                                            <h3 class="text-primary" id="connected-users">0</h3>
+                                            <small class="text-muted">Usuários Conectados</small>
+                                        </div>
+                                        <div class="col-12 mb-3">
+                                            <h3 class="text-success" id="active-documents">0</h3>
+                                            <small class="text-muted">Documentos Ativos</small>
+                                        </div>
+                                        <div class="col-12">
+                                            <h3 class="text-info" id="total-sessions">0</h3>
+                                            <small class="text-muted">Sessões Ativas</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h6>Acesso Rápido</h6>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary" onclick="openDocument('exemplo')">
+                                        <i class="fas fa-file-alt"></i>
+                                        Documento de Exemplo
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="openDocument('rascunho')">
+                                        <i class="fas fa-edit"></i>
+                                        Rascunho
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para criar novo documento -->
+<div class="modal fade" id="newDocumentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Criar Novo Documento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newDocumentForm">
+                    <div class="mb-3">
+                        <label for="documentTitle" class="form-label">Título do Documento</label>
+                        <input type="text" class="form-control" id="documentTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="documentDescription" class="form-label">Descrição (opcional)</label>
+                        <textarea class="form-control" id="documentDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitNewDocument()">Criar Documento</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Carregar estatísticas
+function loadStats() {
+    fetch('/collaborative-editor/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('connected-users').textContent = data.data.connectedClients || 0;
+                document.getElementById('active-documents').textContent = data.data.documentsInCache || 0;
+                document.getElementById('total-sessions').textContent = data.data.activeSessions || 0;
+            }
+        })
+        .catch(error => console.error('Erro ao carregar estatísticas:', error));
+}
+
+// Criar novo documento
+function createNewDocument() {
+    const modal = new bootstrap.Modal(document.getElementById('newDocumentModal'));
+    modal.show();
+}
+
+// Submeter novo documento
+function submitNewDocument() {
+    const title = document.getElementById('documentTitle').value;
+    const description = document.getElementById('documentDescription').value;
+    
+    if (!title.trim()) {
+        alert('Por favor, insira um título para o documento.');
+        return;
+    }
+    
+    fetch('/collaborative-editor/api/document', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: title,
+            description: description
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = `/collaborative-editor/document/${data.data.documentId}`;
+        } else {
+            alert('Erro ao criar documento: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao criar documento.');
+    });
+}
+
+// Abrir documento
+function openDocument(documentId) {
+    window.location.href = `/collaborative-editor/document/${documentId}`;
+}
+
+// Carregar estatísticas ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    
+    // Atualizar estatísticas a cada 30 segundos
+    setInterval(loadStats, 30000);
+});
+</script>
