@@ -60,6 +60,9 @@ router.get('/templates', ensureAuthenticated, canViewNugecid, controller.listarT
 router.get('/preencher-template/:filename', ensureAuthenticated, canViewNugecid, controller.exibirPreenchimentoTemplate);
 router.post('/preencher-template/:filename', ensureAuthenticated, canEditNugecid, controller.processarPreenchimentoTemplate);
 
+// Rota para gerar template diretamente de um registro
+router.get('/gerar-template/:id', ensureAuthenticated, canViewNugecid, controller.gerarTemplateDireto);
+
 // --- OUTRAS ROTAS ---
 router.post('/status/:id', ensureAuthenticated, canEditNugecid, controller.updateStatus);
 router.post('/mover-todos-para-lixeira', ensureAuthenticated, isAdmin, controller.moverTodosParaLixeira);

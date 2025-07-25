@@ -174,6 +174,17 @@ exports.processarPreenchimentoTemplate = async (req, res) => {
       return res.redirect(`/nugecid/preencher-template/${filename}`);
     }
     
+    // Verificar se todos os registros têm o mesmo número de processo
+    let numeroProcessoAutomatico = '';
+    if (registros.length > 0) {
+      const primeiroNumeroProcesso = registros[0].numProcesso;
+      const todosIguais = registros.every(r => r.numProcesso === primeiroNumeroProcesso);
+      
+      if (todosIguais && primeiroNumeroProcesso) {
+        numeroProcessoAutomatico = primeiroNumeroProcesso;
+      }
+    }
+    
     // Preparar dados para preenchimento
     const dadosPreenchimento = {
       // Dados do cabeçalho
@@ -183,8 +194,8 @@ exports.processarPreenchimentoTemplate = async (req, res) => {
       nucleo: 'NÚCLEO DE GESTÃO E CONTROLE DE INFORMAÇÃO DOCUMENTAL E ARQUIVO GERAL - ITEP',
       titulo_documento: 'TERMO DE DESARQUIVAMENTO DE DOCUMENTO',
       
-      // Dados do processo
-      numero_processo: numero_processo || 'A ser preenchido',
+      // Dados do processo - usar automático se disponível, senão usar o informado pelo usuário
+      numero_processo: numeroProcessoAutomatico || numero_processo || 'A ser preenchido',
       data_desarquivamento: new Date().toLocaleDateString('pt-BR'),
       
       // Observação geral
@@ -2195,5 +2206,88 @@ exports.salvarEdicaoTermo = async (req, res) => {
       success: false, 
       message: 'Erro interno do servidor ao salvar edição.' 
     });
+  }
+};
+
+/**
+ * @desc Gera template preenchido diretamente de um registro específico
+ * @route GET /nugecid/gerar-template/:id
+ */
+exports.gerarTemplateDireto = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Buscar o registro específico
+    const registro = await Desarquivamento.findByPk(id);
+    
+    if (!registro) {
+      req.flash('error_msg', 'Registro não encontrado.');
+      return res.redirect('/nugecid');
+    }
+    
+    // Preparar dados para preenchimento automático
+    const dadosPreenchimento = {
+      // Dados do cabeçalho
+      instituicao: 'INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA',
+      estado: 'DO RIO GRANDE DO NORTE',
+      secretaria: 'SECRETARIA DE SEGURANÇA PÚBLICA E DEFESA SOCIAL',
+      nucleo: 'NÚCLEO DE GESTÃO E CONTROLE DE INFORMAÇÃO DOCUMENTAL E ARQUIVO GERAL - ITEP',
+      titulo_documento: 'TERMO DE DESARQUIVAMENTO DE DOCUMENTO',
+      
+      // Dados do processo - preenchido automaticamente se disponível
+      numero_processo: registro.numProcesso || '',
+      data_desarquivamento: new Date().toLocaleDateString('pt-BR'),
+      
+      // Observação geral
+      observacao_geral: registro.finalidade || 'Desarquivamento solicitado conforme necessidade do setor.',
+      
+      // Lista com o registro único
+      registros: [{
+        tipo_documento: registro.tipoDocumento || 'Ex. Prontuário, Laudo, Parecer, Relatório',
+        nome: registro.nomeCompleto || '',
+        numero: registro.numDocumento || '',
+        observacao: registro.finalidade || ''
+      }],
+      
+      // Setor solicitante
+      setor_solicitante: registro.setorDemandante || 'ITEP-IC-NPI-SPD',
+      
+      // Dados do usuário
+      usuario_nome: req.session.user ? req.session.user.nome : 'Sistema',
+      usuario_setor: req.session.user ? req.session.user.setor : 'NUGECID',
+      data_geracao: new Date().toLocaleDateString('pt-BR'),
+      hora_geracao: new Date().toLocaleTimeString('pt-BR')
+    };
+    
+    // Renderizar template preenchido diretamente
+    res.render('nugecid/template-preenchido', {
+      title: 'Template Preenchido - NUGECID',
+      filename: 'Termo de Desarquivamento',
+      dados: dadosPreenchimento,
+      csrfToken: req.csrfToken(),
+      user: req.session.user,
+      layout: 'layout'
+    });
+    
+    // Registrar auditoria
+    await Auditoria.create({
+      acao: 'GERAR_TEMPLATE_DIRETO',
+      tabela: 'desarquivamentos',
+      registroId: id,
+      usuarioId: req.session.user ? req.session.user.id : null,
+      dadosAnteriores: null,
+      dadosNovos: {
+        registro_id: id,
+        nome_completo: registro.nomeCompleto,
+        num_documento: registro.numDocumento
+      },
+      ip: req.ip,
+      userAgent: req.get('User-Agent')
+    });
+    
+  } catch (error) {
+    console.error('Erro ao gerar template direto:', error);
+    req.flash('error_msg', 'Erro ao gerar template.');
+    res.redirect('/nugecid');
   }
 };

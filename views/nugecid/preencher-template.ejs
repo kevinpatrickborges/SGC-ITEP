@@ -56,7 +56,9 @@
                 </label>
                 <input type="text" class="form-control" id="numero_processo" name="numero_processo" 
                        placeholder="Ex: 123456/2024" required>
-                <small class="form-text text-muted">Número do processo eletrônico relacionado</small>
+                <small class="form-text text-muted" id="processo_help">
+                  Número do processo eletrônico relacionado
+                </small>
               </div>
               <div class="col-md-6 mb-3">
                 <label for="observacao_geral" class="form-label">
@@ -103,6 +105,7 @@
                       </th>
                       <th>Nome Completo</th>
                       <th>Nº Documento</th>
+                      <th>Nº Processo</th>
                       <th>Tipo Documento</th>
                       <th>Data Solicitação</th>
                       <th>Status</th>
@@ -113,10 +116,12 @@
                       <tr>
                         <td>
                           <input type="checkbox" name="registros_selecionados" 
-                                 value="<%= registro.id %>" class="form-check-input registro-checkbox">
+                                 value="<%= registro.id %>" class="form-check-input registro-checkbox"
+                                 data-num-processo="<%= registro.numProcesso || '' %>">
                         </td>
                         <td><%= registro.nomeCompleto %></td>
                         <td><%= registro.numDocumento %></td>
+                        <td><%= registro.numProcesso || '-' %></td>
                         <td><%= registro.tipoDocumento || '-' %></td>
                         <td><%= new Date(registro.dataSolicitacao).toLocaleDateString('pt-BR') %></td>
                         <td>
@@ -170,7 +175,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Função para atualizar contador e estado do botão
   function atualizarEstado() {
-    const selecionados = document.querySelectorAll('.registro-checkbox:checked').length;
+    const checkboxesSelecionados = document.querySelectorAll('.registro-checkbox:checked');
+    const selecionados = checkboxesSelecionados.length;
     contadorSelecionados.textContent = selecionados;
     btnPreencher.disabled = selecionados === 0;
     
@@ -183,6 +189,60 @@ document.addEventListener('DOMContentLoaded', function() {
       selectAll.checked = true;
     } else {
       selectAll.indeterminate = true;
+    }
+    
+    // Verificar preenchimento automático do número de processo
+    verificarPreenchimentoAutomatico(checkboxesSelecionados);
+  }
+  
+  // Função para verificar e preencher automaticamente o número de processo
+  function verificarPreenchimentoAutomatico(checkboxesSelecionados) {
+    const numeroProcessoInput = document.getElementById('numero_processo');
+    const processoHelp = document.getElementById('processo_help');
+    
+    if (checkboxesSelecionados.length === 0) {
+      // Nenhum registro selecionado - limpar e habilitar campo
+      numeroProcessoInput.value = '';
+      numeroProcessoInput.disabled = false;
+      numeroProcessoInput.style.backgroundColor = '';
+      processoHelp.innerHTML = 'Número do processo eletrônico relacionado';
+      processoHelp.className = 'form-text text-muted';
+      return;
+    }
+    
+    // Coletar números de processo dos registros selecionados
+    const numerosProcesso = Array.from(checkboxesSelecionados)
+      .map(checkbox => checkbox.getAttribute('data-num-processo'))
+      .filter(num => num && num.trim() !== '');
+    
+    if (numerosProcesso.length === 0) {
+      // Nenhum registro tem número de processo - limpar e habilitar campo
+      numeroProcessoInput.value = '';
+      numeroProcessoInput.disabled = false;
+      numeroProcessoInput.style.backgroundColor = '';
+      processoHelp.innerHTML = 'Número do processo eletrônico relacionado';
+      processoHelp.className = 'form-text text-muted';
+      return;
+    }
+    
+    // Verificar se todos os números de processo são iguais
+    const primeiroNumero = numerosProcesso[0];
+    const todosIguais = numerosProcesso.every(num => num === primeiroNumero);
+    
+    if (todosIguais) {
+      // Todos iguais - preencher automaticamente e desabilitar campo
+      numeroProcessoInput.value = primeiroNumero;
+      numeroProcessoInput.disabled = true;
+      numeroProcessoInput.style.backgroundColor = '#e9ecef';
+      processoHelp.innerHTML = '<i class="fas fa-check-circle text-success"></i> Preenchido automaticamente (todos os registros têm o mesmo número)';
+      processoHelp.className = 'form-text text-success';
+    } else {
+      // Números diferentes - limpar e habilitar campo
+      numeroProcessoInput.value = '';
+      numeroProcessoInput.disabled = false;
+      numeroProcessoInput.style.backgroundColor = '';
+      processoHelp.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Os registros selecionados têm números de processo diferentes - preencha manualmente';
+      processoHelp.className = 'form-text text-warning';
     }
   }
 
