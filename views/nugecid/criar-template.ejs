@@ -1,0 +1,395 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-file-word text-primary"></i>
+            Criar Template Personalizado
+        </h1>
+        <a href="/nugecid" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cogs"></i>
+                        Configuração do Template
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form id="formTemplate" method="POST" action="/nugecid/termo/criar-template">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        
+                        <!-- Informações Básicas -->
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="titulo_documento" class="form-label">
+                                    <i class="fas fa-heading"></i>
+                                    Título do Documento *
+                                </label>
+                                <input type="text" class="form-control" id="titulo_documento" name="titulo_documento" 
+                                       placeholder="Ex: TERMO DE DESARQUIVAMENTO" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="incluir_data" class="form-label">
+                                    <i class="fas fa-calendar"></i>
+                                    Data Automática
+                                </label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="incluir_data" name="incluir_data" checked>
+                                    <label class="form-check-label" for="incluir_data">
+                                        Incluir data atual
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="instituicao" class="form-label">
+                                <i class="fas fa-building"></i>
+                                Instituição
+                            </label>
+                            <input type="text" class="form-control" id="instituicao" name="instituicao" 
+                                   value="INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA">
+                        </div>
+
+                        <!-- Campos Personalizados -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-plus-circle"></i>
+                                Campos Personalizados
+                            </label>
+                            <div id="campos-personalizados">
+                                <!-- Campos serão adicionados dinamicamente -->
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="addCampo">
+                                <i class="fas fa-plus"></i> Adicionar Campo
+                            </button>
+                        </div>
+
+                        <!-- Opções de Estrutura -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="incluir_tabela_registros" 
+                                           name="incluir_tabela_registros" checked>
+                                    <label class="form-check-label" for="incluir_tabela_registros">
+                                        <i class="fas fa-table"></i>
+                                        Incluir Tabela de Registros
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="incluir_assinaturas" 
+                                           name="incluir_assinaturas" checked>
+                                    <label class="form-check-label" for="incluir_assinaturas">
+                                        <i class="fas fa-signature"></i>
+                                        Incluir Seção de Assinaturas
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Observações do Template -->
+                        <div class="mb-3">
+                            <label for="observacoes_template" class="form-label">
+                                <i class="fas fa-sticky-note"></i>
+                                Observações do Template
+                            </label>
+                            <textarea class="form-control" id="observacoes_template" name="observacoes_template" 
+                                      rows="3" placeholder="Observações que aparecerão no rodapé do documento..."></textarea>
+                        </div>
+
+                        <!-- Botões de Ação -->
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-info" id="btnPreview">
+                                <i class="fas fa-eye"></i> Visualizar Prévia
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Criar Template
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel de Ajuda -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-question-circle"></i>
+                        Ajuda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h6>Como usar:</h6>
+                    <ul class="small">
+                        <li><strong>Título:</strong> Nome que aparecerá no cabeçalho do documento</li>
+                        <li><strong>Campos Personalizados:</strong> Adicione campos específicos para seu documento</li>
+                        <li><strong>Tabela de Registros:</strong> Inclui automaticamente a lista de prontuários</li>
+                        <li><strong>Assinaturas:</strong> Adiciona espaços para assinatura de responsáveis</li>
+                    </ul>
+                    
+                    <h6>Variáveis Disponíveis:</h6>
+                    <div class="small text-muted">
+                        <code>{numero_do_processo}</code><br>
+                        <code>{data_do_desarquivamento}</code><br>
+                        <code>{observacao_geral}</code><br>
+                        <code>{usuario_nome}</code><br>
+                        <code>{usuario_setor}</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prévia do Template -->
+            <div class="card shadow mb-4" id="previewCard" style="display: none;">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-eye"></i>
+                        Prévia do Template
+                    </h6>
+                </div>
+                <div class="card-body" id="previewContent">
+                    <!-- Conteúdo da prévia será inserido aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Sucesso -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle"></i>
+                    Template Criado com Sucesso!
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Seu template personalizado foi criado e está pronto para uso.</p>
+                <div id="templateInfo"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <a href="/nugecid/termo/selecionar" class="btn btn-primary">
+                    <i class="fas fa-file-word"></i> Usar Template
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let campoCounter = 0;
+    
+    // Adicionar campo personalizado
+    document.getElementById('addCampo').addEventListener('click', function() {
+        campoCounter++;
+        const container = document.getElementById('campos-personalizados');
+        
+        const campoDiv = document.createElement('div');
+        campoDiv.className = 'row mb-2 campo-personalizado';
+        campoDiv.innerHTML = `
+            <div class="col-md-4">
+                <input type="text" class="form-control form-control-sm" 
+                       name="campos_personalizados[${campoCounter}][label]" 
+                       placeholder="Rótulo do campo">
+            </div>
+            <div class="col-md-4">
+                <input type="text" class="form-control form-control-sm" 
+                       name="campos_personalizados[${campoCounter}][placeholder]" 
+                       placeholder="Variável (ex: campo_1)">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select form-select-sm" name="campos_personalizados[${campoCounter}][tipo]">
+                    <option value="texto">Texto</option>
+                    <option value="data">Data</option>
+                    <option value="numero">Número</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-outline-danger btn-sm remove-campo">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(campoDiv);
+        
+        // Adicionar evento de remoção
+        campoDiv.querySelector('.remove-campo').addEventListener('click', function() {
+            campoDiv.remove();
+        });
+    });
+    
+    // Visualizar prévia
+    document.getElementById('btnPreview').addEventListener('click', function() {
+        const formData = new FormData(document.getElementById('formTemplate'));
+        
+        // Simular prévia (simplificada)
+        const titulo = formData.get('titulo_documento') || 'DOCUMENTO PERSONALIZADO';
+        const instituicao = formData.get('instituicao') || 'INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA';
+        
+        let previewHTML = `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h6 style="margin: 0; font-weight: bold;">${instituicao}</h6>
+                <h6 style="margin: 5px 0; font-weight: bold;">DO RIO GRANDE DO NORTE</h6>
+                <h6 style="margin: 10px 0; font-weight: bold; text-decoration: underline;">${titulo}</h6>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <p><strong>Número do Processo:</strong> {numero_do_processo}</p>
+                <p><strong>Data:</strong> {data_do_desarquivamento}</p>
+            </div>
+        `;
+        
+        // Adicionar campos personalizados
+        const camposPersonalizados = document.querySelectorAll('.campo-personalizado');
+        if (camposPersonalizados.length > 0) {
+            previewHTML += '<div style="margin-bottom: 15px;">';
+            camposPersonalizados.forEach(campo => {
+                const label = campo.querySelector('input[name*="[label]"]').value;
+                const placeholder = campo.querySelector('input[name*="[placeholder]"]').value;
+                if (label && placeholder) {
+                    previewHTML += `<p><strong>${label}:</strong> {${placeholder}}</p>`;
+                }
+            });
+            previewHTML += '</div>';
+        }
+        
+        // Adicionar tabela se selecionada
+        if (document.getElementById('incluir_tabela_registros').checked) {
+            previewHTML += `
+                <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #000; padding: 5px; background-color: #f0f0f0;">Nº</th>
+                            <th style="border: 1px solid #000; padding: 5px; background-color: #f0f0f0;">Tipo</th>
+                            <th style="border: 1px solid #000; padding: 5px; background-color: #f0f0f0;">Nome</th>
+                            <th style="border: 1px solid #000; padding: 5px; background-color: #f0f0f0;">Número</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 5px;">{numero}</td>
+                            <td style="border: 1px solid #000; padding: 5px;">{tipo_documento}</td>
+                            <td style="border: 1px solid #000; padding: 5px;">{nome_completo}</td>
+                            <td style="border: 1px solid #000; padding: 5px;">{numero_documento}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        // Adicionar assinaturas se selecionadas
+        if (document.getElementById('incluir_assinaturas').checked) {
+            previewHTML += `
+                <div style="margin-top: 30px; font-size: 12px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 15px; text-align: center; width: 50%;">
+                                <div style="height: 40px; border-bottom: 1px solid #000; margin-bottom: 5px;"></div>
+                                <strong>Responsável pela Entrega</strong>
+                            </td>
+                            <td style="border: 1px solid #000; padding: 15px; text-align: center; width: 50%;">
+                                <div style="height: 40px; border-bottom: 1px solid #000; margin-bottom: 5px;"></div>
+                                <strong>Responsável pelo Recebimento</strong>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+        }
+        
+        document.getElementById('previewContent').innerHTML = previewHTML;
+        document.getElementById('previewCard').style.display = 'block';
+        
+        // Scroll para a prévia
+        document.getElementById('previewCard').scrollIntoView({ behavior: 'smooth' });
+    });
+    
+    // Submissão do formulário
+    document.getElementById('formTemplate').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        // Converter campos personalizados para array
+        const camposPersonalizados = [];
+        const camposElements = document.querySelectorAll('.campo-personalizado');
+        
+        camposElements.forEach((campo, index) => {
+            const label = campo.querySelector('input[name*="[label]"]').value;
+            const placeholder = campo.querySelector('input[name*="[placeholder]"]').value;
+            const tipo = campo.querySelector('select[name*="[tipo]"]').value;
+            
+            if (label && placeholder) {
+                camposPersonalizados.push({
+                    nome: placeholder,
+                    label: label,
+                    placeholder: placeholder,
+                    tipo: tipo
+                });
+            }
+        });
+        
+        // Preparar dados para envio
+        const dados = {
+            titulo_documento: formData.get('titulo_documento'),
+            instituicao: formData.get('instituicao'),
+            campos_personalizados: camposPersonalizados,
+            incluir_tabela_registros: formData.get('incluir_tabela_registros') === 'on',
+            incluir_assinaturas: formData.get('incluir_assinaturas') === 'on',
+            observacoes_template: formData.get('observacoes_template'),
+            _csrf: formData.get('_csrf')
+        };
+        
+        // Enviar via fetch
+        fetch('/nugecid/termo/criar-template', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dados)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('templateInfo').innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>Nome:</strong> ${data.template.nome}<br>
+                        <strong>ID:</strong> ${data.template.id}<br>
+                        <strong>Criado em:</strong> ${new Date(data.template.criado_em).toLocaleString('pt-BR')}
+                    </div>
+                `;
+                
+                const modal = new bootstrap.Modal(document.getElementById('successModal'));
+                modal.show();
+            } else {
+                alert('Erro ao criar template: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao criar template. Tente novamente.');
+        });
+    });
+});
+</script>
+
+<%- include('../partials/footer') %>

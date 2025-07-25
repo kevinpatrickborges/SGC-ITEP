@@ -6,7 +6,7 @@
             <h6 class="m-0 font-weight-bold text-primary">Itens Excluídos</h6>
             <div>
                 <% if (typeof desarquivamentos !== 'undefined' && desarquivamentos.length > 0) { %>
-                    <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#esvaziarLixeiraModal">
+                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#esvaziarLixeiraModal">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
                             <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm-1.115 1.858L9.5 4.23l-.885.628A.5.5 0 0 1 8 4.5V4h-1v.5a.5.5 0 0 1-.615.49l-.885-.628L5.115 4.358a.5.5 0 0 1 .27.446l.853 10.66h4.524l.853-10.66a.5.5 0 0 1 .27-.446M4.5 4.5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m3 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m3 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5"/>
                         </svg> Esvaziar Lixeira
@@ -65,28 +65,35 @@
 </div>
 
 <!-- Modal de Confirmação para Esvaziar Lixeira -->
-<div class="modal fade" id="esvaziarLixeiraModal" tabindex="-1" role="dialog" aria-labelledby="esvaziarLixeiraModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+<div class="modal fade" id="esvaziarLixeiraModal" tabindex="-1" aria-labelledby="esvaziarLixeiraModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="esvaziarLixeiraModalLabel">Confirmar Esvaziar Lixeira</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <h5 class="modal-title" id="esvaziarLixeiraModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmar Esvaziar Lixeira
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="/nugecid/desarquivamento/lixeira/esvaziar" method="POST">
                 <div class="modal-body">
                     <p>Para confirmar que deseja esvaziar a lixeira, por favor, insira sua senha. <strong>Esta ação é irreversível.</strong></p>
                     <input type="hidden" name="_method" value="POST">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <div class="form-group">
-                        <label for="passwordEsvaziar">Senha</label>
+                    <div class="mb-3">
+                        <label for="passwordEsvaziar" class="form-label">Senha</label>
                         <input type="password" class="form-control" id="passwordEsvaziar" name="password" required>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger">Esvaziar Lixeira</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i>
+                        Esvaziar Lixeira
+                    </button>
                 </div>
             </form>
         </div>
@@ -94,28 +101,35 @@
 </div>
 
 <!-- Modal de Confirmação de Exclusão -->
-<div class="modal fade" id="exclusaoModal" tabindex="-1" role="dialog" aria-labelledby="exclusaoModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+<div class="modal fade" id="exclusaoModal" tabindex="-1" aria-labelledby="exclusaoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exclusaoModalLabel">Confirmar Exclusão Permanente</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <h5 class="modal-title" id="exclusaoModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirmar Exclusão Permanente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="formExclusao" method="POST">
                 <div class="modal-body">
                     <p>Para confirmar a exclusão permanente deste item, por favor, insira sua senha.</p>
                     <input type="hidden" name="_method" value="DELETE">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <div class="form-group">
-                        <label for="password">Senha</label>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Senha</label>
                         <input type="password" class="form-control" id="password" name="password" required>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger">Excluir Permanentemente</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>
+                        Excluir Permanentemente
+                    </button>
                 </div>
             </form>
         </div>
@@ -126,6 +140,7 @@
 function abrirModalExclusao(id) {
     const form = document.getElementById('formExclusao');
     form.action = `/nugecid/desarquivamento/${id}/force`;
-    $('#exclusaoModal').modal('show');
+    const modal = new bootstrap.Modal(document.getElementById('exclusaoModal'));
+    modal.show();
 }
 </script>

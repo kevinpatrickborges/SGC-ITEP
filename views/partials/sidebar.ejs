@@ -3,19 +3,29 @@
     <img src="/img/itep_logo.png" alt="ITEP Logo">
     <span>SGC-ITEP</span>
   </div>
+    <!-- Barra de Pesquisa -->
+  <div class="sidebar-search">
+    <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="sidebarSearch" class="search-input" placeholder="Pesquisar...">
+    </div>
+  </div>
+
+  <!-- Itens do Menu -->
   <ul class="sei-menu">
-    <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> <span>Painel de Controle</span></a></li>
+    <li><a href="/dashboard"><i class="bi bi-window-stack"></i> <span>Painel de Controle</span></a></li>
     <li class="has-submenu">
       <a href="#" role="button" data-bs-toggle="collapse" data-bs-target="#nugecidSubmenu" aria-expanded="false" aria-controls="nugecidSubmenu">
         <i class="bi bi-archive"></i> <span>NUGECID</span>
       </a>
       <ul class="collapse submenu" id="nugecidSubmenu">
-        <li><a href="/nugecid"><i class="bi bi-file-earmark-zip"></i> <span>Desarquivamento</span></a></li>
+        <li><a href="/nugecid"><i class="bi bi-filetype-xlsx"></i> <span>Desarquivamento</span></a></li>
       </ul>
     </li>
-    <li><a href="/usuarios"><i class="bi bi-people"></i> <span>Usuários</span></a></li>
-    <li><a href="/relatorios"><i class="bi bi-bar-chart-line"></i> <span>Relatórios</span></a></li>
-    <li><a href="/importacao/importacao"><i class="bi bi-upload"></i> <span>Importação</span></a></li>
+    <li><a href="/projetos"><i class="bi bi-card-checklist"></i> <span>Projetos</span></a></li>
+    <li><a href="/usuarios"><i class="bi bi-people-fill"></i> <span>Usuários</span></a></li>
+    <li><a href="/relatorios"><i class="bi bi-ui-radios"></i> <span>Relatórios</span></a></li>
+    <li><a href="/importacao/importacao"><i class="bi bi-box-arrow-up"></i> <span>Importação</span></a></li>
     <li><a href="/collaborative-editor"><i class="bi bi-pencil-square"></i> <span>Editor Colaborativo</span></a></li>
     <li><a href="/viewer"><i class="bi bi-eye"></i> <span>Visualizador</span></a></li>
     <li><a href="/sobre"><i class="bi bi-info-circle"></i> <span>Sobre</span></a></li>

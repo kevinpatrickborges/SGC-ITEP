@@ -13,14 +13,26 @@ const cleanupJob = require('./jobs/cleanup');
 const startCleanupTrashJob = require('./jobs/cleanupTrash');
 const { ensureAuthenticated } = require('./middlewares/auth');
 
+// Novos middlewares de melhoria
+const { applyPerformanceOptimizations } = require('./middleware/performance');
+const { globalErrorHandler, notFoundHandler, handleUncaughtException, handleUnhandledRejection } = require('./middleware/errorHandler');
+const { auditarAutenticacao } = require('./middleware/auditoria');
+
 const app = express();
 
+// Configurar handlers de erro não capturado
+handleUncaughtException();
+handleUnhandledRejection();
+
 // --- CONFIGURAÇÃO DO APP (MIDDLEWARES, VIEWS, ETC.) ---
+// Aplicar otimizações de performance primeiro
+applyPerformanceOptimizations(app);
+
 require('./config/i18n')(app);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // 1. Cookie Parser - DEVE VIR ANTES da session.
 
@@ -31,7 +43,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'itep2025',
   resave: false,
   saveUninitialized: true,
-  cookie: { maxAge: 15 * 60 * 1000 } // 15 minutos
+  cookie: { maxAge: 2 * 60 * 60 * 1000 } // 2 horas
 }));
 
 // 3. CSRF - Proteção com a nova biblioteca csrf-sync.
@@ -42,10 +54,35 @@ app.use(flash());
 
 app.use(expressLayouts);
 
+// Middleware para definir req.user baseado na sessão
+app.use((req, res, next) => {
+  if (req.session && req.session.user) {
+    req.user = req.session.user;
+  }
+  next();
+});
+
+// Middleware de debug GLOBAL para todas as requisições /projetos
+app.use((req, res, next) => {
+  if (req.originalUrl.startsWith('/projetos')) {
+    console.log(`🌍 GLOBAL DEBUG: ${req.method} ${req.originalUrl}`);
+    console.log('📋 Body:', req.body);
+    console.log('🔑 Method Override:', req.body._method);
+    console.log('👤 User:', req.user ? req.user.id : 'undefined');
+    console.log('🔍 Headers:', req.headers);
+  }
+  next();
+});
+
+
+
 // Middleware para disponibilizar variáveis globais para as views
 app.use((req, res, next) => {
   res.locals.isAuthenticated = req.session.isLoggedIn;
   res.locals.user = req.session.user;
+  res.locals.currentUser = req.session.user;
+  res.locals.success_msg = req.flash('success_msg');
+  res.locals.error_msg = req.flash('error_msg');
   next();
 });
 
@@ -75,17 +112,31 @@ async function startServer() {
 
     // --- MIDDLEWARES GLOBAIS (após config inicial) ---
     app.use((req, res, next) => {
-      res.locals.success_msg = req.flash('success_msg');
-      res.locals.error_msg = req.flash('error_msg');
-      res.locals.currentUser = req.session.user;
       res.locals.__ = res.__;
       next();
     });
 
     // --- ROTAS (carregadas após o DB estar pronto) ---
     console.log('Loading routes...');
+    
+    // Rotas que NÃO precisam de CSRF (devem vir ANTES da proteção CSRF)
     app.use('/', require('./routes/index'));
+    
+    // Rotas de importação (sem CSRF global, pois é tratado na própria rota)
+    app.use('/nugecid/desarquivamento/importar', require('./modules/nugecid/routes/desarquivamento.import.routes'));
+
+    // Rotas que precisam de CSRF mas com tratamento especial
+    app.use('/viewer', require('./routes/viewer.js'));
+
+    // Middleware de debug removido - usando apenas o global
+    
+    // Aplica a proteção CSRF a todas as rotas que vêm a seguir.
+    // Rotas que não devem ser protegidas (ex: APIs sem estado) devem ser declaradas ANTES desta linha.
+    app.use(csrfProtection);
+    
+    // Rotas que PRECISAM de CSRF (devem vir DEPOIS da proteção CSRF)
     app.use('/auth', require('./routes/auth'));
+    
     app.use('/usuarios', require('./routes/usuarios'));
     app.use('/movimentacoes', require('./routes/movimentacoes'));
     app.use('/custodia-vestigios', require('./routes/custodia_vestigios'));
@@ -94,16 +145,16 @@ async function startServer() {
     app.use('/relatorios', require('./routes/relatorios'));
     app.use('/publicacoes', require('./routes/publicacoes.routes.js'));
     app.use('/collaborative-editor', require('./routes/collaborative-editor.routes.js'));
-
-    // Rotas de importação (sem CSRF global, pois é tratado na própria rota)
-    app.use('/nugecid/desarquivamento/importar', require('./modules/nugecid/routes/desarquivamento.import.routes'));
-
-    // Rotas que precisam de CSRF mas com tratamento especial
-    app.use('/viewer', require('./routes/viewer.js'));
-
-    // Aplica a proteção CSRF a todas as rotas que vêm a seguir.
-    // Rotas que não devem ser protegidas (ex: APIs sem estado) devem ser declaradas ANTES desta linha.
-    app.use(csrfProtection);
+    
+    app.use('/projetos', require('./routes/projetos'));
+    
+    // Rota simples para página Sobre
+    app.get('/sobre', (req, res) => {
+      res.render('sobre', {
+        title: 'Sobre o SGC-ITEP',
+        layout: 'layout'
+      });
+    });
 
     // Rotas do Módulo NUGECID (agora consolidadas)
     app.use('/nugecid', require('./routes/nugecid.routes.js'));
@@ -133,15 +184,11 @@ async function startServer() {
     app.use('/api/notifications', notificationsApiRoutes);
     app.use('/api/python', ensureAuthenticated, pythonServicesApiRoutes);
 
-    // --- HANDLER 404 ---
-    app.use((req, res) => {
-      if (req.path.startsWith('/api/')) {
-        return res.status(404).json({ error: 'Endpoint não encontrado' });
-      }
-      res.status(404).render('404');
-    });
+    // --- TRATAMENTO DE ERROS ---
+    // Handler 404 aprimorado
+    app.use(notFoundHandler);
 
-    // Tratamento de erro específico para CSRF inválido (DEVE SER DEPOIS DAS ROTAS)
+    // Tratamento de erro específico para CSRF inválido (DEVE SER ANTES do handler global)
     app.use((err, req, res, next) => {
       if (err === invalidCsrfTokenError) {
         console.warn('CSRF Token inválido detectado para a rota:', req.path);
@@ -151,6 +198,9 @@ async function startServer() {
         next(err);
       }
     });
+
+    // Handler global de erros (DEVE SER O ÚLTIMO)
+    app.use(globalErrorHandler);
 
     // --- INICIAR SERVIDOR ---
     const PORT = process.env.PORT || 3001;

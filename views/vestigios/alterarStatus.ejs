@@ -16,11 +16,17 @@
       </div>
       <div class="mb-3">
         <label for="usuario" class="form-label">Usuário (matrícula)</label>
-        <input type="text" class="form-control" id="usuario" name="usuario" required>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-person-vcard"></i></span>
+          <input type="text" class="form-control" id="usuario" name="usuario" required>
+        </div>
       </div>
       <div class="mb-3">
         <label for="senha" class="form-label">Senha</label>
-        <input type="password" class="form-control" id="senha" name="senha" required>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-key"></i></span>
+          <input type="password" class="form-control" id="senha" name="senha" required>
+        </div>
       </div>
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button type="submit" class="btn btn-primary">Alterar Status</button>

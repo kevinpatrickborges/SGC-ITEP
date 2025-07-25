@@ -5,7 +5,7 @@ const { Desarquivamento } = require('../models');
 const { Op } = require('sequelize');
 const statisticsService = require('../services/statisticsService');
 
-// Função para contar usuários ativos por IP com heartbeat
+// Função para obter usuários ativos por IP com heartbeat
 const ONE_MINUTE = 60 * 1000;
 let getActiveUsersByIP = (sessionStoreInstance) => {
   return new Promise((resolve, reject) => {
@@ -16,7 +16,20 @@ let getActiveUsersByIP = (sessionStoreInstance) => {
       const now = Date.now();
       Object.values(sessions).forEach(sess => {
         if (sess.user && sess.ip && sess.lastPing && (now - sess.lastPing < ONE_MINUTE)) {
-          ipMap[sess.ip] = (ipMap[sess.ip] || 0) + 1;
+          if (!ipMap[sess.ip]) {
+            ipMap[sess.ip] = {
+              count: 0,
+              users: []
+            };
+          }
+          ipMap[sess.ip].count++;
+          // Evitar duplicatas de usuários
+          if (!ipMap[sess.ip].users.find(u => u.id === sess.user.id)) {
+            ipMap[sess.ip].users.push({
+              id: sess.user.id,
+              nome: sess.user.nome || sess.user.email || 'Usuário'
+            });
+          }
         }
       });
       resolve(ipMap);
@@ -83,7 +96,8 @@ const renderDashboard = async (req, res) => {
       usersByIp,
       solicitacoesRecentes,
       vestigiosUrgentes,
-      registrosRecentes
+      registrosRecentes,
+      currentUser: req.session.user
     });
   } catch (error) {
     console.error('Erro ao renderizar dashboard:', error);

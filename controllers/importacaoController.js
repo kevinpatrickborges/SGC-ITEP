@@ -103,7 +103,7 @@ exports.formImportacaoDesarquivamento = (req, res) => {
     res.render('nugecid/importar', {
         preview: null,
         erros: null,
-        csrfToken: req.csrfToken()
+        csrfToken: res.locals.csrfToken
     });
 };
 
@@ -163,7 +163,7 @@ exports.previewImportacaoDesarquivamento = (req, res) => {
         res.render('nugecid/importar', {
             preview: registros,
             erros: null,
-            csrfToken: req.csrfToken()
+            csrfToken: res.locals.csrfToken
         });
 
     } catch (error) {

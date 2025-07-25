@@ -1,0 +1,221 @@
+<div class="container-fluid">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
+    <div>
+      <a href="/nugecid/templates" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left"></i> Voltar aos Templates
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Informações do Template -->
+    <div class="col-12 mb-4">
+      <div class="card border-left-primary">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                Template Selecionado
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                <i class="fas fa-file-pdf text-danger"></i>
+                <%= filename %>
+              </div>
+            </div>
+            <div class="col-auto">
+              <a href="/nugecid/pdf/visualizar/<%= encodeURIComponent(filename) %>" 
+                 class="btn btn-outline-primary btn-sm" target="_blank">
+                <i class="fas fa-eye"></i> Visualizar Template
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulário de Preenchimento -->
+    <div class="col-12">
+      <form action="/nugecid/preencher-template/<%= encodeURIComponent(filename) %>" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        
+        <!-- Dados Gerais -->
+        <div class="card shadow mb-4">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fas fa-info-circle"></i>
+              Dados Gerais do Documento
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="numero_processo" class="form-label">
+                  <i class="fas fa-hashtag"></i>
+                  Número do Processo
+                </label>
+                <input type="text" class="form-control" id="numero_processo" name="numero_processo" 
+                       placeholder="Ex: 123456/2024" required>
+                <small class="form-text text-muted">Número do processo eletrônico relacionado</small>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="observacao_geral" class="form-label">
+                  <i class="fas fa-comment"></i>
+                  Observação Geral
+                </label>
+                <textarea class="form-control" id="observacao_geral" name="observacao_geral" rows="3"
+                          placeholder="Observações sobre o desarquivamento...">Desarquivamento solicitado conforme necessidade do setor.</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seleção de Registros -->
+        <div class="card shadow mb-4">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              <i class="fas fa-list-check"></i>
+              Selecionar Registros para Preenchimento
+            </h6>
+          </div>
+          <div class="card-body">
+            <% if (registros && registros.length > 0) { %>
+              <!-- Controles de Seleção -->
+              <div class="mb-3">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="selecionarTodos">
+                  <i class="fas fa-check-square"></i> Selecionar Todos
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="deselecionarTodos">
+                  <i class="fas fa-square"></i> Desmarcar Todos
+                </button>
+                <span class="ml-3 text-muted">
+                  <span id="contadorSelecionados">0</span> registro(s) selecionado(s)
+                </span>
+              </div>
+
+              <!-- Tabela de Registros -->
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                  <thead class="thead-light">
+                    <tr>
+                      <th width="50">
+                        <input type="checkbox" id="selectAll" class="form-check-input">
+                      </th>
+                      <th>Nome Completo</th>
+                      <th>Nº Documento</th>
+                      <th>Tipo Documento</th>
+                      <th>Data Solicitação</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% registros.forEach(registro => { %>
+                      <tr>
+                        <td>
+                          <input type="checkbox" name="registros_selecionados" 
+                                 value="<%= registro.id %>" class="form-check-input registro-checkbox">
+                        </td>
+                        <td><%= registro.nomeCompleto %></td>
+                        <td><%= registro.numDocumento %></td>
+                        <td><%= registro.tipoDocumento || '-' %></td>
+                        <td><%= new Date(registro.dataSolicitacao).toLocaleDateString('pt-BR') %></td>
+                        <td>
+                          <span class="badge badge-<%= registro.status === 'Finalizado' ? 'success' : 
+                                                        registro.status === 'Desarquivado' ? 'warning' : 
+                                                        registro.status === 'Solicitado' ? 'info' : 'secondary' %>">
+                            <%= registro.status %>
+                          </span>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } else { %>
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Nenhum registro de desarquivamento encontrado.
+              </div>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="card shadow mb-4">
+          <div class="card-body text-center">
+            <button type="submit" class="btn btn-primary btn-lg" id="btnPreencher" disabled>
+              <i class="fas fa-fill-drip"></i>
+              Preencher Template com Dados Selecionados
+            </button>
+            <a href="/nugecid/templates" class="btn btn-secondary btn-lg ml-3">
+              <i class="fas fa-times"></i>
+              Cancelar
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript para controle de seleção -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const selectAll = document.getElementById('selectAll');
+  const registroCheckboxes = document.querySelectorAll('.registro-checkbox');
+  const btnPreencher = document.getElementById('btnPreencher');
+  const contadorSelecionados = document.getElementById('contadorSelecionados');
+  const btnSelecionarTodos = document.getElementById('selecionarTodos');
+  const btnDeselecionarTodos = document.getElementById('deselecionarTodos');
+
+  // Função para atualizar contador e estado do botão
+  function atualizarEstado() {
+    const selecionados = document.querySelectorAll('.registro-checkbox:checked').length;
+    contadorSelecionados.textContent = selecionados;
+    btnPreencher.disabled = selecionados === 0;
+    
+    // Atualizar estado do checkbox "Selecionar Todos"
+    if (selecionados === 0) {
+      selectAll.indeterminate = false;
+      selectAll.checked = false;
+    } else if (selecionados === registroCheckboxes.length) {
+      selectAll.indeterminate = false;
+      selectAll.checked = true;
+    } else {
+      selectAll.indeterminate = true;
+    }
+  }
+
+  // Event listener para "Selecionar Todos" no cabeçalho
+  selectAll.addEventListener('change', function() {
+    registroCheckboxes.forEach(checkbox => {
+      checkbox.checked = this.checked;
+    });
+    atualizarEstado();
+  });
+
+  // Event listeners para checkboxes individuais
+  registroCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', atualizarEstado);
+  });
+
+  // Botão "Selecionar Todos"
+  btnSelecionarTodos.addEventListener('click', function() {
+    registroCheckboxes.forEach(checkbox => {
+      checkbox.checked = true;
+    });
+    atualizarEstado();
+  });
+
+  // Botão "Desmarcar Todos"
+  btnDeselecionarTodos.addEventListener('click', function() {
+    registroCheckboxes.forEach(checkbox => {
+      checkbox.checked = false;
+    });
+    atualizarEstado();
+  });
+
+  // Inicializar estado
+  atualizarEstado();
+});
+</script>

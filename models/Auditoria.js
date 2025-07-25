@@ -10,7 +10,7 @@ const Auditoria = sequelize.define('Auditoria', {
   },
   usuarioId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
   },
   acao: {
     type: DataTypes.STRING,

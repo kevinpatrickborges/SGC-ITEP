@@ -1,0 +1,256 @@
+/* ========================================
+   SISTEMA DE TEMA CLARO/ESCURO
+   SGC-ITEP - Sistema de Gestão Documental
+   ======================================== */
+
+/* ===== TEMA CLARO (PADRÃO) ===== */
+:root {
+  /* Backgrounds */
+  --bg-body: #f0f2f5;
+  --bg-surface: #ffffff;
+  --bg-surface-secondary: #f8f9fa;
+  --bg-sidebar: #ffffff;
+  --bg-topbar: var(--primary-500);
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-hover: rgba(0, 0, 0, 0.05);
+  
+  /* Textos */
+  --text-primary: #1a202c;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --text-inverse: #ffffff;
+  --text-link: var(--primary-600);
+  
+  /* Bordas */
+  --border-color: #e2e8f0;
+  --border-color-light: #f1f5f9;
+  --border-color-strong: #cbd5e0;
+  
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Estados */
+  --state-success-bg: #f0fdf4;
+  --state-success-border: #bbf7d0;
+  --state-success-text: #166534;
+  --state-warning-bg: #fffbeb;
+  --state-warning-border: #fed7aa;
+  --state-warning-text: #92400e;
+  --state-error-bg: #fef2f2;
+  --state-error-border: #fecaca;
+  --state-error-text: #991b1b;
+  --state-info-bg: #eff6ff;
+  --state-info-border: #bfdbfe;
+  --state-info-text: #1e40af;
+}
+
+/* ===== TEMA ESCURO ===== */
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-body: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-surface-secondary: #334155;
+  --bg-sidebar: #1e293b;
+  --bg-topbar: var(--primary-800);
+  --bg-card: #1e293b;
+  --bg-input: #334155;
+  --bg-hover: rgba(255, 255, 255, 0.1);
+  
+  /* Textos */
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-inverse: #0f172a;
+  --text-link: var(--primary-400);
+  
+  /* Bordas */
+  --border-color: #475569;
+  --border-color-light: #334155;
+  --border-color-strong: #64748b;
+  
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  
+  /* Estados */
+  --state-success-bg: #064e3b;
+  --state-success-border: #047857;
+  --state-success-text: #6ee7b7;
+  --state-warning-bg: #7c2d12;
+  --state-warning-border: #ea580c;
+  --state-warning-text: #fdba74;
+  --state-error-bg: #7f1d1d;
+  --state-error-border: #dc2626;
+  --state-error-text: #fca5a5;
+  --state-info-bg: #1e3a8a;
+  --state-info-border: #3b82f6;
+  --state-info-text: #93c5fd;
+}
+
+/* ===== APLICAÇÃO DOS TEMAS ===== */
+body {
+  background-color: var(--bg-body);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Superfícies */
+.sei-content-box,
+.box,
+.card,
+.modal-content {
+  background-color: var(--bg-surface);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+
+/* Sidebar */
+.sei-sidebar {
+  background-color: var(--bg-sidebar);
+  border-color: var(--border-color);
+}
+
+/* Topbar */
+.sei-topbar {
+  background-color: var(--bg-topbar);
+}
+
+/* Inputs */
+.form-control,
+.form-select,
+input,
+textarea,
+select {
+  background-color: var(--bg-input);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 0.2rem rgba(98, 125, 152, 0.25);
+}
+
+/* Tabelas */
+.table {
+  color: var(--text-primary);
+}
+
+.table th {
+  background-color: var(--bg-surface-secondary);
+  border-color: var(--border-color);
+}
+
+.table td {
+  border-color: var(--border-color);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+  background-color: var(--bg-surface-secondary);
+}
+
+/* Botões */
+.btn-outline-primary {
+  color: var(--primary-600);
+  border-color: var(--primary-600);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-600);
+  border-color: var(--primary-600);
+}
+
+/* Estados de alerta */
+.alert-success {
+  background-color: var(--state-success-bg);
+  border-color: var(--state-success-border);
+  color: var(--state-success-text);
+}
+
+.alert-warning {
+  background-color: var(--state-warning-bg);
+  border-color: var(--state-warning-border);
+  color: var(--state-warning-text);
+}
+
+.alert-danger {
+  background-color: var(--state-error-bg);
+  border-color: var(--state-error-border);
+  color: var(--state-error-text);
+}
+
+.alert-info {
+  background-color: var(--state-info-bg);
+  border-color: var(--state-info-border);
+  color: var(--state-info-text);
+}
+
+/* ===== BOTÃO DE ALTERNÂNCIA DE TEMA ===== */
+.theme-toggle {
+  background: none;
+  border: none;
+  color: var(--text-inverse);
+  font-size: 1.2rem;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Ícones do tema */
+.theme-icon {
+  transition: all 0.3s ease;
+}
+
+.theme-icon.hidden {
+  opacity: 0;
+  transform: rotate(180deg) scale(0);
+}
+
+.theme-icon.visible {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+/* Animação de rotação para o ícone */
+@keyframes themeRotate {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg); }
+}
+
+.theme-toggle.animating .theme-icon {
+  animation: themeRotate 0.6s ease-in-out;
+}
+
+/* ===== TRANSIÇÕES SUAVES ===== */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Exceções para elementos que não devem ter transição */
+.loading-spinner,
+.btn-spinner,
+[class*="animate-"],
+[class*="animation-"] {
+  transition: none !important;
+}

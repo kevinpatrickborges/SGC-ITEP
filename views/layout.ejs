@@ -8,10 +8,12 @@
   <% const cacheBuster = new Date().getTime(); %>
   <!-- Libs -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/bootstrap-icons.css?v=<%= cacheBuster %>">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
   <!-- Estilos Locais -->
+  <link href="/css/colors-institutional.css?v=<%= cacheBuster %>" rel="stylesheet">
+  <link href="/css/theme-toggle.css?v=<%= cacheBuster %>" rel="stylesheet">
   <link href="/css/theme.css?v=<%= cacheBuster %>" rel="stylesheet">
   <link href="/css/sidebar.css?v=<%= cacheBuster %>" rel="stylesheet">
   <link href="/css/topbar.css?v=<%= cacheBuster %>" rel="stylesheet">
@@ -39,6 +41,7 @@
 
   <!-- Scripts Locais -->
   <script src="/js/sidebar.js?v=<%= cacheBuster %>"></script>
+    <script src="/js/sidebar-search.js?v=<%= cacheBuster %>"></script>
   <script src="/js/heartbeat.js?v=<%= cacheBuster %>"></script>
   <script src="/js/notification-handler.js?v=<%= cacheBuster %>"></script>
 
@@ -47,7 +50,10 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Exclusão</h5>
+          <h5 class="modal-title" id="confirmDeleteModalLabel">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Confirmar Exclusão
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -65,8 +71,14 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" form="confirmDeleteForm" class="btn btn-danger">Confirmar Exclusão</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>
+            Cancelar
+          </button>
+          <button type="submit" form="confirmDeleteForm" class="btn btn-danger">
+            <i class="fas fa-trash me-1"></i>
+            Confirmar Exclusão
+          </button>
         </div>
       </div>
     </div>
@@ -77,7 +89,10 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header bg-warning text-dark">
-          <h5 class="modal-title" id="moveAllToTrashModalLabel">Confirmar Limpeza de Registros</h5>
+          <h5 class="modal-title" id="moveAllToTrashModalLabel">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Confirmar Limpeza de Registros
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -96,8 +111,14 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" form="moveAllToTrashForm" class="btn btn-warning">Sim, mover para a lixeira</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>
+            Cancelar
+          </button>
+          <button type="submit" form="moveAllToTrashForm" class="btn btn-warning">
+            <i class="fas fa-trash-alt me-1"></i>
+            Sim, mover para a lixeira
+          </button>
         </div>
       </div>
     </div>

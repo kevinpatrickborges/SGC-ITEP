@@ -5,7 +5,7 @@
         <label for="arquivo" class="form-label"><%= __('Selecione um arquivo .xlsx ou .csv') %></label>
         <input type="file" name="arquivo" id="arquivo" class="form-control" accept=".xlsx,.csv" required>
       </div>
-      <button type="submit" class="btn btn-success"><i class="bi bi-upload"></i> <%= __('Importar') %></button>
+      <button type="submit" class="btn btn-success"><i class="bi bi-cloud-upload"></i> <%= __('Importar') %></button>
     </form>
     <% if (preview && preview.length) { %>
       <h5 class="mt-4"><%= __('Pré-visualização dos dados') %>:</h5>
@@ -31,7 +31,7 @@
       </div>
       <form action="/importacao/confirmar" method="POST">
         <input type="hidden" name="arquivoTemp" value="<%= arquivoTemp %>">
-        <button class="btn btn-primary" type="submit"><i class="bi bi-check-circle"></i> <%= __('Confirmar Importação') %></button>
+        <button class="btn btn-primary" type="submit"><i class="bi bi-check-circle-fill"></i> <%= __('Confirmar Importação') %></button>
       </form>
     <% } %>
     <% if (mensagem) { %>

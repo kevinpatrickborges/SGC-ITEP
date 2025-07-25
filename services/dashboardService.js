@@ -95,7 +95,10 @@ exports.getDashboardStats = async () => {
       solicitacoesRecentes,
       vestigiosUrgentes,
       distribuicaoPorTipo,
-      distribuicaoPorStatus,
+      desarquivamentosPorStatus: distribuicaoPorStatus.map(item => ({
+        status: item.status,
+        total: parseInt(item.count)
+      })),
       solicitacoesMensais,
       distribuicaoPorTipoDocumento
     };
@@ -103,4 +106,4 @@ exports.getDashboardStats = async () => {
     console.error('Erro ao obter estatísticas do dashboard:', error);
     throw new Error('Não foi possível gerar as estatísticas do dashboard.');
   }
-}; 
+};

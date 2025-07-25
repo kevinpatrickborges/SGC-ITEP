@@ -126,10 +126,53 @@ html, body {
     width: 100%;
     margin-top: 10px;
     font-size: 1rem;
+    position: relative;
+    transition: all 0.3s ease;
+    overflow: hidden;
   }
   .login-btn:hover {
     background: #006666;
   }
+  
+  /* Estados de loading do botão */
+  .login-btn.loading {
+    background: #006666;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  .login-btn.loading .btn-text {
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+  }
+  
+  .login-btn .btn-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid #fff;
+    border-radius: 50%;
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+  
+  .login-btn.loading .btn-spinner {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    animation: btnSpin 1s linear infinite;
+  }
+  
+  @keyframes btnSpin {
+    0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) scale(1) rotate(360deg); }
+  }
+  
+
   
   /* Alertas */
   .alert {

@@ -9,19 +9,31 @@
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="col-md-6">
             <label class="form-label">Nome</label>
-            <input type="text" name="nome" class="form-control" required value="<%= typeof formData !== 'undefined' ? formData.nome : '' %>">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                <input type="text" name="nome" class="form-control" required value="<%= typeof formData !== 'undefined' ? formData.nome : '' %>">
+            </div>
         </div>
         <div class="col-md-6">
             <label class="form-label">Matrícula</label>
-            <input type="text" name="matricula" class="form-control" value="<%= typeof formData !== 'undefined' ? formData.matricula : '' %>">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person-vcard"></i></span>
+                <input type="text" name="matricula" class="form-control" value="<%= typeof formData !== 'undefined' ? formData.matricula : '' %>">
+            </div>
         </div>
         <div class="col-md-6">
             <label class="form-label">Usuário</label>
-            <input type="text" name="email" class="form-control" required value="<%= typeof formData !== 'undefined' ? formData.email : '' %>">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                <input type="text" name="email" class="form-control" required value="<%= typeof formData !== 'undefined' ? formData.email : '' %>">
+            </div>
         </div>
         <div class="col-md-6">
             <label class="form-label">Senha</label>
-            <input type="password" name="senha" class="form-control" required>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                <input type="password" name="senha" class="form-control" required>
+            </div>
         </div>
         <div class="col-md-6">
             <label class="form-label">Perfil</label>

@@ -37,6 +37,10 @@ const {
     if (req.path === '/viewer/upload' && req.method === 'POST') {
       return true;
     }
+    // Pular para a rota de heartbeat do dashboard
+    if (req.path === '/dashboard/ping' && req.method === 'POST') {
+      return true;
+    }
     return false;
   }
 });

@@ -15,6 +15,435 @@ const HTMLtoDOCX = require('html-to-docx');
 const Auditoria = require('../models/Auditoria');
 
 /**
+ * @desc Exibe o formulário para criar templates personalizados.
+ * @route GET /nugecid/termo/criar-template
+ */
+exports.exibirFormularioTemplate = (req, res) => {
+  try {
+    res.render('nugecid/criar-template', {
+      title: 'Criar Template Personalizado - NUGECID',
+      csrfToken: req.csrfToken(),
+      user: req.session.user,
+      layout: 'layout'
+    });
+  } catch (error) {
+    console.error('Erro ao exibir formulário de template:', error);
+    req.flash('error_msg', 'Erro ao carregar a página de criação de template.');
+    res.redirect('/nugecid');
+  }
+};
+
+/**
+ * @desc Visualiza um arquivo PDF no navegador.
+ * @route GET /nugecid/pdf/visualizar/:filename
+ */
+exports.visualizarPDF = (req, res) => {
+  try {
+    const { filename } = req.params;
+    const path = require('path');
+    const fs = require('fs');
+    
+    // Caminho para o diretório de templates
+    const templatesDir = path.join(__dirname, '..', 'templates');
+    const filePath = path.join(templatesDir, filename);
+    
+    // Verifica se o arquivo existe
+    if (!fs.existsSync(filePath)) {
+      req.flash('error_msg', 'Arquivo PDF não encontrado.');
+      return res.redirect('/nugecid');
+    }
+    
+    // Verifica se é um arquivo PDF
+    if (!filename.toLowerCase().endsWith('.pdf')) {
+      req.flash('error_msg', 'Apenas arquivos PDF são suportados.');
+      return res.redirect('/nugecid');
+    }
+    
+    res.render('nugecid/visualizar-pdf', {
+      title: `Visualizar PDF - ${filename}`,
+      filename: filename,
+      pdfUrl: `/nugecid/pdf/arquivo/${filename}`,
+      user: req.session.user,
+      layout: 'layout'
+    });
+  } catch (error) {
+    console.error('Erro ao visualizar PDF:', error);
+    req.flash('error_msg', 'Erro ao carregar o arquivo PDF.');
+    res.redirect('/nugecid');
+  }
+};
+
+/**
+ * @desc Lista os templates PDF disponíveis.
+ * @route GET /nugecid/templates
+ */
+exports.listarTemplatesPDF = (req, res) => {
+  try {
+    const path = require('path');
+    const fs = require('fs');
+    
+    // Caminho para o diretório de templates
+    const templatesDir = path.join(__dirname, '..', 'templates');
+    
+    // Verifica se o diretório existe
+    if (!fs.existsSync(templatesDir)) {
+      req.flash('error_msg', 'Diretório de templates não encontrado.');
+      return res.redirect('/nugecid');
+    }
+    
+    // Lista todos os arquivos PDF no diretório
+    const files = fs.readdirSync(templatesDir)
+      .filter(file => file.toLowerCase().endsWith('.pdf'))
+      .map(file => {
+        const filePath = path.join(templatesDir, file);
+        const stats = fs.statSync(filePath);
+        return {
+          name: file,
+          displayName: file.replace(/\.[^/.]+$/, ''), // Remove extensão
+          size: (stats.size / 1024 / 1024).toFixed(2), // Tamanho em MB
+          modified: stats.mtime.toLocaleDateString('pt-BR')
+        };
+      });
+    
+    res.render('nugecid/templates-pdf', {
+      title: 'Templates PDF - NUGECID',
+      templates: files,
+      user: req.session.user,
+      layout: 'layout'
+    });
+  } catch (error) {
+    console.error('Erro ao listar templates PDF:', error);
+    req.flash('error_msg', 'Erro ao carregar a lista de templates.');
+    res.redirect('/nugecid');
+  }
+};
+
+/**
+ * @desc Exibe formulário para preencher template com dados do sistema
+ * @route GET /nugecid/preencher-template/:filename
+ */
+exports.exibirPreenchimentoTemplate = async (req, res) => {
+  try {
+    const { filename } = req.params;
+    
+    // Buscar registros de desarquivamento para seleção
+    const registros = await Desarquivamento.findAll({
+      order: [['dataSolicitacao', 'DESC']],
+      limit: 50 // Limitar para performance
+    });
+    
+    res.render('nugecid/preencher-template', {
+      title: 'Preencher Template - NUGECID',
+      filename: filename,
+      registros: registros,
+      csrfToken: req.csrfToken(),
+      user: req.session.user,
+      layout: 'layout'
+    });
+    
+  } catch (error) {
+    console.error('Erro ao exibir formulário de preenchimento:', error);
+    req.flash('error_msg', 'Erro ao carregar formulário de preenchimento.');
+    res.redirect('/nugecid/templates');
+  }
+};
+
+/**
+ * @desc Processa o preenchimento do template com dados selecionados
+ * @route POST /nugecid/preencher-template/:filename
+ */
+exports.processarPreenchimentoTemplate = async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const { registros_selecionados, numero_processo, observacao_geral } = req.body;
+    
+    if (!registros_selecionados || registros_selecionados.length === 0) {
+      req.flash('error_msg', 'Selecione pelo menos um registro para preencher o template.');
+      return res.redirect(`/nugecid/preencher-template/${filename}`);
+    }
+    
+    // Buscar os registros selecionados
+    const registros = await Desarquivamento.findAll({
+      where: {
+        id: Array.isArray(registros_selecionados) ? registros_selecionados : [registros_selecionados]
+      }
+    });
+    
+    if (registros.length === 0) {
+      req.flash('error_msg', 'Nenhum registro válido encontrado.');
+      return res.redirect(`/nugecid/preencher-template/${filename}`);
+    }
+    
+    // Preparar dados para preenchimento
+    const dadosPreenchimento = {
+      // Dados do cabeçalho
+      instituicao: 'INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA',
+      estado: 'DO RIO GRANDE DO NORTE',
+      secretaria: 'SECRETARIA DE SEGURANÇA PÚBLICA E DEFESA SOCIAL',
+      nucleo: 'NÚCLEO DE GESTÃO E CONTROLE DE INFORMAÇÃO DOCUMENTAL E ARQUIVO GERAL - ITEP',
+      titulo_documento: 'TERMO DE DESARQUIVAMENTO DE DOCUMENTO',
+      
+      // Dados do processo
+      numero_processo: numero_processo || 'A ser preenchido',
+      data_desarquivamento: new Date().toLocaleDateString('pt-BR'),
+      
+      // Observação geral
+      observacao_geral: observacao_geral || 'Desarquivamento solicitado conforme necessidade do setor.',
+      
+      // Lista de registros
+      registros: registros.map(r => ({
+        tipo_documento: r.tipoDocumento || 'Ex. Prontuário, Laudo, Parecer, Relatório',
+        nome: r.nomeCompleto || '',
+        numero: r.numDocumento || '',
+        observacao: r.finalidade || ''
+      })),
+      
+      // Setor solicitante (pegar do primeiro registro ou usar padrão)
+      setor_solicitante: registros.length > 0 && registros[0].setorDemandante ? registros[0].setorDemandante : 'ITEP-IC-NPI-SPD',
+      
+      // Dados do usuário
+      usuario_nome: req.session.user ? req.session.user.nome : 'Sistema',
+      usuario_setor: req.session.user ? req.session.user.setor : 'NUGECID',
+      data_geracao: new Date().toLocaleDateString('pt-BR'),
+      hora_geracao: new Date().toLocaleTimeString('pt-BR')
+    };
+    
+    // Renderizar template preenchido
+    res.render('nugecid/template-preenchido', {
+      title: 'Template Preenchido - NUGECID',
+      filename: filename,
+      dados: dadosPreenchimento,
+      csrfToken: req.csrfToken(),
+      user: req.session.user,
+      layout: 'layout'
+    });
+    
+  } catch (error) {
+    console.error('Erro ao processar preenchimento do template:', error);
+    req.flash('error_msg', 'Erro ao processar preenchimento do template.');
+    res.redirect('/nugecid/templates');
+  }
+};
+
+/**
+ * @desc Serve o arquivo PDF para visualização.
+ * @route GET /nugecid/pdf/arquivo/:filename
+ */
+exports.servirArquivoPDF = (req, res) => {
+  try {
+    const { filename } = req.params;
+    const path = require('path');
+    const fs = require('fs');
+    
+    // Caminho para o diretório de templates
+    const templatesDir = path.join(__dirname, '..', 'templates');
+    const filePath = path.join(templatesDir, filename);
+    
+    // Verifica se o arquivo existe
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Arquivo não encontrado' });
+    }
+    
+    // Verifica se é um arquivo PDF
+    if (!filename.toLowerCase().endsWith('.pdf')) {
+      return res.status(400).json({ error: 'Apenas arquivos PDF são suportados' });
+    }
+    
+    // Define o tipo de conteúdo como PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    
+    // Cria um stream de leitura e envia o arquivo
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    
+  } catch (error) {
+    console.error('Erro ao servir arquivo PDF:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+/**
+ * @desc Cria um novo template DOCX personalizado usando docxtemplater.
+ * @route POST /nugecid/termo/criar-template
+ */
+exports.criarTemplatePersonalizado = async (req, res) => {
+  try {
+    const { 
+      titulo_documento, 
+      instituicao, 
+      campos_personalizados, 
+      incluir_tabela_registros,
+      incluir_assinaturas,
+      observacoes_template 
+    } = req.body;
+
+    // Validações básicas
+    if (!titulo_documento) {
+      return res.status(400).json({
+        success: false,
+        message: 'Título do documento é obrigatório.'
+      });
+    }
+
+    // Criar estrutura básica do template
+    const templateData = {
+      titulo: titulo_documento || 'DOCUMENTO PERSONALIZADO',
+      instituicao: instituicao || 'INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA',
+      estado: 'DO RIO GRANDE DO NORTE',
+      data_atual: '{data_atual}',
+      numero_processo: '{numero_do_processo}',
+      data_desarquivamento: '{data_do_desarquivamento}',
+      observacao_geral: '{observacao_geral}',
+      usuario_nome: '{usuario_nome}',
+      usuario_setor: '{usuario_setor}'
+    };
+
+    // Adicionar campos personalizados
+    if (campos_personalizados && Array.isArray(campos_personalizados)) {
+      campos_personalizados.forEach(campo => {
+        if (campo.nome && campo.placeholder) {
+          templateData[campo.nome] = `{${campo.placeholder}}`;
+        }
+      });
+    }
+
+    // Gerar HTML do template para prévia
+    let htmlTemplate = `
+      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="margin: 0; font-size: 16px; font-weight: bold;">${templateData.instituicao}</h1>
+          <h2 style="margin: 5px 0; font-size: 14px; font-weight: bold;">${templateData.estado}</h2>
+          <h3 style="margin: 10px 0; font-size: 14px; font-weight: bold; text-decoration: underline;">${templateData.titulo}</h3>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <p><strong>Número do Processo:</strong> ${templateData.numero_processo}</p>
+          <p><strong>Data:</strong> ${templateData.data_desarquivamento}</p>
+        </div>
+    `;
+
+    // Adicionar campos personalizados ao HTML
+    if (campos_personalizados && Array.isArray(campos_personalizados)) {
+      htmlTemplate += '<div style="margin-bottom: 20px;">';
+      campos_personalizados.forEach(campo => {
+        if (campo.nome && campo.label) {
+          htmlTemplate += `<p><strong>${campo.label}:</strong> {${campo.placeholder || campo.nome}}</p>`;
+        }
+      });
+      htmlTemplate += '</div>';
+    }
+
+    // Adicionar tabela de registros se solicitado
+    if (incluir_tabela_registros) {
+      htmlTemplate += `
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid #000; padding: 8px; background-color: #f0f0f0;">Nº</th>
+              <th style="border: 1px solid #000; padding: 8px; background-color: #f0f0f0;">Tipo de Documento</th>
+              <th style="border: 1px solid #000; padding: 8px; background-color: #f0f0f0;">Nome</th>
+              <th style="border: 1px solid #000; padding: 8px; background-color: #f0f0f0;">Número</th>
+              <th style="border: 1px solid #000; padding: 8px; background-color: #f0f0f0;">Observação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#registros}
+            <tr>
+              <td style="border: 1px solid #000; padding: 8px;">{numero}</td>
+              <td style="border: 1px solid #000; padding: 8px;">{tipo_documento}</td>
+              <td style="border: 1px solid #000; padding: 8px;">{nome_completo}</td>
+              <td style="border: 1px solid #000; padding: 8px;">{numero_documento}</td>
+              <td style="border: 1px solid #000; padding: 8px;">{observacao}</td>
+            </tr>
+            {/registros}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // Adicionar seção de assinaturas se solicitado
+    if (incluir_assinaturas) {
+      htmlTemplate += `
+        <div style="margin-top: 50px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="border: 1px solid #000; padding: 20px; text-align: center; width: 50%;">
+                <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 10px;"></div>
+                <strong>Responsável pela Entrega</strong><br>
+                <span style="font-size: 12px;">Nome e Assinatura</span>
+              </td>
+              <td style="border: 1px solid #000; padding: 20px; text-align: center; width: 50%;">
+                <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 10px;"></div>
+                <strong>Responsável pelo Recebimento</strong><br>
+                <span style="font-size: 12px;">Nome e Assinatura</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `;
+    }
+
+    // Adicionar observações do template
+    if (observacoes_template) {
+      htmlTemplate += `
+        <div style="margin-top: 20px; font-size: 10px; text-align: center;">
+          <p>${observacoes_template}</p>
+        </div>
+      `;
+    }
+
+    htmlTemplate += '</div>';
+
+    // Salvar configuração do template (pode ser expandido para salvar em banco)
+    const templateConfig = {
+      id: Date.now(),
+      nome: titulo_documento,
+      criado_por: req.session.user ? req.session.user.id : null,
+      criado_em: new Date(),
+      configuracao: {
+        titulo_documento,
+        instituicao,
+        campos_personalizados,
+        incluir_tabela_registros,
+        incluir_assinaturas,
+        observacoes_template
+      },
+      html_template: htmlTemplate
+    };
+
+    // Registrar auditoria
+    if (req.session.user) {
+      await Auditoria.create({
+        acao: 'CRIAR_TEMPLATE_PERSONALIZADO',
+        tabela: 'templates',
+        registroId: templateConfig.id,
+        usuarioId: req.session.user.id,
+        dadosAnteriores: null,
+        dadosNovos: templateConfig,
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Template personalizado criado com sucesso!',
+      template: templateConfig,
+      preview_html: htmlTemplate
+    });
+
+  } catch (error) {
+    console.error('Erro ao criar template personalizado:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor ao criar template.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
  * @desc Exibe a lista de desarquivamentos com filtros
  * @route GET /desarquivamentos
  */
@@ -943,53 +1372,163 @@ exports.prepararTermo = async (req, res) => {
   }
 };
 
+/**
+ * @desc Gera termo em massa usando docxtemplater com validação e tratamento de erros aprimorado.
+ * @route POST /nugecid/termo/gerar-massa
+ */
 exports.gerarTermoEmMassa = async (req, res) => {
   try {
     const { registros, observacao, numero_do_processo, data_do_desarquivamento } = req.body;
 
-        const templatePath = path.resolve(__dirname, '..', 'templates', '01- MODELO - TERMO DE DESARQUIVAMENTO.docx');
-    const content = fs.readFileSync(templatePath);
+    // Validações de entrada
+    if (!registros || !Array.isArray(registros) || registros.length === 0) {
+      req.flash('error_msg', 'Nenhum registro selecionado para gerar o termo.');
+      return res.redirect('/nugecid/termo/selecionar');
+    }
+
+    // Verificar se o template existe
+    const templatePath = path.resolve(__dirname, '..', 'templates', '01- MODELO - TERMO DE DESARQUIVAMENTO.docx');
+    
+    if (!fs.existsSync(templatePath)) {
+      console.error('Template não encontrado:', templatePath);
+      req.flash('error_msg', 'Template do documento não encontrado. Verifique se o arquivo existe em: templates/01- MODELO - TERMO DE DESARQUIVAMENTO.docx');
+      return res.redirect('/nugecid/termo/selecionar');
+    }
+
+    // Carregar e processar o template
+    const content = fs.readFileSync(templatePath, 'binary');
     const zip = new PizZip(content);
+    
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
-      delimiters: { start: '{', end: '}' }
+      delimiters: { 
+        start: '{', 
+        end: '}' 
+      },
+      nullGetter: function(part, scopeManager) {
+        // Retorna string vazia para valores nulos/undefined
+        console.log('Valor nulo encontrado para:', part.value);
+        return '';
+      },
+      errorLogging: true
     });
 
+    // Preparar dados formatados para o template
+    const dataFormatada = data_do_desarquivamento ? 
+      new Date(data_do_desarquivamento + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 
+      new Date().toLocaleDateString('pt-BR');
+
     const dadosParaTemplate = {
-      numero_do_processo: numero_do_processo || '',
-      data_do_desarquivamento: data_do_desarquivamento ? new Date(data_do_desarquivamento + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '',
+      // Dados do cabeçalho
+      instituicao: 'INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA',
+      estado: 'DO RIO GRANDE DO NORTE', 
+      titulo_documento: 'TERMO DE DESARQUIVAMENTO',
+      
+      // Dados do processo
+      numero_do_processo: numero_do_processo || 'A ser preenchido',
+      data_do_desarquivamento: dataFormatada,
+      
+      // Observações gerais
+      observacao_geral: observacao || 'Desarquivamento solicitado conforme necessidade do setor.',
+      
+      // Lista de registros formatada
       registros: registros.map((r, index) => ({
-        'Nº': index + 1,
-        Tipo_de_documento: r.tipoDocumento || '',
+        numero: index + 1,
+        tipo_documento: r.tipoDocumento || 'Prontuário de Identificação Civil',
         nome_completo: r.nomeCompleto || '',
-        Numero_do_documeto: r.numDocumento || '',
+        numero_documento: r.numDocumento || '',
         observacao: observacao || ''
-      }))
+      })),
+      
+      // Dados do usuário e sistema
+      usuario_nome: req.session.user ? req.session.user.nome : 'Sistema',
+      usuario_setor: req.session.user ? req.session.user.setor : 'NUGECID',
+      data_geracao: new Date().toLocaleDateString('pt-BR'),
+      hora_geracao: new Date().toLocaleTimeString('pt-BR'),
+      
+      // Dados para rodapé
+      portaria_referencia: 'Portaria nº 188/2023-GDG/ITEP no DOE nº 15433 de 25/05/2023'
     };
 
     // Log detalhado dos dados que serão enviados para o template
-    console.log('=== DADOS PARA TEMPLATE ===');
+    console.log('=== DADOS PARA TEMPLATE DOCXTEMPLATER ===');
     console.log('Número do processo:', dadosParaTemplate.numero_do_processo);
     console.log('Data do desarquivamento:', dadosParaTemplate.data_do_desarquivamento);
     console.log('Registros encontrados:', registros.length);
+    console.log('Usuário:', dadosParaTemplate.usuario_nome);
+    console.log('Template path:', templatePath);
     console.log('Dados dos registros:');
     dadosParaTemplate.registros.forEach((reg, idx) => {
-      console.log(`Registro ${idx + 1}:`, reg);
+      console.log(`  Registro ${idx + 1}:`, {
+        tipo: reg.tipo_documento,
+        nome: reg.nome_completo,
+        numero: reg.numero_documento
+      });
     });
     console.log('=== FIM DOS DADOS ===');
 
+    // Renderizar o template
     doc.render(dadosParaTemplate);
 
-    const buf = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+    // Gerar o buffer do documento
+    const buf = doc.getZip().generate({ 
+      type: 'nodebuffer', 
+      compression: 'DEFLATE',
+      compressionOptions: {
+        level: 6
+      }
+    });
 
-    res.setHeader('Content-Disposition', `attachment; filename=Termo_Desarquivamento_Final.docx`);
+    // Configurar headers para download
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const nomeArquivo = `Termo_Desarquivamento_Massa_${timestamp}.docx`;
+    
+    res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivo}"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Length', buf.length);
+    
+    // Registrar auditoria
+    if (req.session.user) {
+      await Auditoria.create({
+        acao: 'GERAR_TERMO_MASSA_DOCX',
+        tabela: 'desarquivamentos',
+        registroId: null,
+        usuarioId: req.session.user.id,
+        dadosAnteriores: null,
+        dadosNovos: {
+          numero_processo: numero_do_processo,
+          quantidade_registros: registros.length,
+          nome_arquivo: nomeArquivo,
+          observacao: observacao
+        },
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+    }
+
     res.send(buf);
 
   } catch (error) {
     console.error('Erro ao gerar o termo em massa:', error);
-    req.flash('error_msg', 'Ocorreu um erro ao gerar o documento.');
+    
+    // Log detalhado do erro para debug
+    if (error.properties && error.properties.errors) {
+      console.error('Erros específicos do template:');
+      error.properties.errors.forEach((err, index) => {
+        console.error(`  Erro ${index + 1}:`, err);
+      });
+    }
+    
+    // Mensagem de erro mais específica
+    let errorMessage = 'Ocorreu um erro ao gerar o documento.';
+    if (error.message.includes('template')) {
+      errorMessage = 'Erro no template do documento. Verifique se o arquivo template está correto.';
+    } else if (error.message.includes('render')) {
+      errorMessage = 'Erro ao processar os dados no template. Verifique os campos do documento.';
+    }
+    
+    req.flash('error_msg', errorMessage);
     res.redirect('/nugecid/termo/selecionar');
   }
 };
@@ -1273,7 +1812,7 @@ exports.obterConteudoTermoHTML = async (req, res) => {
 };
 
 /**
- * @desc Gera e baixa o DOCX do termo usando o template original.
+ * @desc Gera e baixa o DOCX do termo usando o template original com docxtemplater.
  * @route POST /nugecid/termo/baixar-docx
  */
 exports.baixarTermoDOCX = async (req, res) => {
@@ -1287,40 +1826,112 @@ exports.baixarTermoDOCX = async (req, res) => {
 
     const { registros, observacao, numero_do_processo, data_do_desarquivamento } = termoData;
 
-    // Carregar o template DOCX
+    // Verificar se o template existe
     const templatePath = path.join(__dirname, '..', 'templates', '01- MODELO - TERMO DE DESARQUIVAMENTO.docx');
+    
+    if (!fs.existsSync(templatePath)) {
+      console.error('Template não encontrado:', templatePath);
+      req.flash('error_msg', 'Template do documento não encontrado.');
+      return res.redirect('/nugecid/desarquivamento');
+    }
+
+    // Carregar o template DOCX
     const content = fs.readFileSync(templatePath, 'binary');
     const zip = new PizZip(content);
+    
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
+      delimiters: {
+        start: '{',
+        end: '}'
+      },
+      nullGetter: function(part) {
+        // Retorna string vazia para valores nulos/undefined
+        return '';
+      },
+      errorLogging: true
     });
 
+    // Preparar dados para o template
     const dadosTemplate = {
-      numero_do_processo: numero_do_processo,
-      data_do_desarquivamento: data_do_desarquivamento,
-      observacao: observacao,
+      numero_do_processo: numero_do_processo || 'A ser preenchido',
+      data_do_desarquivamento: data_do_desarquivamento || new Date().toLocaleDateString('pt-BR'),
+      observacao: observacao || 'Desarquivamento solicitado conforme necessidade do setor.',
       registros: registros.map((r, index) => ({
         numero: index + 1,
         tipo_documento: r.tipoDocumento || 'Prontuário de Identificação Civil',
         nome_completo: r.nomeCompleto || '',
-        numero_documento: r.numDocumento || ''
-      }))
+        numero_documento: r.numDocumento || '',
+        observacao_item: observacao || ''
+      })),
+      // Dados adicionais para o cabeçalho
+      instituicao: 'INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA',
+      estado: 'DO RIO GRANDE DO NORTE',
+      titulo_documento: 'TERMO DE DESARQUIVAMENTO',
+      // Data atual formatada
+      data_atual: new Date().toLocaleDateString('pt-BR'),
+      // Informações do usuário logado
+      usuario_nome: req.session.user ? req.session.user.nome : 'Sistema',
+      usuario_setor: req.session.user ? req.session.user.setor : 'NUGECID'
     };
+
+    console.log('=== DADOS PARA TEMPLATE DOCX ===');
+    console.log('Número do processo:', dadosTemplate.numero_do_processo);
+    console.log('Data do desarquivamento:', dadosTemplate.data_do_desarquivamento);
+    console.log('Registros:', dadosTemplate.registros.length);
+    console.log('Usuário:', dadosTemplate.usuario_nome);
+    console.log('=== FIM DOS DADOS ===');
 
     // Renderizar o template
     doc.render(dadosTemplate);
-    const buf = doc.getZip().generate({ type: 'nodebuffer' });
+    
+    // Gerar o buffer do documento
+    const buf = doc.getZip().generate({ 
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+      compressionOptions: {
+        level: 6
+      }
+    });
 
     // Configurar headers para download
-    const nomeArquivo = `Termo_Desarquivamento_${Date.now()}.docx`;
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const nomeArquivo = `Termo_Desarquivamento_${timestamp}.docx`;
+    
     res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivo}"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Length', buf.length);
+    
+    // Registrar auditoria
+    if (req.session.user) {
+      await Auditoria.create({
+        acao: 'DOWNLOAD_TERMO_DOCX',
+        tabela: 'desarquivamentos',
+        registroId: null,
+        usuarioId: req.session.user.id,
+        dadosAnteriores: null,
+        dadosNovos: {
+          numero_processo: numero_do_processo,
+          quantidade_registros: registros.length,
+          nome_arquivo: nomeArquivo
+        },
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+    }
+
     res.send(buf);
 
   } catch (error) {
     console.error('Erro ao gerar DOCX:', error);
-    req.flash('error_msg', 'Ocorreu um erro ao gerar o documento.');
+    
+    // Log detalhado do erro
+    if (error.properties && error.properties.errors) {
+      console.error('Erros do template:', error.properties.errors);
+    }
+    
+    req.flash('error_msg', 'Ocorreu um erro ao gerar o documento. Verifique o template e tente novamente.');
     res.redirect('/nugecid/desarquivamento');
   }
 };
@@ -1392,29 +2003,197 @@ exports.exportarTermoPDF = async (req, res) => {
 };
 
 /**
- * @desc Exporta o termo editado como DOCX.
+ * @desc Exporta o termo editado como DOCX usando docxtemplater ou html-to-docx como fallback.
  * @route POST /nugecid/termo/exportar-docx
  */
 exports.exportarTermoDOCX = async (req, res) => {
   try {
     const { content } = req.body;
+    
     if (!content) {
-      return res.status(400).json({ success: false, message: 'Conteúdo não fornecido.' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Conteúdo não fornecido para exportação.' 
+      });
     }
 
+    // Tentar usar o template original se disponível
+    const templatePath = path.join(__dirname, '..', 'templates', '01- MODELO - TERMO DE DESARQUIVAMENTO.docx');
+    
+    if (fs.existsSync(templatePath) && req.session.termoData) {
+      // Usar docxtemplater com o template original
+      const termoData = req.session.termoData;
+      const templateContent = fs.readFileSync(templatePath, 'binary');
+      const zip = new PizZip(templateContent);
+      
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: { start: '{', end: '}' },
+        nullGetter: function() { return ''; }
+      });
+
+      // Extrair dados do conteúdo HTML editado (simplificado)
+      const dadosTemplate = {
+        numero_do_processo: termoData.numero_do_processo || 'A ser preenchido',
+        data_do_desarquivamento: termoData.data_do_desarquivamento || new Date().toLocaleDateString('pt-BR'),
+        observacao: termoData.observacao || '',
+        registros: termoData.registros ? termoData.registros.map((r, index) => ({
+          numero: index + 1,
+          tipo_documento: r.tipoDocumento || 'Prontuário',
+          nome_completo: r.nomeCompleto || '',
+          numero_documento: r.numDocumento || ''
+        })) : [],
+        usuario_nome: req.session.user ? req.session.user.nome : 'Sistema',
+        data_geracao: new Date().toLocaleDateString('pt-BR')
+      };
+
+      doc.render(dadosTemplate);
+      const buffer = doc.getZip().generate({ type: 'nodebuffer' });
+      
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      const nomeArquivo = `Termo_Editado_${timestamp}.docx`;
+      
+      res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivo}"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      
+      // Registrar auditoria
+      if (req.session.user) {
+        await Auditoria.create({
+          acao: 'EXPORTAR_TERMO_EDITADO_DOCX',
+          tabela: 'desarquivamentos',
+          registroId: null,
+          usuarioId: req.session.user.id,
+          dadosAnteriores: null,
+          dadosNovos: {
+            nome_arquivo: nomeArquivo,
+            metodo: 'docxtemplater'
+          },
+          ip: req.ip,
+          userAgent: req.get('User-Agent')
+        });
+      }
+      
+      return res.send(buffer);
+    }
+    
+    // Fallback: usar html-to-docx
+    console.log('Usando html-to-docx como fallback para exportação');
+    
     const HTMLtoDOCX = require('html-to-docx');
     const buffer = await HTMLtoDOCX(content, null, {
-      table: { row: { cantSplit: true } },
+      table: { 
+        row: { cantSplit: true },
+        style: {
+          border: {
+            top: { style: 'single', size: 1, color: '000000' },
+            bottom: { style: 'single', size: 1, color: '000000' },
+            left: { style: 'single', size: 1, color: '000000' },
+            right: { style: 'single', size: 1, color: '000000' }
+          }
+        }
+      },
       footer: true,
       pageNumber: true,
+      margins: {
+        top: 1440,    // 1 inch = 1440 twips
+        right: 1440,
+        bottom: 1440,
+        left: 1440
+      },
+      font: {
+        name: 'Arial',
+        size: 24 // 12pt = 24 half-points
+      }
     });
 
-    res.setHeader('Content-Disposition', 'attachment; filename=Termo_Desarquivamento_Editado.docx');
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const nomeArquivo = `Termo_Desarquivamento_Editado_${timestamp}.docx`;
+    
+    res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivo}"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    
+    // Registrar auditoria
+    if (req.session.user) {
+      await Auditoria.create({
+        acao: 'EXPORTAR_TERMO_EDITADO_DOCX',
+        tabela: 'desarquivamentos',
+        registroId: null,
+        usuarioId: req.session.user.id,
+        dadosAnteriores: null,
+        dadosNovos: {
+          nome_arquivo: nomeArquivo,
+          metodo: 'html-to-docx'
+        },
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+    }
+    
     res.send(buffer);
 
   } catch (error) {
     console.error('Erro ao exportar DOCX:', error);
-    res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    
+    // Log detalhado do erro
+    if (error.properties && error.properties.errors) {
+      console.error('Erros do template:', error.properties.errors);
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor ao exportar documento.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * @desc Salva o conteúdo editado do termo de desarquivamento na sessão.
+ * @route POST /nugecid/termo/salvar-edicao
+ */
+exports.salvarEdicaoTermo = async (req, res) => {
+  try {
+    const { editedContent } = req.body;
+    
+    if (!editedContent) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Conteúdo editado não fornecido.' 
+      });
+    }
+
+    // Salvar o conteúdo editado na sessão para uso posterior
+    if (!req.session.termoData) {
+      req.session.termoData = {};
+    }
+    
+    req.session.termoData.editedContent = editedContent;
+    req.session.termoData.lastEdited = new Date();
+    
+    // Log da ação para auditoria
+    await Auditoria.create({
+      usuarioId: req.session.user.id,
+      acao: 'edit_termo',
+      entidade: 'TermoDesarquivamento',
+      entidadeId: null, // Não há ID específico para o termo
+      detalhes: {
+        action: 'Edição de termo de desarquivamento',
+        contentLength: editedContent.length,
+        timestamp: new Date()
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Conteúdo editado salvo com sucesso!' 
+    });
+    
+  } catch (error) {
+    console.error('Erro ao salvar edição do termo:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro interno do servidor ao salvar edição.' 
+    });
   }
 };

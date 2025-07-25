@@ -11,15 +11,24 @@
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="mb-3">
                     <label for="nome" class="form-label"><%= __('Nome') %></label>
-                    <input type="text" class="form-control" id="nome" name="nome" value="<%= usuario.nome %>" required>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="nome" name="nome" value="<%= usuario.nome %>" required>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label for="matricula" class="form-label"><%= __('Matrícula') %></label>
-                    <input type="text" class="form-control" id="matricula" name="matricula" value="<%= usuario.matricula %>">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person-vcard"></i></span>
+                        <input type="text" class="form-control" id="matricula" name="matricula" value="<%= usuario.matricula %>">
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label for="email" class="form-label"><%= __('Email') %></label>
-                    <input type="text" class="form-control" id="email" name="email" value="<%= usuario.email %>" required>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                        <input type="text" class="form-control" id="email" name="email" value="<%= usuario.email %>" required>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label for="perfil" class="form-label"><%= __('Perfil') %></label>
@@ -31,7 +40,10 @@
                 </div>
                 <div class="mb-3">
                     <label for="senha" class="form-label"><%= __('Nova Senha') %></label>
-                    <input type="password" class="form-control" id="senha" name="senha">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                        <input type="password" class="form-control" id="senha" name="senha">
+                    </div>
                     <div class="form-text"><%= __('Deixe em branco para não alterar a senha.') %></div>
                 </div>
 
@@ -40,4 +52,4 @@
             </form>
         </div>
     </div>
-</div> 
+</div>

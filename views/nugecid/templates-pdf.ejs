@@ -1,0 +1,155 @@
+<div class="container-fluid">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
+    <a href="/nugecid" class="btn btn-secondary btn-sm">
+      <i class="fas fa-arrow-left"></i> Voltar ao NUGECID
+    </a>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-file-pdf text-danger"></i>
+            Templates PDF Disponíveis
+          </h6>
+        </div>
+        <div class="card-body">
+          <% if (templates && templates.length > 0) { %>
+            <div class="row">
+              <% templates.forEach(template => { %>
+                <div class="col-lg-6 col-xl-4 mb-4">
+                  <div class="card border-left-primary h-100">
+                    <div class="card-body">
+                      <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                          <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Template PDF
+                          </div>
+                          <div class="h6 mb-0 font-weight-bold text-gray-800">
+                            <%= template.displayName %>
+                          </div>
+                          <div class="text-xs text-gray-600 mt-2">
+                            <i class="fas fa-file-alt"></i> <%= template.size %> MB
+                            <br>
+                            <i class="fas fa-calendar"></i> Modificado em <%= template.modified %>
+                          </div>
+                        </div>
+                        <div class="col-auto">
+                          <i class="fas fa-file-pdf fa-2x text-danger"></i>
+                        </div>
+                      </div>
+                      <div class="mt-3">
+                        <div class="btn-group w-100" role="group">
+                          <a href="/nugecid/pdf/visualizar/<%= encodeURIComponent(template.name) %>" 
+                             class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye"></i> Visualizar
+                          </a>
+                          <a href="/nugecid/preencher-template/<%= encodeURIComponent(template.name) %>" 
+                             class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> Preencher
+                          </a>
+                          <a href="/nugecid/pdf/arquivo/<%= encodeURIComponent(template.name) %>" 
+                             target="_blank" 
+                             class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-external-link-alt"></i> Nova Aba
+                          </a>
+                          <a href="/nugecid/pdf/arquivo/<%= encodeURIComponent(template.name) %>" 
+                             download="<%= template.name %>" 
+                             class="btn btn-success btn-sm">
+                            <i class="fas fa-download"></i> Baixar
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-5">
+              <i class="fas fa-file-pdf fa-3x text-gray-300 mb-3"></i>
+              <h5 class="text-gray-600">Nenhum template PDF encontrado</h5>
+              <p class="text-gray-500">
+                Adicione arquivos PDF na pasta <code>/templates</code> para visualizá-los aqui.
+              </p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card de Informações -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-info">
+            <i class="fas fa-info-circle"></i>
+            Sobre o Visualizador PDF
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6 class="font-weight-bold text-primary">Funcionalidades:</h6>
+              <ul class="list-unstyled">
+                <li><i class="fas fa-check text-success"></i> Visualização integrada no sistema</li>
+                <li><i class="fas fa-check text-success"></i> Navegação por páginas</li>
+                <li><i class="fas fa-check text-success"></i> Controle de zoom</li>
+                <li><i class="fas fa-check text-success"></i> Ajuste automático de largura</li>
+                <li><i class="fas fa-check text-success"></i> Navegação por teclado</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6 class="font-weight-bold text-primary">Atalhos do Teclado:</h6>
+              <ul class="list-unstyled">
+                <li><kbd>←</kbd> ou <kbd>Page Up</kbd> - Página anterior</li>
+                <li><kbd>→</kbd> ou <kbd>Page Down</kbd> - Próxima página</li>
+                <li><kbd>+</kbd> ou <kbd>=</kbd> - Aumentar zoom</li>
+                <li><kbd>-</kbd> - Diminuir zoom</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.border-left-primary {
+  border-left: 0.25rem solid #4e73df !important;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  transition: transform 0.2s ease-in-out;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn-group .btn {
+  flex: 1;
+}
+
+kbd {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.875em;
+}
+
+@media (max-width: 768px) {
+  .btn-group {
+    flex-direction: column;
+  }
+  
+  .btn-group .btn {
+    border-radius: 0.375rem !important;
+    margin-bottom: 2px;
+  }
+}
+</style>

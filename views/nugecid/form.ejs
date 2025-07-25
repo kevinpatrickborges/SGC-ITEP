@@ -17,7 +17,7 @@
                 </div>
             <% } %>
 
-            <form action="<%= typeof desarquivamento !== 'undefined' && desarquivamento.id ? '/nugecid/editar/' + desarquivamento.id : '/nugecid/novo' %>" method="POST">
+            <form action="<%= typeof desarquivamento !== 'undefined' && desarquivamento.id ? '/nugecid/' + desarquivamento.id + '/editar' : '/nugecid/novo' %>" method="POST">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
                 <div class="row">
@@ -68,16 +68,42 @@
                         <div class="form-row">
                             <div class="form-group col-md-4">
                                 <label for="dataSolicitacao">Data de Solicitação</label>
-                                <input type="date" class="form-control" id="dataSolicitacao" name="dataSolicitacao" value="<%= desarquivamento && desarquivamento.dataSolicitacao ? new Date(desarquivamento.dataSolicitacao).toISOString().split('T')[0] : new Date().toISOString().split('T')[0] %>" required>
+                                <input type="date" class="form-control" id="dataSolicitacao" name="dataSolicitacao" value="<%
+                                    let dataSolicitacaoValue = '';
+                                    if (desarquivamento && desarquivamento.dataSolicitacao) {
+                                        const date = new Date(desarquivamento.dataSolicitacao);
+                                        if (!isNaN(date.getTime())) {
+                                            dataSolicitacaoValue = date.toISOString().split('T')[0];
+                                        }
+                                    }
+                                    if (!dataSolicitacaoValue) {
+                                        dataSolicitacaoValue = new Date().toISOString().split('T')[0];
+                                    }
+                                %><%- dataSolicitacaoValue %>" required>
                             </div>
                             <div class="form-group col-md-4">
                                 <label for="dataDesarquivamento">Data Desarquivamento (Opcional)</label>
-                                <input type="date" class="form-control" id="dataDesarquivamento" name="dataDesarquivamento" value="<%= desarquivamento && desarquivamento.dataDesarquivamento ? new Date(desarquivamento.dataDesarquivamento).toISOString().split('T')[0] : '' %>">
+                                <input type="date" class="form-control" id="dataDesarquivamento" name="dataDesarquivamento" value="<%
+                                    let dataDesarquivamentoValue = '';
+                                    if (desarquivamento && desarquivamento.dataDesarquivamento) {
+                                        const date = new Date(desarquivamento.dataDesarquivamento);
+                                        if (!isNaN(date.getTime())) {
+                                            dataDesarquivamentoValue = date.toISOString().split('T')[0];
+                                        }
+                                    }
+                                %><%- dataDesarquivamentoValue %>">
                             </div>
                             <div class="form-group col-md-4">
                                 <label for="dataDevolucao">Data Devolução (Opcional)</label>
-                                <input type="date" class="form-control" id="dataDevolucao" name="dataDevolucao" value="<%= desarquivamento && desarquivamento.dataDevolucao ? new Date(desarquivamento.dataDevolucao).toISOString().split('T')[0] : '' %>">
-                            </div>
+                                <input type="date" class="form-control" id="dataDevolucao" name="dataDevolucao" value="<%
+                                    let dataDevolucaoValue = '';
+                                    if (desarquivamento && desarquivamento.dataDevolucao) {
+                                        const date = new Date(desarquivamento.dataDevolucao);
+                                        if (!isNaN(date.getTime())) {
+                                            dataDevolucaoValue = date.toISOString().split('T')[0];
+                                        }
+                                    }
+                                %><%- dataDevolucaoValue %>">
                         </div>
 
                         <div class="form-row">
@@ -103,7 +129,15 @@
 
                         <div class="form-group">
                             <label for="dataPrazoDevolucao">Data Prazo Devolução (Opcional)</label>
-                            <input type="date" class="form-control" id="dataPrazoDevolucao" name="dataPrazoDevolucao" value="<%= desarquivamento && desarquivamento.dataPrazoDevolucao ? new Date(desarquivamento.dataPrazoDevolucao).toISOString().split('T')[0] : '' %>">
+                            <input type="date" class="form-control" id="dataPrazoDevolucao" name="dataPrazoDevolucao" value="<%
+                                let dataPrazoDevolucaoValue = '';
+                                if (desarquivamento && desarquivamento.dataPrazoDevolucao) {
+                                    const date = new Date(desarquivamento.dataPrazoDevolucao);
+                                    if (!isNaN(date.getTime())) {
+                                        dataPrazoDevolucaoValue = date.toISOString().split('T')[0];
+                                    }
+                                }
+                            %><%- dataPrazoDevolucaoValue %>">
                         </div>
                     </div>
                 </div>

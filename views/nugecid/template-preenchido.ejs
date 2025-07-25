@@ -1,0 +1,351 @@
+<div class="container-fluid">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
+    <div>
+      <a href="/nugecid/templates" class="btn btn-secondary btn-sm">
+        <i class="fas fa-arrow-left"></i> Voltar aos Templates
+      </a>
+      <a href="/nugecid/preencher-template/<%= encodeURIComponent(filename) %>" class="btn btn-warning btn-sm">
+        <i class="fas fa-edit"></i> Editar Seleção
+      </a>
+    </div>
+  </div>
+
+  <!-- Informações do Template -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-left-success">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                Template Preenchido com Sucesso
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                <i class="fas fa-file-pdf text-danger"></i>
+                <%= filename %>
+              </div>
+              <div class="text-xs text-gray-600 mt-1">
+                Gerado em <%= dados.data_geracao %> às <%= dados.hora_geracao %> por <%= dados.usuario_nome %>
+              </div>
+            </div>
+            <div class="col-auto">
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-primary" onclick="imprimirDocumento()">
+                  <i class="fas fa-print"></i> Imprimir
+                </button>
+                <button type="button" class="btn btn-success" onclick="exportarPDF()">
+                  <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Documento Preenchido -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-body" id="documentoContent" style="padding: 20px 60px;">
+          <!-- Cabeçalho Oficial -->
+          <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+              <img src="/img/brasao rn.png" alt="Brasão RN" style="height: 100px;">
+              <div style="flex: 1; text-align: center; margin-left: 30px; margin-right: 30px;">
+                <h4 style="margin: 0; font-weight: bold; font-size: 10px; font-family: 'Liberation Serif', serif;">GOVERNO <%= dados.estado %></h4>
+                <h5 style="margin: 0; font-weight: bold; font-size: 10px; font-family: 'Liberation Serif', serif;"><%= dados.secretaria %></h5>
+                <h6 style="margin: 0; font-weight: bold; font-size: 10px; font-family: 'Liberation Serif', serif;"><%= dados.instituicao %></h6>
+                <p style="margin: 0; font-weight: bold; font-size: 10px; font-family: 'Liberation Serif', serif;"><%= dados.nucleo %></p>
+              </div>
+              <img src="/img/Logo itep.png" alt="Logo ITEP" style="height: 100px;">
+            </div>
+          </div>
+
+          <!-- Título do Documento -->
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h3 style="font-weight: bold; margin: 0; font-size: 12px; font-family: 'Calibri', sans-serif;">
+              <%= dados.titulo_documento %>
+            </h3>
+          </div>
+
+          <!-- Texto Introdutório -->
+          <div style="margin-bottom: 25px; margin-left: 80px; margin-right: 80px; text-align: justify; line-height: 2.0; font-size: 12px; font-family: 'Calibri', sans-serif;">
+            <p style="margin-bottom: 15px;">
+              Ao servidor responsável pelo desarquivamento compete ter ciência que esta solicitação de 
+              desarquivamento de documento deve estar vinculada a uma demanda do Instituto Técnico-
+              Científico de Perícia do Rio Grande do Norte, ou jurisdição de órgão público através de autoridade 
+              competente.
+            </p>
+            <p style="margin-bottom: 15px;">
+              Estar ciente quanto às orientações e normativas descritas na portaria nº 188/2023-GDG/ITEP 
+              no DOE nº 15433 de 25/05/2023, que dispõe sobre o acesso e o fluxo de desarquivamento de 
+              documentos no âmbito do setor de Arquivo Geral do Instituto Técnico-Científico do Rio Grande do 
+              Norte.
+            </p>
+          </div>
+
+          <!-- Tabela Unificada -->
+          <table style="width: 90%; border-collapse: collapse; margin: 0 auto; margin-bottom: 0px;">
+            <!-- Cabeçalho do Processo -->
+            <tr>
+              <td colspan="2" style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f0f0f0; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                Nº. DE PROCESSO ELETRÔNICO
+              </td>
+              <td colspan="3" style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f0f0f0; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                DATA DO DESARQUIVAMENTO
+              </td>
+            </tr>
+            <!-- Dados do Processo -->
+            <tr>
+              <td colspan="2" style="border: 1px solid #000; padding: 4px; text-align: center; height: 20px; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                <%= dados.numero_processo %>
+              </td>
+              <td colspan="3" style="border: 1px solid #000; padding: 4px; text-align: center; height: 20px; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                <%= dados.data_desarquivamento %>
+              </td>
+            </tr>
+            <!-- Cabeçalho dos Documentos -->
+            <tr>
+              <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 3%; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                Nº
+              </td>
+              <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 25%; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                TIPO DE DOCUMENTO<br>
+                <span style="font-size: 10px; font-weight: normal;">Ex. Prontuário, Laudo, Parecer, Relatório.</span>
+              </td>
+              <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 35%; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                NOME
+              </td>
+              <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 17%; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                NÚMERO
+              </td>
+              <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #f0f0f0; width: 15%; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                OBSERVAÇÃO
+              </td>
+            </tr>
+            <!-- Dados dos Documentos -->
+            <% dados.registros.forEach((registro, index) => { %>
+              <tr>
+                <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  <%= index + 1 %>
+                </td>
+                <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  <%= registro.tipo_documento %>
+                </td>
+                <td style="border: 1px solid #000; padding: 4px; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  <%= registro.nome %>
+                </td>
+                <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  <%= registro.numero %>
+                </td>
+                <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  <%= registro.observacao %>
+                </td>
+              </tr>
+            <% }); %>
+          </table>
+
+          <!-- Seções de Assinatura -->
+          <div style="margin-top: 20px;">
+            <table style="width: 90%; border-collapse: collapse; margin: 0 auto;">
+              <tr>
+                <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #d3d3d3; width: 50%; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  SETOR DE ARQUIVO GERAL<br>
+                  <span style="font-size: 10px; font-weight: normal;">Responsável pela ENTREGA</span>
+                </td>
+                <td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; background-color: #d3d3d3; width: 50%; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  SETOR SOLICITANTE<br>
+                  <span style="font-size: 10px; font-weight: normal;">Responsável pelo RECEBIMENTO</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="border: 1px solid #000; padding: 15px; text-align: center; vertical-align: bottom; height: 60px; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  <div style="border-top: 2px solid #000; padding-top: 5px; margin-top: 15px; width: 80%; margin-left: auto; margin-right: auto;">
+                    <strong>Assinatura</strong><br>
+                    <span style="font-size: 10px;">Por extenso</span>
+                  </div>
+                </td>
+                <td style="border: 1px solid #000; padding: 15px; text-align: center; vertical-align: bottom; height: 60px; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  <div style="border-top: 2px solid #000; padding-top: 5px; margin-top: 30px; width: 80%; margin-left: auto; margin-right: auto;">
+                    <strong style="color: red;">Assinatura</strong><br>
+                    <span style="font-size: 10px; color: red;">Por extenso</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="border: 1px solid #000; padding: 0; text-align: left; font-weight: bold; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  <div style="height: 90px; display: flex;">
+                    <div style="padding: 1px; width: 20%; display: flex; align-items: center; border-right: 1px solid #000; height: auto%;">
+                      MATRÍCULA:
+                    </div>
+                    <div style="padding: 4px; width: 30%; display: flex; align-items: center;">
+                      <!-- Espaço para preenchimento manual -->
+                    </div>
+                  </div>
+                </td>
+                <td style="border: 1px solid #000; padding: 0; text-align: left; font-weight: bold; font-size: 12px; font-family: 'Calibri', sans-serif;">
+                  <div style="border-bottom: 1px solid #000; height: 30px; display: flex;">
+                    <div style="padding: 4px; width: 25%; display: flex; align-items: center; border-right: 1px solid #000;">
+                      <span style="color: red;">MATRÍCULA:</span>
+                    </div>
+                    <div style="padding: 4px; width: 50%; display: flex; align-items: center;">
+                      <!-- Espaço para preenchimento manual -->
+                    </div>
+                  </div>
+                  <div style="border-bottom: 1px solid #000; height: 30px; display: flex;">
+                    <div style="padding: 4px; width: 25%; display: flex; align-items: center; border-right: 1px solid #000;">
+                      <span style="color: red; font-size: 12px; font-weight: bold;">DATA DA RETIRADA:</span>
+                    </div>
+                    <div style="padding: 4px; width: 50%; display: flex; align-items: center;">
+                      <!-- Espaço para preenchimento manual -->
+                    </div>
+                  </div>
+                  <div style="padding: 4px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                    <span style="color: red; font-size: 12px; font-weight: bold;">SETOR: <%= dados.setor_solicitante %></span>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Rodapé -->
+          <div style="margin-top: 30px; text-align: center; font-size: 10px; font-family: 'Calibri', sans-serif; color: #666; border-top: 2px solid #000; padding-top: 15px;">
+            <p style="margin: 0; font-size: 10px; color: #000">Instituto Técnico Científico de Perícia – ITEP</p>
+            <p style="margin: 0; font-size: 10px; color: #000">Núcleo de Gestão do Conhecimento, Informação Documentação e Memória - NUGECID</p>
+            <p style="margin: 0; font-size: 10px; color: #000">Av. Duque de Caxias, 97, Ribeira – Natal/RN – CEP: 59.012-200 – Telefone: (84) 3232-6928 </p>
+            <p style="margin: 0; font-size: 10px; color: #000">Email: arquivogeral@itep.rn.gov.br </p>
+            <div style="border-top: 1px solid #ccc; margin: 10px 0; padding-top: 10px;">
+              <p style="margin: 0;">Documento gerado automaticamente pelo Sistema SGC-ITEP</p>
+            <p style="margin: 0;">Usuário: <%= dados.usuario_nome %> | Setor: NUGECID</p>
+              <p style="margin: 0;">Data/Hora: <%= dados.data_geracao %> - <%= dados.hora_geracao %></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript para funcionalidades -->
+<script>
+function imprimirDocumento() {
+  // Criar uma nova janela para impressão
+  const printWindow = window.open('', '_blank');
+  const content = document.getElementById('documentoContent').innerHTML;
+  
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Termo de Desarquivamento - <%= filename %></title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          font-size: 12px;
+          line-height: 1.4;
+          margin: 20px;
+          color: #000;
+        }
+        table {
+          border-collapse: collapse;
+          width: 100%;
+        }
+        th, td {
+          border: 1px solid #000;
+          padding: 8px;
+          text-align: left;
+        }
+        th {
+          background-color: #f0f0f0;
+          font-weight: bold;
+        }
+        .text-center {
+          text-align: center;
+        }
+        @media print {
+          body {
+            margin: 0;
+          }
+          .no-print {
+            display: none;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      ${content}
+    </body>
+    </html>
+  `);
+  
+  printWindow.document.close();
+  printWindow.focus();
+  
+  // Aguardar o carregamento e imprimir
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 500);
+}
+
+function exportarPDF() {
+  // Implementar exportação para PDF
+  const content = document.getElementById('documentoContent').innerHTML;
+  
+  // Criar formulário para envio
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/nugecid/termo/exportar-pdf';
+  form.style.display = 'none';
+  
+  // Adicionar CSRF token
+  const csrfInput = document.createElement('input');
+  csrfInput.type = 'hidden';
+  csrfInput.name = '_csrf';
+  csrfInput.value = '<%= csrfToken %>';
+  form.appendChild(csrfInput);
+  
+  // Adicionar conteúdo
+  const contentInput = document.createElement('input');
+  contentInput.type = 'hidden';
+  contentInput.name = 'content';
+  contentInput.value = content;
+  form.appendChild(contentInput);
+  
+  // Adicionar nome do arquivo
+  const filenameInput = document.createElement('input');
+  filenameInput.type = 'hidden';
+  filenameInput.name = 'filename';
+  filenameInput.value = 'Termo_Preenchido_<%= filename.replace(".pdf", "") %>';
+  form.appendChild(filenameInput);
+  
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+}
+
+// Adicionar estilos para impressão
+const printStyles = `
+  @media print {
+    .container-fluid {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .card {
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .btn, .d-sm-flex {
+      display: none !important;
+    }
+  }
+`;
+
+const styleSheet = document.createElement('style');
+styleSheet.type = 'text/css';
+styleSheet.innerText = printStyles;
+document.head.appendChild(styleSheet);
+</script>

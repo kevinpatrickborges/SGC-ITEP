@@ -103,7 +103,7 @@
       <div class="col-lg-12 mb-4">
         <div class="card h-100">
           <div class="card-header">
-            <h4 class="card-title mb-0">Usuários Ativos</h4>
+            <h4 class="card-title mb-0"><i class="bi bi-people-fill me-2"></i>Usuários Ativos</h4>
           </div>
           <div class="card-body p-0">
             <div class="table-responsive">
@@ -112,19 +112,29 @@
                   <tr>
                     <th>IP</th>
                     <th>Conexões</th>
+                    <th>Usuários Conectados</th>
                   </tr>
                 </thead>
                 <tbody>
                   <% if (usersByIp && Object.keys(usersByIp).length > 0) { %>
-                    <% Object.entries(usersByIp).forEach(function([ip, count]) { %>
+                    <% Object.entries(usersByIp).forEach(function([ip, data]) { %>
                       <tr>
                         <td><%= (ip === '::1' || ip === '127.0.0.1') ? 'localhost' : ip %></td>
-                        <td><%= count %></td>
+                        <td><%= data.count || data %></td>
+                        <td>
+                          <% if (data.users && data.users.length > 0) { %>
+                            <% data.users.forEach(function(user, index) { %>
+                              <span class="badge bg-primary me-1"><%= user.nome %></span><% if (index < data.users.length - 1) { %> <% } %>
+                            <% }) %>
+                          <% } else { %>
+                            <span class="text-muted">-</span>
+                          <% } %>
+                        </td>
                       </tr>
                     <% }) %>
                   <% } else { %>
                     <tr>
-                      <td colspan="2" class="text-center">Nenhum usuário ativo</td>
+                      <td colspan="3" class="text-center">Nenhum usuário ativo</td>
                     </tr>
                   <% } %>
                 </tbody>

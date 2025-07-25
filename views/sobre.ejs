@@ -1,0 +1,107 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h4 class="card-title mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            Sobre o SGC-ITEP
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-lg-8">
+              <h5>Sistema de Gestão Documental</h5>
+              <p class="text-muted mb-4">
+                O SGC-ITEP é um Sistema de Gestão Documental modular desenvolvido especificamente para o 
+                Instituto Técnico-Científico de Perícia, com foco na modernização e digitalização dos 
+                processos de controle documental.
+              </p>
+              
+              <h6>Módulo NUGECID</h6>
+              <p>
+                O primeiro módulo implementado é o NUGECID, que substitui o controle manual de 
+                desarquivamento de documentos (prontuários, laudos, etc.) que anteriormente era 
+                realizado através de planilhas.
+              </p>
+              
+              <h6>Características Principais</h6>
+              <ul class="list-unstyled">
+                <li><i class="bi bi-check-circle text-success me-2"></i>Sistema seguro e auditável</li>
+                <li><i class="bi bi-check-circle text-success me-2"></i>Controle de acesso por níveis (ACL)</li>
+                <li><i class="bi bi-check-circle text-success me-2"></i>Gestão completa de registros (CRUD)</li>
+                <li><i class="bi bi-check-circle text-success me-2"></i>Pesquisa e filtragem avançada</li>
+                <li><i class="bi bi-check-circle text-success me-2"></i>Importação de planilhas XLSX</li>
+                <li><i class="bi bi-check-circle text-success me-2"></i>Relatórios e exportações</li>
+              </ul>
+              
+              <h6>Tecnologias Utilizadas</h6>
+              <div class="row mt-3">
+                <div class="col-md-6">
+                  <strong>Backend:</strong>
+                  <ul class="list-unstyled ms-3">
+                    <li>• Node.js (v18+)</li>
+                    <li>• Express.js</li>
+                    <li>• Sequelize (ORM)</li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <strong>Frontend:</strong>
+                  <ul class="list-unstyled ms-3">
+                    <li>• EJS (Templates)</li>
+                    <li>• Bootstrap 5</li>
+                    <li>• Vanilla JavaScript</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-lg-4">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <h6 class="card-title">
+                    <i class="bi bi-gear me-2"></i>
+                    Informações do Sistema
+                  </h6>
+                  <hr>
+                  <div class="mb-2">
+                    <strong>Versão:</strong> 1.0.0
+                  </div>
+                  <div class="mb-2">
+                    <strong>Ambiente:</strong> 
+                    <span class="badge bg-primary">Desenvolvimento</span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Banco de Dados:</strong> SQLite
+                  </div>
+                  <div class="mb-2">
+                    <strong>Última Atualização:</strong> <%= new Date().toLocaleDateString('pt-BR') %>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="card bg-light mt-3">
+                <div class="card-body">
+                  <h6 class="card-title">
+                    <i class="bi bi-people me-2"></i>
+                    Suporte
+                  </h6>
+                  <hr>
+                  <p class="small mb-2">
+                    Para suporte técnico ou dúvidas sobre o sistema, entre em contato com a equipe de TI.
+                  </p>
+                  <div class="d-grid">
+                    <a href="/dashboard" class="btn btn-outline-primary btn-sm">
+                      <i class="bi bi-arrow-left me-1"></i>
+                      Voltar ao Dashboard
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
