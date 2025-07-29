@@ -138,15 +138,10 @@ async function startServer() {
     app.use('/auth', require('./routes/auth'));
     
     app.use('/usuarios', require('./routes/usuarios'));
-    app.use('/movimentacoes', require('./routes/movimentacoes'));
-    app.use('/custodia-vestigios', require('./routes/custodia_vestigios'));
     app.use('/dashboard', require('./routes/dashboard'));
     app.use('/importacao', require('./routes/importacao'));
     app.use('/relatorios', require('./routes/relatorios'));
-    app.use('/publicacoes', require('./routes/publicacoes.routes.js'));
-    app.use('/collaborative-editor', require('./routes/collaborative-editor.routes.js'));
-    
-    app.use('/projetos', require('./routes/projetos'));
+    // Rotas removidas na simplificação: publicações, editor colaborativo e projetos
     
     // Rota simples para página Sobre
     app.get('/sobre', (req, res) => {
@@ -160,8 +155,6 @@ async function startServer() {
     app.use('/nugecid', require('./routes/nugecid.routes.js'));
     app.use('/api/export', require('./routes/api/export'));
     app.use('/api/v1/auth', require('./routes/api/auth'));
-    app.use('/api/v1/custodia-vestigios', require('./routes/custodia_vestigios/api'));
-    app.use('/api/v1/movimentacoes', require('./routes/movimentacoes'));
     app.use('/api/v1/usuarios', require('./routes/usuarios'));
     app.use('/api/v1/importacao', require('./routes/importacao'));
     app.use('/api/v1/relatorios', require('./routes/relatorios'));
@@ -169,20 +162,16 @@ async function startServer() {
     console.log('Routes loaded successfully.');
 
     // Rotas da API
-    const vestigiosApiRoutes = require('./routes/api/vestigios');
     const dashboardApiRoutes = require('./routes/api/dashboard');
     const authApiRoutes = require('./routes/api/auth');
     const exportApiRoutes = require('./routes/api/export');
     const notificationsApiRoutes = require('./routes/api/notifications');
-    const pythonServicesApiRoutes = require('./routes/api/python_services');
 
     // API Endpoints
-    app.use('/api/vestigios', ensureAuthenticated, vestigiosApiRoutes);
     app.use('/api/dashboard', ensureAuthenticated, dashboardApiRoutes);
     app.use('/api/auth', authApiRoutes);
     app.use('/api/export', ensureAuthenticated, exportApiRoutes);
     app.use('/api/notifications', notificationsApiRoutes);
-    app.use('/api/python', ensureAuthenticated, pythonServicesApiRoutes);
 
     // --- TRATAMENTO DE ERROS ---
     // Handler 404 aprimorado
@@ -207,10 +196,7 @@ async function startServer() {
     const http = require('http');
     const server = http.createServer(app);
     
-    // Inicializar o serviço de editor colaborativo
-    const collaborativeEditorService = require('./services/collaborativeEditorService');
-    collaborativeEditorService.initialize(server);
-    console.log('Serviço de Editor Colaborativo inicializado'); // Restart
+    // Serviços removidos na simplificação
     
     server.listen(PORT, () => {
       console.log(`Server is running at http://localhost:${PORT}`);

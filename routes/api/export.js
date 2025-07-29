@@ -4,9 +4,7 @@ const { ensureAuthenticated: auth } = require('../../middlewares/auth');
 const roleRequired = require('../../middlewares/roleRequired');
 const exportController = require('../../controllers/exportController');
 
-// Exportação de vestígios
-router.get('/vestigios/excel', auth, roleRequired(['admin','tecnico','auditor']), exportController.exportVestigiosExcel);
-router.get('/vestigios/pdf', auth, roleRequired(['admin','tecnico','auditor']), exportController.exportVestigiosPDF);
+// Rotas de exportação de vestígios removidas na simplificação
 
 // Exportação de desarquivamentos
 router.get('/desarquivamentos/excel', auth, roleRequired(['admin', 'NUGECID_EDITOR', 'auditor']), exportController.exportDesarquivamentosExcel);

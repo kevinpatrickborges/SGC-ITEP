@@ -4,7 +4,6 @@ const PDFDocument = require('pdfkit');
 const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
-const Vestigio = require('../models/Vestigio');
 const Usuario = require('../models/Usuario');
 
 module.exports = {
@@ -12,9 +11,7 @@ module.exports = {
     const { tipo, formato } = req.body;
     try {
       let registros = [];
-      if (tipo === 'vestigios') {
-        registros = await Vestigio.findAll();
-      } else if (tipo === 'usuarios') {
+      if (tipo === 'usuarios') {
         registros = await Usuario.findAll({ attributes: { exclude: ['senha'] } });
       } else {
         return res.status(400).json({ error: 'Tipo de relatório inválido.' });
