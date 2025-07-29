@@ -10,7 +10,7 @@
 O **SGC‑ITEP** é um **Sistema de Gestão Documental** modular destinado ao Instituto Técnico‑Científico de Perícia.
 Ele substitui planilhas soltas e pastas físicas por um fluxo digital auditável que abrange:
 
-1. **Desarquivamento de Prontuários** (módulo **NUGECID**) – registrar, acompanhar, imprimir recibos.
+1. **Desarquivamento de Prontuários** (módulo **NUGECID**) – registrar, acompanhar, imprimir registros de desarquivamentos.
 2. Futuras extensões (Balística, Toxicologia, DNA…).
 
 Cada setor é um **plug‑in independente** (pasta `modules/<setor>`), mas compartilha login, auditoria, uploads e API.
@@ -43,13 +43,10 @@ Cada setor é um **plug‑in independente** (pasta `modules/<setor>`), mas compa
   * Recibo PDF com QR‑Code para assinatura da retirada
   * Lista "Itens Desarquivados" (soft‑delete)
   * Painel com indicadores (abertos, pendentes, vencidos).
-
-### 3.2 Custódia de Vestígios
-
-* Cadastro de vestígio, localização hierárquica, movimentações.
-* Visual 3D de armário/estante (Three.js).
-
----
+  * Preencher o template com o registro já adicionado ao painel.
+  * Imprimir o registro com base no template já criado.
+  * Gestor de Projetos e planejamento podendo adicionar tarefas a usuários.
+  * Ter um painel de controle para o gestor de projetos com A fazer, Em Andamento e Concluído.
 
 ## 4. Padrões de Código
 

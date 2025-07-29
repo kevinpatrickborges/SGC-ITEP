@@ -1,0 +1,11 @@
+# Ignorar arquivos EJS que contêm sintaxe mista
+views/
+**/*.ejs
+
+# Ignorar outros arquivos que podem causar conflitos
+node_modules/
+public/js/three.module.js
+
+# Ignorar diretórios específicos
+views/**/*
+templates/**/*

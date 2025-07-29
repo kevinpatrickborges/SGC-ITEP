@@ -1,0 +1,113 @@
+/* Estilos de Impressão Dedicados */
+
+@media print {
+  /* Ocultar elementos da interface específicos */
+  .container-fluid > .d-sm-flex,
+  .row.mb-4,
+  .card.shadow,
+  .sei-wrapper,
+  .sei-main-content,
+  nav,
+  .sidebar,
+  .topbar,
+  button:not(.print-visible),
+  .btn:not(.print-visible) {
+    display: none !important;
+  }
+
+  /* Configurações da página */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  /* Estilos para o corpo da página */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: white !important;
+    font-size: 12pt !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Garantir que o conteúdo do documento seja visível */
+  .documento-conteudo,
+  #documentoContent {
+    display: block !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    width: 100% !important;
+    background: white !important;
+    color: black !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+  }
+
+  /* Garante que o container-fluid não interfira */
+  .container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Remove bordas e sombras dos cards no modo de impressão */
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Oculta elementos desnecessários da interface */
+  .btn, .d-sm-flex, .sidebar, .topbar, .sei-wrapper > .sei-main-content > .container-fluid > .d-sm-flex {
+      display: none !important;
+  }
+
+  /* Ajustes de página para evitar cortes */
+  @page {
+    size: A4;
+    margin: 0; /* Remove todas as margens */
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background-color: #fff;
+    color: #000;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 12px !important; /* Força tamanho menor da fonte */
+  }
+  
+  /* Remove qualquer espaçamento adicional do HTML */
+  html {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Força todos os elementos a ficarem em uma página */
+  #documentoContent * {
+    page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Ajustes específicos para tabelas */
+  table {
+    font-size: 0.7em !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Reduz espaçamentos de parágrafos e títulos */
+  p, h1, h2, h3, h4, h5, h6 {
+    margin: 2px 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Força altura máxima do conteúdo */
+  #documentoContent {
+    max-height: 100vh !important;
+    overflow: hidden !important;
+  }
+}

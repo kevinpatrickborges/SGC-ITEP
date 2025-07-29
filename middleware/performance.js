@@ -161,14 +161,8 @@ function setupOptimizedHeaders() {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     
-    // Preload de recursos críticos
-    if (req.url === '/' || req.url.includes('dashboard')) {
-      res.setHeader('Link', [
-        '</css/style.css>; rel=preload; as=style',
-        '</js/dashboard.js>; rel=preload; as=script',
-        '</css/bootstrap.min.css>; rel=preload; as=style'
-      ].join(', '));
-    }
+    // Preload de recursos críticos removido para evitar avisos desnecessários
+    // Os recursos serão carregados normalmente conforme necessário
     
     next();
   };
@@ -244,8 +238,9 @@ function setupSecurity() {
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
         scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+        scriptSrcAttr: ["'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
         connectSrc: ["'self'"],
         frameSrc: ["'none'"],
         objectSrc: ["'none'"]

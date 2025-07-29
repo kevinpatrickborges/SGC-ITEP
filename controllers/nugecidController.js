@@ -9,6 +9,7 @@ const QRCode = require('qrcode');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const fs = require('fs');
+const serialize = require('serialize-javascript');
 const path = require('path');
 const mammoth = require('mammoth');
 const HTMLtoDOCX = require('html-to-docx');
@@ -224,6 +225,7 @@ exports.processarPreenchimentoTemplate = async (req, res) => {
       title: 'Template Preenchido - NUGECID',
       filename: filename,
       dados: dadosPreenchimento,
+      dadosJSON: serialize(dadosPreenchimento || {}),
       csrfToken: req.csrfToken(),
       user: req.session.user,
       layout: 'layout'
@@ -2259,30 +2261,32 @@ exports.gerarTemplateDireto = async (req, res) => {
       hora_geracao: new Date().toLocaleTimeString('pt-BR')
     };
     
+    // Registrar auditoria ANTES do render
+    if (req.session.user) {
+      await Auditoria.create({
+        acao: 'GERAR_TEMPLATE_DIRETO',
+        entidade: 'Desarquivamento',
+        entidadeId: registro.id,
+        usuarioId: req.session.user.id,
+        detalhes: {
+          registro_id: id,
+          nome_completo: registro.nomeCompleto,
+          num_documento: registro.numDocumento,
+          ip: req.ip,
+          userAgent: req.get('User-Agent')
+        }
+      });
+    }
+    
     // Renderizar template preenchido diretamente
     res.render('nugecid/template-preenchido', {
       title: 'Template Preenchido - NUGECID',
       filename: 'Termo de Desarquivamento',
       dados: dadosPreenchimento,
+      dadosJSON: serialize(dadosPreenchimento || {}),
       csrfToken: req.csrfToken(),
       user: req.session.user,
       layout: 'layout'
-    });
-    
-    // Registrar auditoria
-    await Auditoria.create({
-      acao: 'GERAR_TEMPLATE_DIRETO',
-      tabela: 'desarquivamentos',
-      registroId: id,
-      usuarioId: req.session.user ? req.session.user.id : null,
-      dadosAnteriores: null,
-      dadosNovos: {
-        registro_id: id,
-        nome_completo: registro.nomeCompleto,
-        num_documento: registro.numDocumento
-      },
-      ip: req.ip,
-      userAgent: req.get('User-Agent')
     });
     
   } catch (error) {

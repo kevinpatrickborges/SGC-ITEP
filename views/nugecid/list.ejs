@@ -177,6 +177,27 @@
   </div>
 </div>
 
+<style>
+/* Efeito minimalista para linhas clicáveis */
+.registro-linha {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.registro-linha:hover {
+  background-color: #e9ecef !important;
+}
+
+/* Linhas listradas ficam brancas no hover */
+.table-striped tbody tr.registro-linha:nth-of-type(odd):hover {
+  background-color: #ffffff !important;
+}
+
+.registro-linha:hover td {
+  background-color: transparent;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Configura o modal de exclusão
